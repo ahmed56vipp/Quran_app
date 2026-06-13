@@ -1,44 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-void main() => runApp(MaterialApp(home: QuranApp()));
+void main() => runApp(const QuranApp());
 
-class QuranApp extends StatefulWidget {
+class QuranApp extends StatelessWidget {
+  const QuranApp({super.key});
   @override
-  _QuranAppState createState() => _QuranAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(home: SurahListScreen());
+  }
 }
 
-class _QuranAppState extends State<QuranApp> {
-  String _data = "جاري تهيئة قاعدة البيانات...";
+class SurahListScreen extends StatefulWidget {
+  @override
+  _SurahListScreenState createState() => _SurahListScreenState();
+}
+
+class _SurahListScreenState extends State<SurahListScreen> {
+  List surahs = [];
 
   @override
   void initState() {
     super.initState();
-    initDatabase();
+    fetchSurahs();
   }
 
-  Future<void> initDatabase() async {
-    var databasesPath = await getDatabasesPath();
-    String path = join(databasesPath, 'demo.db');
-
-    Database db = await openDatabase(path, version: 1, onCreate: (db, version) async {
-      await db.execute("CREATE TABLE quran (id INTEGER PRIMARY KEY, verse TEXT)");
-      await db.execute("INSERT INTO quran (verse) VALUES ('بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ')");
-    });
-
-    List<Map> list = await db.rawQuery('SELECT * FROM quran');
-    setState(() {
-      _data = list[0]['verse'];
-    });
+  fetchSurahs() async {
+    final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/surah'));
+    if (response.statusCode == 200) {
+      setState(() {
+        surahs = json.decode(response.body)['data'];
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("تطبيق القرآن الكريم")),
-      body: Center(child: Text(_data, style: TextStyle(fontSize: 24))),
+      appBar: AppBar(title: const Text("القرآن الكريم")),
+      body: surahs.isEmpty 
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: surahs.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(surahs[index]['name']),
+                  subtitle: Text(surahs[index]['englishName']),
+                );
+              },
+            ),
     );
   }
 }
-
