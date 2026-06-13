@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 void main() => runApp(const QuranApp());
 
@@ -23,33 +23,30 @@ class _SurahListScreenState extends State<SurahListScreen> {
   @override
   void initState() {
     super.initState();
-    fetchSurahs();
+    loadSurahs();
   }
 
-  fetchSurahs() async {
-    final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/surah'));
-    if (response.statusCode == 200) {
-      setState(() {
-        surahs = json.decode(response.body)['data'];
-      });
-    }
+  Future<void> loadSurahs() async {
+    final String response = await rootBundle.loadString('assets/quran_data.json');
+    final data = await json.decode(response);
+    setState(() {
+      surahs = data['surahs'];
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("القرآن الكريم")),
-      body: surahs.isEmpty 
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: surahs.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(surahs[index]['name']),
-                  subtitle: Text(surahs[index]['englishName']),
-                );
-              },
-            ),
+      body: ListView.builder(
+        itemCount: surahs.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text(surahs[index]['name']),
+            subtitle: Text(surahs[index]['englishName']),
+          );
+        },
+      ),
     );
   }
-}
+} 
