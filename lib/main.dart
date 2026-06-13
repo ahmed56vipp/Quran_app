@@ -8,7 +8,11 @@ class QuranApp extends StatelessWidget {
   const QuranApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: SurahListScreen());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: SurahListScreen(),
+    );
   }
 }
 
@@ -37,16 +41,24 @@ class _SurahListScreenState extends State<SurahListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("القرآن الكريم")),
+      appBar: AppBar(title: const Text("القرآن الكريم", style: TextStyle(color: Colors.white))),
       body: ListView.builder(
         itemCount: surahs.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(surahs[index]['name']),
-            subtitle: Text(surahs[index]['englishName']),
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.teal.shade100,
+                child: Text("${surahs[index]['number']}"),
+              ),
+              title: Text(surahs[index]['name'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              subtitle: Text(surahs[index]['englishName']),
+              trailing: const Icon(Icons.menu_book, color: Colors.teal),
+            ),
           );
         },
       ),
     );
   }
-} 
+}
