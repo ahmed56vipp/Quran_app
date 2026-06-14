@@ -20,7 +20,6 @@ class MyApp extends StatelessWidget {
 
 class SurahListScreen extends StatefulWidget {
   const SurahListScreen({super.key});
-
   @override
   State<SurahListScreen> createState() => _SurahListScreenState();
 }
@@ -35,7 +34,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadQuranIndex() async {
-    final String response = await rootBundle.loadString('assets/surah.json');
+    // يقرأ الفهرس من ملف quran_data.json
+    final String response = await rootBundle.loadString('assets/quran_data.json');
     final data = await json.decode(response);
     setState(() {
       surahs = data;
@@ -69,7 +69,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
 class SurahDetailsScreen extends StatefulWidget {
   final Map surah;
   const SurahDetailsScreen({super.key, required this.surah});
-
   @override
   State<SurahDetailsScreen> createState() => _SurahDetailsScreenState();
 }
@@ -85,9 +84,10 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   }
 
   Future<void> loadSurahContent() async {
+    // يحول رقم السورة إلى اسم ملف (مثلاً 1.json)
     String index = widget.surah['index'];
     int id = int.parse(index);
-    final String response = await rootBundle.loadString('assets/surah/$id.json');
+    final String response = await rootBundle.loadString('assets/$id.json');
     final data = await json.decode(response);
     setState(() {
       verses = data['ayahs'];
@@ -108,7 +108,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
                     verses[index]['text'],
-                    style: const TextStyle(fontSize: 20),
+                    style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
                     textAlign: TextAlign.right,
                   ),
                 );
