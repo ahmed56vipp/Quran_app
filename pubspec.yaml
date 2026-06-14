@@ -14,3 +14,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+  fonts:
+    - family: AhmedFont
+      fonts:
+        - asset: assets/ahmed.ttf
