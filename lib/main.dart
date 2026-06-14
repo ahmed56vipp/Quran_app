@@ -42,7 +42,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 return ListTile(
                   title: Text(surahs[index]['name']),
                   onTap: () {
-                    // الانتقال لصفحة الآيات وإرسال رقم السورة
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -67,7 +66,6 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
-    // تحميل ملف السورة (مثلاً surah_1.json)
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -79,7 +77,10 @@ class SurahDetailsScreen extends StatelessWidget {
       body: FutureBuilder(
         future: loadSurahData(),
         builder: (context, snapshot) {
-          if (!snapshot.connectionState.isDone) return const Center(child: CircularProgressIndicator());
+          // هنا التصحيح: استبدلنا isDone بـ connectionState == ConnectionState.done
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
           
           List ayahs = snapshot.data!['ayahs'];
           return ListView.builder(
