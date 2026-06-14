@@ -14,19 +14,32 @@ class SurahListScreen extends StatefulWidget {
 
 class _SurahListScreenState extends State<SurahListScreen> {
   List surahs = [];
+  Map surahDetails = {}; // لتخزين بيانات quran_full.json
 
   @override
   void initState() {
     super.initState();
-    loadQuranIndex();
+    loadAllData();
   }
 
-  Future<void> loadQuranIndex() async {
-    final String response = await rootBundle.loadString('assets/quran_data.json');
-    final data = await json.decode(response);
+  Future<void> loadAllData() async {
+    // تحميل الفهرس
+    final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
+    final indexData = await json.decode(indexResponse);
+    
+    // تحميل بيانات السور الكاملة (النوع)
+    final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
+    final fullData = await json.decode(fullResponse);
+
+    // تحويل البيانات لقاموس ليسهل الوصول لها برقم السورة
+    Map tempDetails = {};
+    for (var item in fullData) {
+      tempDetails[item['index']] = item;
+    }
+
     setState(() {
-      // بناءً على ملفك، القائمة داخل مفتاح 'surahs'
-      surahs = data['surahs'];
+      surahs = indexData['surahs'];
+      surahDetails = tempDetails;
     });
   }
 
@@ -39,8 +52,17 @@ class _SurahListScreenState extends State<SurahListScreen> {
           : ListView.builder(
               itemCount: surahs.length,
               itemBuilder: (context, index) {
+                String surahIndex = surahs[index]['number'].toString().padLeft(3, '0');
+                var details = surahDetails[surahIndex];
+                String type = details != null ? details['type'] : "";
+
                 return ListTile(
+                  leading: Icon(
+                    type == 'Makkiyah' ? Icons.location_on : Icons.mosque,
+                    color: type == 'Makkiyah' ? Colors.red : Colors.green,
+                  ),
                   title: Text(surahs[index]['name']),
+                  subtitle: Text(type == 'Makkiyah' ? "مكية" : "مدنية"),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -59,47 +81,5 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 }
 
-class SurahDetailsScreen extends StatelessWidget {
-  final int surahNumber;
-  final String surahName;
-  const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
-
-  Future<Map> loadSurahData() async {
-    String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
-    return json.decode(response);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(surahName)),
-      body: FutureBuilder<Map>(
-        future: loadSurahData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          
-          // هنا نقوم باستخراج الآيات من مفتاح "verse" الذي هو عبارة عن Map
-          Map verseMap = snapshot.data!['verse'];
-          // نحول قيم الـ Map (الآيات) إلى قائمة لعرضها
-          List verses = verseMap.values.toList();
-
-          return ListView.builder(
-            itemCount: verses.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Text(
-                  verses[index],
-                  style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
-                  textAlign: TextAlign.right,
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
+// كلاس SurahDetailsScreen يبقى كما هو (الذي يعمل لديك حالياً)
+// ...
