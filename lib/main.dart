@@ -6,6 +6,7 @@ void main() {
   runApp(const MaterialApp(home: SurahListScreen()));
 }
 
+// 1. صفحة القائمة الرئيسية
 class SurahListScreen extends StatefulWidget {
   const SurahListScreen({super.key});
   @override
@@ -25,7 +26,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
     final String response = await rootBundle.loadString('assets/quran_data.json');
     final data = await json.decode(response);
     setState(() {
-      // بناءً على صورة ملف quran_data.json، البيانات داخل مفتاح "surahs"
       surahs = data['surahs'];
     });
   }
@@ -41,10 +41,62 @@ class _SurahListScreenState extends State<SurahListScreen> {
               itemBuilder: (context, index) {
                 return ListTile(
                   title: Text(surahs[index]['name']),
-                  subtitle: Text(surahs[index]['englishName']),
+                  onTap: () {
+                    // الانتقال لصفحة الآيات وإرسال رقم السورة
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SurahDetailsScreen(
+                          surahNumber: surahs[index]['number'], 
+                          surahName: surahs[index]['name']
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
+    );
+  }
+}
+
+// 2. صفحة عرض الآيات
+class SurahDetailsScreen extends StatelessWidget {
+  final int surahNumber;
+  final String surahName;
+  const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
+
+  Future<Map> loadSurahData() async {
+    // تحميل ملف السورة (مثلاً surah_1.json)
+    String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
+    return json.decode(response);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(surahName)),
+      body: FutureBuilder(
+        future: loadSurahData(),
+        builder: (context, snapshot) {
+          if (!snapshot.connectionState.isDone) return const Center(child: CircularProgressIndicator());
+          
+          List ayahs = snapshot.data!['ayahs'];
+          return ListView.builder(
+            itemCount: ayahs.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  ayahs[index]['text'],
+                  style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
+                  textAlign: TextAlign.right,
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
