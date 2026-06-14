@@ -6,7 +6,6 @@ void main() {
   runApp(const MaterialApp(home: SurahListScreen()));
 }
 
-// 1. صفحة القائمة الرئيسية
 class SurahListScreen extends StatefulWidget {
   const SurahListScreen({super.key});
   @override
@@ -26,6 +25,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     final String response = await rootBundle.loadString('assets/quran_data.json');
     final data = await json.decode(response);
     setState(() {
+      // بناءً على ملفك، القائمة داخل مفتاح 'surahs'
       surahs = data['surahs'];
     });
   }
@@ -59,13 +59,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 }
 
-// 2. صفحة عرض الآيات
 class SurahDetailsScreen extends StatelessWidget {
   final int surahNumber;
   final String surahName;
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
+    // قراءة ملف السورة المباشر من assets
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -74,14 +74,14 @@ class SurahDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(surahName)),
-      body: FutureBuilder(
+      body: FutureBuilder<Map>(
         future: loadSurahData(),
         builder: (context, snapshot) {
-          // هنا التصحيح: استبدلنا isDone بـ connectionState == ConnectionState.done
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
           
+          // تأكد من هيكل ملفات السور لديك، إذا كان داخل 'ayahs' نستخدم هذا:
           List ayahs = snapshot.data!['ayahs'];
           return ListView.builder(
             itemCount: ayahs.length,
