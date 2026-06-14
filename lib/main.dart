@@ -24,10 +24,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadAllData() async {
+    // تحميل بيانات الفهرس
     final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
-    final indexData = await json.decode(indexResponse);
+    final List indexData = json.decode(indexResponse); // تم تعديلها لتكون List مباشرة
+    
+    // تحميل تفاصيل السور
     final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
-    final List fullData = await json.decode(fullResponse);
+    final List fullData = json.decode(fullResponse);
 
     Map tempDetails = {};
     for (var item in fullData) {
@@ -35,7 +38,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     }
 
     setState(() {
-      surahs = indexData['surahs'];
+      surahs = indexData; // تعيين القائمة مباشرة
       surahDetails = tempDetails;
     });
   }
@@ -49,6 +52,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
           : ListView.builder(
               itemCount: surahs.length,
               itemBuilder: (context, index) {
+                // تحويل رقم السورة إلى "001" لتطابق الـ index في quran_full.json
                 String surahIndex = surahs[index]['number'].toString().padLeft(3, '0');
                 var details = surahDetails[surahIndex];
                 String type = details != null ? details['type'] : "";
@@ -85,6 +89,7 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
+    // التأكد من أن أسماء الملفات في GitHub هي surah_1.json, surah_2.json... إلخ
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -96,8 +101,14 @@ class SurahDetailsScreen extends StatelessWidget {
       body: FutureBuilder<Map>(
         future: loadSurahData(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return const Center(child: Text("خطأ في تحميل بيانات السورة"));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: Text("لا توجد بيانات"));
           }
           
           Map verseMap = snapshot.data!['verse'];
@@ -110,7 +121,7 @@ class SurahDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(12.0),
                 child: Text(
                   verses[index],
-                  style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
+                  style: const TextStyle(fontSize: 22),
                   textAlign: TextAlign.right,
                 ),
               );
