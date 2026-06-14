@@ -15,7 +15,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/quran_data.json
-  fonts:
-    - family: Uthmanic
+  - family: Uthmanic
       fonts:
-        - asset: assets/fonts/ahmed.ttf
+        - asset: assets/ahmed.ttf
