@@ -17,5 +17,5 @@ flutter:
     - assets/quran_data.json
   fonts:
     - family: Uthmanic
-      asset: 
-        - asset: assets/خط2.ttf
+      fonts:
+        - asset: assets/ahmed.ttf
