@@ -14,8 +14,7 @@ dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/surah.json
-    - assets/surah/
+    - assets/
   fonts:
     - family: Uthmanic
       fonts:
