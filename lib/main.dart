@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SurahListScreen(),
+      home: const SurahListScreen(),
     );
   }
 }
@@ -35,33 +35,42 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadQuranData() async {
-    final String response = await rootBundle.loadString('assets/quran_full.json');
-    final data = await json.decode(response);
-    setState(() {
-      surahs = data['surahs'];
-    });
+    try {
+      final String response = await rootBundle.loadString('assets/quran_full.json');
+      final data = await json.decode(response);
+      setState(() {
+        // الملف عبارة عن قائمة مباشرة، لذا نضع البيانات كما هي
+        surahs = data; 
+      });
+    } catch (e) {
+      debugPrint("Error loading JSON: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("القرآن الكريم")),
-      body: ListView.builder(
-        itemCount: surahs.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(surahs[index]['name']),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SurahDetailsScreen(surah: surahs[index]),
-                ),
-              );
-            },
-          );
-        },
-      ),
+      body: surahs.isEmpty 
+          ? const Center(child: CircularProgressIndicator()) 
+          : ListView.builder(
+              itemCount: surahs.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(surahs[index]['titleAr']), // اسم السورة بالعربي
+                  subtitle: Text(surahs[index]['title']), // اسم السورة بالإنجليزي
+                  leading: CircleAvatar(child: Text(surahs[index]['index'])),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SurahDetailsScreen(surah: surahs[index]),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
     );
   }
 }
@@ -73,19 +82,16 @@ class SurahDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(surah['name'])),
-      body: ListView.builder(
-        itemCount: surah['verses'].length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Text(
-              surah['verses'][index],
-              style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
-              textAlign: TextAlign.center,
-            ),
-          );
-        },
+      appBar: AppBar(title: Text(surah['titleAr'])),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Text(
+            "معلومات السورة: ${surah['type']} - عدد الآيات: ${surah['count']}",
+            style: const TextStyle(fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
