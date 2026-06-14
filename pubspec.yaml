@@ -13,8 +13,7 @@ dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/
-    - assets/quran_data/  # تأكد أن اسم المجلد هكذا
+    - assets/quran_data.json
   fonts:
     - family: Uthmanic
       fonts:
