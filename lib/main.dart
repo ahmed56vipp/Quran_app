@@ -6,6 +6,7 @@ void main() {
   runApp(const MaterialApp(home: SurahListScreen()));
 }
 
+// 1. صفحة القائمة الرئيسية
 class SurahListScreen extends StatefulWidget {
   const SurahListScreen({super.key});
   @override
@@ -14,7 +15,7 @@ class SurahListScreen extends StatefulWidget {
 
 class _SurahListScreenState extends State<SurahListScreen> {
   List surahs = [];
-  Map surahDetails = {}; // لتخزين بيانات quran_full.json
+  Map surahDetails = {};
 
   @override
   void initState() {
@@ -23,15 +24,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadAllData() async {
-    // تحميل الفهرس
     final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
     final indexData = await json.decode(indexResponse);
-    
-    // تحميل بيانات السور الكاملة (النوع)
     final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
-    final fullData = await json.decode(fullResponse);
+    final List fullData = await json.decode(fullResponse);
 
-    // تحويل البيانات لقاموس ليسهل الوصول لها برقم السورة
     Map tempDetails = {};
     for (var item in fullData) {
       tempDetails[item['index']] = item;
@@ -81,5 +78,46 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 }
 
-// كلاس SurahDetailsScreen يبقى كما هو (الذي يعمل لديك حالياً)
-// ...
+// 2. صفحة عرض الآيات
+class SurahDetailsScreen extends StatelessWidget {
+  final int surahNumber;
+  final String surahName;
+  const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
+
+  Future<Map> loadSurahData() async {
+    String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
+    return json.decode(response);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(surahName)),
+      body: FutureBuilder<Map>(
+        future: loadSurahData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          Map verseMap = snapshot.data!['verse'];
+          List verses = verseMap.values.toList();
+
+          return ListView.builder(
+            itemCount: verses.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  verses[index],
+                  style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
+                  textAlign: TextAlign.right,
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
