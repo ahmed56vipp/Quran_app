@@ -25,7 +25,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Future<void> loadAllData() async {
     final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
-    final List indexData = json.decode(indexResponse);
+    List indexData = json.decode(indexResponse);
+    
+    // الترتيب التلقائي للسور حسب الرقم
+    indexData.sort((a, b) => a['number'].compareTo(b['number']));
+
     final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
     final List fullData = json.decode(fullResponse);
 
@@ -99,8 +103,8 @@ class SurahDetailsScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData) {
-            return const Center(child: Text("لا توجد بيانات"));
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text("تعذر تحميل بيانات هذه السورة"));
           }
           
           Map verseMap = snapshot.data!['verse'];
@@ -110,7 +114,6 @@ class SurahDetailsScreen extends StatelessWidget {
             itemCount: verses.length,
             itemBuilder: (context, index) {
               String verseText = verses[index];
-              // التحقق إذا كانت الآية هي البسملة
               bool isBasmala = verseText.trim() == "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ" || verseText.contains("بسم الله الرحمن الرحيم");
               
               return Padding(
@@ -119,7 +122,7 @@ class SurahDetailsScreen extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(text: verseText + " "),
-                      if (!isBasmala) // لا نضيف رقم الآية إذا كانت بسملة
+                      if (!isBasmala) 
                         TextSpan(
                           text: "(${index + 1})", 
                           style: const TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Roboto'),
@@ -127,7 +130,7 @@ class SurahDetailsScreen extends StatelessWidget {
                     ],
                   ),
                   style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'),
-                  textAlign: TextAlign.center, // البسملة غالباً تكون في المنتصف
+                  textAlign: TextAlign.right,
                 ),
               );
             },
