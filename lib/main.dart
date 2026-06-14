@@ -109,21 +109,25 @@ class SurahDetailsScreen extends StatelessWidget {
           return ListView.builder(
             itemCount: verses.length,
             itemBuilder: (context, index) {
-              String verseNumber = (index + 1).toString();
+              String verseText = verses[index];
+              // التحقق إذا كانت الآية هي البسملة
+              bool isBasmala = verseText.trim() == "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ" || verseText.contains("بسم الله الرحمن الرحيم");
+              
               return Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: verses[index] + " "),
-                      TextSpan(
-                        text: "($verseNumber)", 
-                        style: const TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Roboto'), // رقم الآية بخط عادي
-                      ),
+                      TextSpan(text: verseText + " "),
+                      if (!isBasmala) // لا نضيف رقم الآية إذا كانت بسملة
+                        TextSpan(
+                          text: "(${index + 1})", 
+                          style: const TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Roboto'),
+                        ),
                     ],
                   ),
-                  style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'), // هنا طبقنا الخط باسم ahmed
-                  textAlign: TextAlign.right,
+                  style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'),
+                  textAlign: TextAlign.center, // البسملة غالباً تكون في المنتصف
                 ),
               );
             },
