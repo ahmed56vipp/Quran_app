@@ -2,79 +2,35 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-void main() => runApp(const QuranApp());
-
-class QuranApp extends StatelessWidget {
-  const QuranApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        fontFamily: 'Uthmanic', // تعميم الخط العثماني على التطبيق بالكامل
-      ),
-      home: SurahListScreen(),
-    );
-  }
+// هذا الكلاس لجلب البيانات من الملف الذي رفعته
+Future<List> loadQuranData() async {
+  final String response = await rootBundle.loadString('assets/quran_full.json');
+  final data = await json.decode(response);
+  return data['surahs']; // تأكد أن المفتاح هو "surahs" حسب محتوى ملفك
 }
 
-class SurahListScreen extends StatefulWidget {
-  @override
-  _SurahListScreenState createState() => _SurahListScreenState();
-}
-
-class _SurahListScreenState extends State<SurahListScreen> {
-  List surahs = [];
-
-  @override
-  void initState() {
-    super.initState();
-    loadSurahs();
-  }
-
-  Future<void> loadSurahs() async {
-    try {
-      final String response = await rootBundle.loadString('assets/quran_data.json');
-      final data = await json.decode(response);
-      setState(() {
-        surahs = data['surahs'];
-      });
-    } catch (e) {
-      debugPrint("Error loading JSON: $e");
-    }
-  }
+// كود صفحة القراءة المحدث
+class SurahDetailsScreen extends StatelessWidget {
+  final Map surah;
+  const SurahDetailsScreen({super.key, required this.surah});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("القرآن الكريم", style: TextStyle(color: Colors.white, fontFamily: 'Uthmanic')),
-        backgroundColor: Colors.teal,
-      ),
-      body: surahs.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: surahs.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.teal.shade100,
-                      child: Text("${surahs[index]['number']}"),
-                    ),
-                    title: Text(
-                      surahs[index]['name'],
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(surahs[index]['englishName']),
-                    trailing: const Icon(Icons.menu_book, color: Colors.teal),
-                  ),
-                );
-              },
+      appBar: AppBar(title: Text(surah['name'])),
+      body: ListView.builder(
+        itemCount: surah['verses'].length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              surah['verses'][index],
+              style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
+              textAlign: TextAlign.center,
             ),
+          );
+        },
+      ),
     );
   }
 }
