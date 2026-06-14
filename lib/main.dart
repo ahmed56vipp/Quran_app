@@ -3,19 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const SurahListScreen(),
-    );
-  }
+  runApp(const MaterialApp(home: SurahListScreen()));
 }
 
 class SurahListScreen extends StatefulWidget {
@@ -26,6 +14,7 @@ class SurahListScreen extends StatefulWidget {
 
 class _SurahListScreenState extends State<SurahListScreen> {
   List surahs = [];
+  String status = "جاري التحميل...";
 
   @override
   void initState() {
@@ -34,34 +23,43 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadQuranIndex() async {
-    // يقرأ الفهرس من ملف quran_data.json
-    final String response = await rootBundle.loadString('assets/quran_data.json');
-    final data = await json.decode(response);
-    setState(() {
-      surahs = data;
-    });
+    try {
+      // المسار الصحيح للفهرس داخل مجلد quran_data
+      final String response = await rootBundle.loadString('assets/quran_data/quran_data.json');
+      final data = await json.decode(response);
+      setState(() {
+        surahs = data;
+        status = "";
+      });
+    } catch (e) {
+      setState(() {
+        status = "خطأ في تحميل الفهرس: $e";
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("القرآن الكريم")),
-      body: ListView.builder(
-        itemCount: surahs.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(surahs[index]['titleAr']),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SurahDetailsScreen(surah: surahs[index]),
-                ),
-              );
-            },
-          );
-        },
-      ),
+      body: surahs.isEmpty
+          ? Center(child: Text(status))
+          : ListView.builder(
+              itemCount: surahs.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(surahs[index]['name'] ?? "سورة"), // تأكد من اسم المفتاح في ملف الـ JSON
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SurahDetailsScreen(surah: surahs[index]),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
     );
   }
 }
@@ -84,21 +82,28 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   }
 
   Future<void> loadSurahContent() async {
-    // يحول رقم السورة إلى اسم ملف (مثلاً 1.json)
-    String index = widget.surah['index'];
-    int id = int.parse(index);
-    final String response = await rootBundle.loadString('assets/$id.json');
-    final data = await json.decode(response);
-    setState(() {
-      verses = data['ayahs'];
-      isLoading = false;
-    });
+    try {
+      // الحصول على رقم السورة
+      String index = widget.surah['index'].toString();
+      // المسار الصحيح للسور في assets مباشرة
+      final String response = await rootBundle.loadString('assets/surah_$index.json');
+      final data = await json.decode(response);
+      setState(() {
+        verses = data['ayahs'];
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      print("Error loading surah: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.surah['titleAr'])),
+      appBar: AppBar(title: Text(widget.surah['name'] ?? "سورة")),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
