@@ -18,4 +18,4 @@ flutter:
   fonts:
     - family: Uthmanic
       fonts:
-        - asset: assets/fonts/KFGQPC-Hafs-Uthmanic-Script.ttf
+        - asset: assets/fonts/خط.ttf
