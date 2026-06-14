@@ -24,11 +24,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadAllData() async {
-    // تحميل بيانات الفهرس
     final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
-    final List indexData = json.decode(indexResponse); // تم تعديلها لتكون List مباشرة
-    
-    // تحميل تفاصيل السور
+    final List indexData = json.decode(indexResponse);
     final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
     final List fullData = json.decode(fullResponse);
 
@@ -38,7 +35,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     }
 
     setState(() {
-      surahs = indexData; // تعيين القائمة مباشرة
+      surahs = indexData;
       surahDetails = tempDetails;
     });
   }
@@ -52,7 +49,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
           : ListView.builder(
               itemCount: surahs.length,
               itemBuilder: (context, index) {
-                // تحويل رقم السورة إلى "001" لتطابق الـ index في quran_full.json
                 String surahIndex = surahs[index]['number'].toString().padLeft(3, '0');
                 var details = surahDetails[surahIndex];
                 String type = details != null ? details['type'] : "";
@@ -89,7 +85,6 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
-    // التأكد من أن أسماء الملفات في GitHub هي surah_1.json, surah_2.json... إلخ
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -104,9 +99,6 @@ class SurahDetailsScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return const Center(child: Text("خطأ في تحميل بيانات السورة"));
-          }
           if (!snapshot.hasData) {
             return const Center(child: Text("لا توجد بيانات"));
           }
@@ -117,11 +109,20 @@ class SurahDetailsScreen extends StatelessWidget {
           return ListView.builder(
             itemCount: verses.length,
             itemBuilder: (context, index) {
+              String verseNumber = (index + 1).toString();
               return Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: Text(
-                  verses[index],
-                  style: const TextStyle(fontSize: 22),
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: verses[index] + " "),
+                      TextSpan(
+                        text: "($verseNumber)", 
+                        style: const TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Roboto'), // رقم الآية بخط عادي
+                      ),
+                    ],
+                  ),
+                  style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'), // هنا طبقنا الخط باسم ahmed
                   textAlign: TextAlign.right,
                 ),
               );
