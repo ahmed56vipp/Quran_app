@@ -65,7 +65,6 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
-    // قراءة ملف السورة المباشر من assets
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -81,15 +80,18 @@ class SurahDetailsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           
-          // تأكد من هيكل ملفات السور لديك، إذا كان داخل 'ayahs' نستخدم هذا:
-          List ayahs = snapshot.data!['ayahs'];
+          // هنا نقوم باستخراج الآيات من مفتاح "verse" الذي هو عبارة عن Map
+          Map verseMap = snapshot.data!['verse'];
+          // نحول قيم الـ Map (الآيات) إلى قائمة لعرضها
+          List verses = verseMap.values.toList();
+
           return ListView.builder(
-            itemCount: ayahs.length,
+            itemCount: verses.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Text(
-                  ayahs[index]['text'],
+                  verses[index],
                   style: const TextStyle(fontSize: 22, fontFamily: 'Uthmanic'),
                   textAlign: TextAlign.right,
                 ),
