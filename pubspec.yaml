@@ -9,12 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
 flutter:
-  uses-material-design: true
-  assets:
-    - assets/
   fonts:
-    - family: AhmedFont
+    - family: ahmed
       fonts:
         - asset: assets/ahmed.ttf
