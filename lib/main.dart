@@ -15,10 +15,10 @@ class QuranApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'القرآن الكريم',
       theme: ThemeData(
-        primaryColor: const Color(0HeaderFF0D47A1), // لون إسلامي هادئ
-        scaffoldBackgroundColor: const Color(0xFFF9F9F9), // خلفية مريحة للعين
+        primaryColor: const Color(0xFF1B5E20), // تم إصلاح رمز اللون هنا
+        scaffoldBackgroundColor: const Color(0xFFF9F9F9), 
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1B5E20), // لون أخضر داكن فخم للمصاحف
+          backgroundColor: Color(0xFF1B5E20), 
           foregroundColor: Colors.white,
           elevation: 2,
         ),
@@ -37,16 +37,14 @@ class SurahListScreen extends StatelessWidget {
       final String response = await rootBundle.loadString('assets/quran_data.json');
       final data = json.decode(response);
       
-      // هنا نقوم بفحص ما إذا كان الـ JSON عبارة عن قائمة مباشرة أو يحتوي على مفتاح داخلي
       if (data is List) {
         return data;
       } else if (data is Map && data.containsKey('surahs')) {
         return data['surahs'];
       } else {
-        return data.values.toList(); // حل احتياطي مرن
+        return data.values.toList();
       }
     } catch (e) {
-      // إذا لم يجد quran_data.json سيتوجه تلقائياً للملف الآخر quran_full.json كخطة بديلة
       final String response = await rootBundle.loadString('assets/quran_full.json');
       final data = json.decode(response);
       return data is List ? data : data['surahs'] ?? [];
@@ -77,7 +75,7 @@ class SurahListScreen extends StatelessWidget {
                 style: TextStyle(fontFamily: 'ahmed', fontSize: 18),
               ),
             );
-          } {
+          } else { // تم إضافة else لإصلاح بناء الشرط بشكل سليم
             final surahs = snapshot.data!;
             return ListView.separated(
               padding: const EdgeInsets.all(12),
@@ -86,7 +84,6 @@ class SurahListScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final surah = surahs[index];
                 
-                // جلب البيانات مع وضع قيم افتراضية في حال اختلف مسمى المفاتيح بالـ JSON
                 final String name = surah['name'] ?? surah['surah_name'] ?? 'سورة';
                 final int id = surah['id'] ?? surah['number'] ?? (index + 1);
                 final int versesCount = surah['verses_count'] ?? surah['total_verses'] ?? 0;
@@ -124,9 +121,9 @@ class SurahListScreen extends StatelessWidget {
                       'آياتها: $versesCount  |  $type',
                       style: const TextStyle(fontSize: 14, color: Colors.black54),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black32),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black26), // تم تعديل اللون هنا ليكون معرفاً
                     onTap: () {
-                      // سنضع هنا دالة الانتقال لصفحة قراءة الآيات في الخطوة القادمة
+                      // شاشة عرض الآيات في الخطوة القادمة
                     },
                   ),
                 );
