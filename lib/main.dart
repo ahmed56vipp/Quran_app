@@ -47,7 +47,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("القرآن الكريم")),
+      appBar: AppBar(title: const Text("قرآن الكريم")),
       body: surahs.isEmpty 
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
