@@ -82,7 +82,6 @@ class SurahDetailsScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           
-          // تم تصحيح الخطأ هنا الإملائي هنا لتنجح عملية الـ Build
           if (snapshot.hasError) return Center(child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text("خطأ: ${snapshot.error}", style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: TextAlign.center),
@@ -96,7 +95,11 @@ class SurahDetailsScreen extends StatelessWidget {
           
           for(int i = 1; i <= count; i++) {
              if(verseData.containsKey('verse_$i')) {
-                verses.add(verseData['verse_$i'] ?? "");
+                String verseText = verseData['verse_$i'] ?? "";
+                
+                // هنا التعديل: دمج نص الآية مع رقمها متبوعاً بالرمز الزخرفي ۝ أو ﴿﴾
+                // يمكنك استبدال ﴿$i﴾ بـ ۝$i حسب رغبتك في شكل خط المصحف
+                verses.add("$verseText ﴿$i﴾"); 
              }
           }
 
@@ -105,6 +108,7 @@ class SurahDetailsScreen extends StatelessWidget {
             child: Text(
               verses.join(" "), 
               textAlign: TextAlign.justify, 
+              textDirection: TextDirection.rtl, // يضمن تنسيق النص العربي من اليمين لليسار بدقة
               style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.2, fontFamily: 'ahmed'),
             ),
           );
