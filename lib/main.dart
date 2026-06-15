@@ -104,7 +104,6 @@ class SurahDetailsScreen extends StatelessWidget {
           
           Map verseMap = snapshot.data!['verse'];
           List keys = verseMap.keys.toList();
-          int verseCounter = 0; 
 
           return ListView.builder(
             itemCount: keys.length,
@@ -112,13 +111,9 @@ class SurahDetailsScreen extends StatelessWidget {
               String key = keys[index];
               String verseText = verseMap[key];
               
-              // الحل الذكي: إذا احتوى النص على كلمة "بسم" فهو بسملة، ولا نزيد العداد
-              bool isBasmala = verseText.contains("بسم");
+              // البسملة دائماً هي العنصر الأول (index 0) في ملفاتك
+              bool isBasmala = (index == 0);
               
-              if (!isBasmala) {
-                verseCounter++;
-              }
-
               return Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Text.rich(
@@ -127,7 +122,7 @@ class SurahDetailsScreen extends StatelessWidget {
                       TextSpan(text: verseText + " "),
                       if (!isBasmala) 
                         TextSpan(
-                          text: "($verseCounter)", 
+                          text: "($index)", 
                           style: const TextStyle(fontSize: 18, color: Colors.grey),
                         ),
                     ],
