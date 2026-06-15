@@ -21,3 +21,15 @@ flutter:
     - family: ahmed
       fonts:
         - asset: assets/ahmed.ttf
+  dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # أضف هذه الحزمة هنا
+  flutter_launcher_icons: ^0.13.1
+
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png" 
+  min_sdk_andr
