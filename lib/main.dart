@@ -72,7 +72,7 @@ class SurahDetailsScreen extends StatelessWidget {
     return json.decode(response);
   }
 
-  // دالة تحويل الأرقام الإنجليزية إلى أرقام عربية مصحفية (١، ٢، ٣...)
+  // تحويل الأرقام إلى المظهر الشرقي (١، ٢، ٣) لأن الخط المرفق يتكفل بوضع الدائرة حولها تلقائياً
   String _toArabicNumbers(int number) {
     const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
     const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -107,17 +107,16 @@ class SurahDetailsScreen extends StatelessWidget {
           for(int i = 1; i <= count; i++) {
              if(verseData.containsKey('verse_$i')) {
                 String verseText = verseData['verse_$i'] ?? "";
-                // تحويل رقم الآية إلى العربي
                 String arabicNumbered = _toArabicNumbers(i);
-                // إضافة نص الآية متبوعاً برمز نهاية الآية الرقمي ۝
-                verses.add("$verseText ۝$arabicNumbered"); 
+                
+                // هنا تم الاعتماد كلياً على الرقم العربي المدمج بالدائرة من الخط نفسه
+                verses.add("$verseText $arabicNumbered"); 
              }
           }
 
-          // دمج الآيات كلها في نص واحد
           String fullText = verses.join(" ");
 
-          // إضافة البسملة في سطر مستقل عدا الفاتحة (1) والتوبة (9) وبدون ترميزها كآية
+          // إضافة البسملة في سطر مستقل عدا الفاتحة والتوبة
           if (surahNumber != 1 && surahNumber != 9) {
             fullText = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\n" + fullText;
           }
@@ -127,7 +126,7 @@ class SurahDetailsScreen extends StatelessWidget {
             child: Text(
               fullText, 
               textAlign: TextAlign.justify, 
-              textDirection: TextDirection.rtl, // لضمان اتجاه النص العربي الصحيح
+              textDirection: TextDirection.rtl,
               style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.2, fontFamily: 'ahmed'),
             ),
           );
