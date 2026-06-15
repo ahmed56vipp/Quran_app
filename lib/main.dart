@@ -72,6 +72,17 @@ class SurahDetailsScreen extends StatelessWidget {
     return json.decode(response);
   }
 
+  // دالة تحويل الأرقام الإنجليزية إلى أرقام عربية مصحفية (١، ٢، ٣...)
+  String _toArabicNumbers(int number) {
+    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    String input = number.toString();
+    for (int i = 0; i < english.length; i++) {
+      input = input.replaceAll(english[i], arabic[i]);
+    }
+    return input;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,19 +107,27 @@ class SurahDetailsScreen extends StatelessWidget {
           for(int i = 1; i <= count; i++) {
              if(verseData.containsKey('verse_$i')) {
                 String verseText = verseData['verse_$i'] ?? "";
-                
-                // هنا التعديل: دمج نص الآية مع رقمها متبوعاً بالرمز الزخرفي ۝ أو ﴿﴾
-                // يمكنك استبدال ﴿$i﴾ بـ ۝$i حسب رغبتك في شكل خط المصحف
-                verses.add("$verseText ﴿$i﴾"); 
+                // تحويل رقم الآية إلى العربي
+                String arabicNumbered = _toArabicNumbers(i);
+                // إضافة نص الآية متبوعاً برمز نهاية الآية الرقمي ۝
+                verses.add("$verseText ۝$arabicNumbered"); 
              }
+          }
+
+          // دمج الآيات كلها في نص واحد
+          String fullText = verses.join(" ");
+
+          // إضافة البسملة في سطر مستقل عدا الفاتحة (1) والتوبة (9) وبدون ترميزها كآية
+          if (surahNumber != 1 && surahNumber != 9) {
+            fullText = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\n" + fullText;
           }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              verses.join(" "), 
+              fullText, 
               textAlign: TextAlign.justify, 
-              textDirection: TextDirection.rtl, // يضمن تنسيق النص العربي من اليمين لليسار بدقة
+              textDirection: TextDirection.rtl, // لضمان اتجاه النص العربي الصحيح
               style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.2, fontFamily: 'ahmed'),
             ),
           );
