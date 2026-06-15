@@ -6,7 +6,6 @@ void main() {
   runApp(const MaterialApp(home: SurahListScreen()));
 }
 
-// 1. صفحة القائمة الرئيسية
 class SurahListScreen extends StatefulWidget {
   const SurahListScreen({super.key});
   @override
@@ -27,7 +26,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
     List indexData = json.decode(indexResponse);
     
-    // الترتيب التلقائي للسور حسب الرقم
+    // ترتيب السور بعد التأكد من وجود مفتاح "number" في JSON الخاص بك
     indexData.sort((a, b) => a['number'].compareTo(b['number']));
 
     final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
@@ -47,7 +46,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("قرآن الكريم")),
+      appBar: AppBar(title: const Text("القرآن الكريم")),
       body: surahs.isEmpty 
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -82,7 +81,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 }
 
-// 2. صفحة عرض الآيات
 class SurahDetailsScreen extends StatelessWidget {
   final int surahNumber;
   final String surahName;
@@ -104,7 +102,7 @@ class SurahDetailsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("تعذر تحميل بيانات هذه السورة"));
+            return const Center(child: Text("تعذر تحميل البيانات"));
           }
           
           Map verseMap = snapshot.data!['verse'];
@@ -114,7 +112,8 @@ class SurahDetailsScreen extends StatelessWidget {
             itemCount: verses.length,
             itemBuilder: (context, index) {
               String verseText = verses[index];
-              bool isBasmala = verseText.trim() == "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ" || verseText.contains("بسم الله الرحمن الرحيم");
+              // شرط التحقق من البسملة
+              bool isBasmala = verseText.contains("بسم الله الرحمن الرحيم");
               
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
@@ -122,13 +121,15 @@ class SurahDetailsScreen extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(text: verseText + " "),
+                      // إضافة رقم الآية فقط إذا لم تكن بسملة
                       if (!isBasmala) 
                         TextSpan(
                           text: "(${index + 1})", 
-                          style: const TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Roboto'),
+                          style: const TextStyle(fontSize: 18, color: Colors.grey),
                         ),
                     ],
                   ),
+                  // استخدام الخط المخصص هنا
                   style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'),
                   textAlign: TextAlign.right,
                 ),
