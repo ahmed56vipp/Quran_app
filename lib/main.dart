@@ -42,7 +42,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
               itemCount: surahs.length,
               itemBuilder: (context, index) {
                 var surah = surahs[index];
-                // مطابقة كلمة "مكية" أو "مدنية" كما في ملفك
                 String type = surah['type']; 
 
                 return ListTile(
@@ -69,7 +68,7 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
-    // تحميل الملف حسب رقم السورة (مثال: surah_1.json)
+    // جلب ملف السورة بناءً على رقمها المتغير
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -83,15 +82,24 @@ class SurahDetailsScreen extends StatelessWidget {
         future: loadSurahData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError || !snapshot.hasData) return Center(child: Text("خطأ في تحميل سورة $surahNumber", style: const TextStyle(color: Colors.white)));
           
-          // استخراج النصوص من الـ Map الموجودة في 'verse'
-          Map verseData = snapshot.data!['verse'];
+          // إذا حدث خطأ، سيظهر لك الخطأ الفعلي هنا لتعرفه
+          if (snapshot.hasError) return Center(child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text("خطأ: ${snapshot.error}", style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: Center),
+          ));
+          
+          if (!snapshot.hasData) return const Center(child: Text("لا توجد بيانات", style: TextStyle(color: Colors.white)));
+          
+          // قراءة البيانات من داخل مفتاح verse كما في ملفك تماماً
+          Map verseData = snapshot.data!['verse'] ?? {};
+          int count = snapshot.data!['count'] ?? verseData.length;
           List<String> verses = [];
           
-          // الترتيب بناءً على المفاتيح الموجودة في ملفك (verse_1, verse_2...)
-          for(int i=1; i <= verseData.length; i++) {
-             verses.add(verseData['verse_$i'] ?? "");
+          for(int i = 1; i <= count; i++) {
+             if(verseData.containsKey('verse_$i')) {
+                verses.add(verseData['verse_$i'] ?? "");
+             }
           }
 
           return SingleChildScrollView(
