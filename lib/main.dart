@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -32,10 +33,15 @@ class _SurahListScreenState extends State<SurahListScreen> {
   bool isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
+  // متغيرات حفظ علامة القراءة
+  String? bookmarkName;
+  int? bookmarkNumber;
+
   @override
   void initState() {
     super.initState();
     loadAllData();
+    loadBookmark(); // تحميل العلامة المحفوظة عند فتح التطبيق
   }
 
   Future<void> loadAllData() async {
@@ -43,6 +49,15 @@ class _SurahListScreenState extends State<SurahListScreen> {
     setState(() {
       allSurahs = json.decode(response);
       filteredSurahs = allSurahs;
+    });
+  }
+
+  // جلب السورة المحفوظة من ذاكرة الهاتف
+  Future<void> loadBookmark() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      bookmarkName = prefs.getString('bookmark_name');
+      bookmarkNumber = prefs.getInt('bookmark_number');
     });
   }
 
@@ -100,32 +115,59 @@ class _SurahListScreenState extends State<SurahListScreen> {
         ),
         body: filteredSurahs.isEmpty 
             ? const Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: filteredSurahs.length,
-                itemBuilder: (context, index) {
-                  var surah = filteredSurahs[index];
-                  String type = surah['type']; 
+            : Column(
+                children: [
+                  // بطاقة مواصلة القراءة تظهر فقط إذا كان هناك حفظ سابق ولم نكن في وضع البحث
+                  if (bookmarkNumber != null && !isSearching)
+                    Card(
+                      color: const Color(0xFF333300),
+                      margin: const EdgeInsets.all(12),
+                      elevation: 4,
+                      child: ListTile(
+                        leading: const Icon(Icons.bookmark, color: Colors.yellow, size: 28),
+                        title: const Text("مواصلة القراءة السابقة", style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        subtitle: Text(bookmarkName ?? "", style: const TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'ahmed')),
+                        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+                        onTap: () async {
+                          await Navigator.push(context, MaterialPageRoute(builder: (context) => 
+                            SurahDetailsScreen(surahNumber: bookmarkNumber!, surahName: bookmarkName!)));
+                          loadBookmark(); // تحديث الحفظ عند العودة للرئيسية
+                        },
+                      ),
+                    ),
+                  
+                  // قائمة السور
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filteredSurahs.length,
+                      itemBuilder: (context, index) {
+                        var surah = filteredSurahs[index];
+                        String type = surah['type']; 
 
-                  return ListTile(
-                    leading: Image.asset(
-                      type == 'مكية' ? 'assets/mk.png' : 'assets/md.png', 
-                      width: 40, height: 40,
-                      errorBuilder: (c, o, s) => const Icon(Icons.book, color: Colors.white),
+                        return ListTile(
+                          leading: Image.asset(
+                            type == 'مكية' ? 'assets/mk.png' : 'assets/md.png', 
+                            width: 40, height: 40,
+                            errorBuilder: (c, o, s) => const Icon(Icons.book, color: Colors.white),
+                          ),
+                          title: Text(
+                            surah['name'], 
+                            style: const TextStyle(color: Colors.white, fontSize: 22, fontFamily: 'ahmed')
+                          ),
+                          trailing: Text(
+                            "سورة رقم ${toArabicNumbers(surah['number'])}",
+                            style: const TextStyle(color: Colors.white54, fontSize: 14),
+                          ),
+                          onTap: () async {
+                            await Navigator.push(context, MaterialPageRoute(builder: (context) => 
+                              SurahDetailsScreen(surahNumber: surah['number'], surahName: surah['name'])));
+                            loadBookmark(); // تحديث الحفظ عند العودة للرئيسية
+                          },
+                        );
+                      },
                     ),
-                    title: Text(
-                      surah['name'], 
-                      style: const TextStyle(color: Colors.white, fontSize: 22, fontFamily: 'ahmed')
-                    ),
-                    trailing: Text(
-                      "سورة رقم ${toArabicNumbers(surah['number'])}",
-                      style: const TextStyle(color: Colors.white54, fontSize: 14),
-                    ),
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => 
-                        SurahDetailsScreen(surahNumber: surah['number'], surahName: surah['name'])));
-                    },
-                  );
-                },
+                  ),
+                ],
               ),
       ),
     );
@@ -148,11 +190,16 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   int totalVersesCount = 0;
   bool hasBasmalah = false;
 
+  // متغيرات التحكم بحجم الخط وحالة الحفظ
+  double _fontSize = 26.0;
+  bool _isBookmarked = false;
+
   @override
   void initState() {
     super.initState();
     hasBasmalah = (widget.surahNumber != 1 && widget.surahNumber != 9);
     _surahDataFuture = loadSurahData();
+    _loadSettings(); // جلب حجم الخط وحالة الحفظ الحالية
   }
 
   Future<Map> loadSurahData() async {
@@ -161,10 +208,45 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     Map verseData = data['verse'] ?? {};
     totalVersesCount = data['count'] ?? verseData.length;
     
-    // توليد مفاتيح تتبع ذكية لكل آية لربطها بقرص التنقل
     _verseKeys = List.generate(totalVersesCount + 1, (index) => GlobalKey());
-    
     return data;
+  }
+
+  // تحميل الإعدادات من الذاكرة المستمرة
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    int? savedNum = prefs.getInt('bookmark_number');
+    setState(() {
+      _fontSize = prefs.getDouble('font_size') ?? 26.0;
+      _isBookmarked = (savedNum == widget.surahNumber);
+    });
+  }
+
+  // تغيير حجم الخط وحفظ التفضيل
+  Future<void> _changeFontSize(bool increase) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (increase && _fontSize < 42) _fontSize += 2;
+      if (!increase && _fontSize > 18) _fontSize -= 2;
+      prefs.setDouble('font_size', _fontSize);
+    });
+  }
+
+  // حفظ أو إزالة السورة من علامة القراءة
+  Future<void> _toggleBookmark() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_isBookmarked) {
+      await prefs.remove('bookmark_number');
+      await prefs.remove('bookmark_name');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إزالة علامة القراءة', textDirection: TextDirection.rtl)));
+    } else {
+      await prefs.setInt('bookmark_number', widget.surahNumber);
+      await prefs.setString('bookmark_name', widget.surahName);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ السورة كعلامة قراءة حالية', textDirection: TextDirection.rtl)));
+    }
+    setState(() {
+      _isBookmarked = !_isBookmarked;
+    });
   }
 
   void _showGoToVerseDialog(BuildContext context) {
@@ -198,7 +280,6 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                 if (verseNum != null && verseNum > 0 && verseNum <= totalVersesCount) {
                   Navigator.pop(context);
                   
-                  // جلب مكان المفتاح الخاص بالآية وسط النص المتصل بدقة
                   final targetContext = _verseKeys[verseNum].currentContext;
                   if (targetContext != null) {
                     Scrollable.ensureVisible(
@@ -242,28 +323,24 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
           Map verseData = snapshot.data!['verse'] ?? {};
           List<InlineSpan> textSpans = [];
           
-          // إضافة البسملة في البداية بشكل مستقل ومتناسق
           if (hasBasmalah) {
-            textSpans.add(const TextSpan(
+            textSpans.add(TextSpan(
               text: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\n",
-              style: TextStyle(fontSize: 28, color: Colors.white, fontFamily: 'ahmed'),
+              style: TextStyle(fontSize: _fontSize + 4, color: Colors.white, fontFamily: 'ahmed'),
             ));
           }
 
-          // بناء النص الكامل المسترسل مع دمج نقاط التتبع الخفية لزر الانتقال
           for (int i = 1; i <= totalVersesCount; i++) {
              if (verseData.containsKey('verse_$i')) {
                 String verseText = verseData['verse_$i'] ?? "";
                 String arabicNumbered = toArabicNumbers(i);
                 
-                // زرع نقطة مرجعية خفية تماماً بحجم 0 قبل بداية كل آية للتنقل التلقائي
                 textSpans.add(WidgetSpan(
                   alignment: PlaceholderAlignment.baseline,
                   baseline: TextBaseline.alphabetic,
                   child: SizedBox(key: _verseKeys[i], width: 0, height: 0),
                 ));
 
-                // إضافة نص الآية ملتصقاً بما قبله وما بعده دون أسطر جديدة
                 textSpans.add(TextSpan(
                   text: "$verseText $arabicNumbered  ",
                 ));
@@ -275,6 +352,25 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             appBar: AppBar(
               title: Text(widget.surahName, style: const TextStyle(fontFamily: 'ahmed')), 
               backgroundColor: const Color(0xFF333300),
+              actions: [
+                // زر الحفظ / المفضلة
+                IconButton(
+                  icon: Icon(_isBookmarked ? Icons.bookmark : Icons.bookmark_border, color: Colors.yellow),
+                  onPressed: _toggleBookmark,
+                  tooltip: "حفظ علامة القراءة",
+                ),
+                // أزرار التحكم بالخط
+                IconButton(
+                  icon: const Icon(Icons.text_increase, color: Colors.white),
+                  onPressed: () => _changeFontSize(true),
+                  tooltip: "تكبير الخط",
+                ),
+                IconButton(
+                  icon: const Icon(Icons.text_decrease, color: Colors.white),
+                  onPressed: () => _changeFontSize(false),
+                  tooltip: "تصغير الخط",
+                ),
+              ],
             ),
             floatingActionButton: FloatingActionButton(
               backgroundColor: const Color(0xFF333300),
@@ -286,8 +382,8 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
               padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 20.0),
               child: Text.rich(
                 TextSpan(children: textSpans),
-                textAlign: TextAlign.justify, // توزيع النص بشكل متساوٍ وعادل على أطراف الشاشة
-                style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.3, fontFamily: 'ahmed'),
+                textAlign: TextAlign.justify,
+                style: TextStyle(fontSize: _fontSize, color: Colors.white, height: 2.3, fontFamily: 'ahmed'),
               ),
             ),
           );
