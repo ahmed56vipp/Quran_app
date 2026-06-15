@@ -15,7 +15,6 @@ class SurahListScreen extends StatefulWidget {
 class _SurahListScreenState extends State<SurahListScreen> {
   List surahs = [];
   Map surahDetails = {};
-  String errorMessage = "";
 
   @override
   void initState() {
@@ -24,35 +23,26 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadAllData() async {
-    try {
-      final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
-      List indexData = json.decode(indexResponse);
-      indexData.sort((a, b) => a['number'].compareTo(b['number']));
+    final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
+    List indexData = json.decode(indexResponse);
+    indexData.sort((a, b) => a['number'].compareTo(b['number']));
 
-      final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
-      final List fullData = json.decode(fullResponse);
+    final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
+    final List fullData = json.decode(fullResponse);
 
-      Map tempDetails = {};
-      for (var item in fullData) {
-        tempDetails[item['index']] = item;
-      }
-
-      setState(() {
-        surahs = indexData;
-        surahDetails = tempDetails;
-      });
-    } catch (e) {
-      setState(() {
-        errorMessage = "خطأ في تحميل البيانات: $e";
-      });
+    Map tempDetails = {};
+    for (var item in fullData) {
+      tempDetails[item['index']] = item;
     }
+
+    setState(() {
+      surahs = indexData;
+      surahDetails = tempDetails;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (errorMessage.isNotEmpty) {
-      return Scaffold(body: Center(child: Text(errorMessage)));
-    }
     return Scaffold(
       appBar: AppBar(title: const Text("القرآن الكريم")),
       body: surahs.isEmpty 
@@ -65,6 +55,10 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 String type = details != null ? details['type'] : "";
 
                 return ListTile(
+                  leading: Icon(
+                    type == 'Makkiyah' ? Icons.location_on : Icons.mosque,
+                    color: type == 'Makkiyah' ? Colors.red : Colors.green,
+                  ),
                   title: Text(surahs[index]['name']),
                   onTap: () {
                     Navigator.push(
@@ -104,23 +98,41 @@ class SurahDetailsScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return Center(child: Text("خطأ: ${snapshot.error}"));
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text("خطأ في تحميل البيانات"));
           }
           
           Map verseMap = snapshot.data!['verse'];
-          List verses = verseMap.values.toList();
+          List keys = verseMap.keys.toList();
+          int verseCounter = 0; // عداد الترقيم الصحيح
 
           return ListView.builder(
-            itemCount: verses.length,
+            itemCount: keys.length,
             itemBuilder: (context, index) {
-              String verseText = verses[index];
+              String key = keys[index];
+              String verseText = verseMap[key];
+              
+              // كشف البسملة بأي شكل كانت
               bool isBasmala = verseText.contains("بسم الله الرحمن الرحيم");
               
+              // زيادة العداد فقط للآيات
+              if (!isBasmala) {
+                verseCounter++;
+              }
+
               return Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: Text(
-                  verseText + (isBasmala ? "" : " (${index + 1})"),
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: verseText + " "),
+                      if (!isBasmala) 
+                        TextSpan(
+                          text: "($verseCounter)", 
+                          style: const TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                    ],
+                  ),
                   style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'),
                   textAlign: TextAlign.right,
                 ),
