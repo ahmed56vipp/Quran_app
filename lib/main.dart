@@ -143,14 +143,24 @@ class SurahDetailsScreen extends StatefulWidget {
 
 class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   final ScrollController _scrollController = ScrollController();
+  int totalVersesCount = 0;
+  bool hasBasmalah = false;
+
+  @override
+  void initState() {
+    super.initState();
+    hasBasmalah = (widget.surahNumber != 1 && widget.surahNumber != 9);
+  }
 
   Future<Map> loadSurahData() async {
     String response = await rootBundle.loadString('assets/surah_${widget.surahNumber}.json');
-    return json.decode(response);
+    Map data = json.decode(response);
+    Map verseData = data['verse'] ?? {};
+    totalVersesCount = data['count'] ?? verseData.length;
+    return data;
   }
 
-  // نافذة إدخال رقم الآية للذهاب إليها
-  void _showGoToVerseDialog(BuildContext context, int totalVerses, bool hasBasmalah) {
+  void _showGoToVerseDialog(BuildContext context) {
     final TextEditingController _verseInputController = TextEditingController();
     showDialog(
       context: context,
@@ -164,7 +174,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             keyboardType: TextInputType.number,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: "أدخل الرقم من 1 إلى $totalVerses",
+              hintText: "أدخل الرقم من 1 إلى $totalVersesCount",
               hintStyle: const TextStyle(color: Colors.white38),
               enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
               focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF333300))),
@@ -178,15 +188,13 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
             TextButton(
               onPressed: () {
                 int? verseNum = int.tryParse(_verseInputController.text);
-                if (verseNum != null && verseNum > 0 && verseNum <= totalVerses) {
+                if (verseNum != null && verseNum > 0 && verseNum <= totalVersesCount) {
                   Navigator.pop(context);
-                  
-                  // حساب موقع العنصر المستهدف في القائمة
                   int targetIndex = hasBasmalah ? verseNum : verseNum - 1;
                   
-                  // الانتقال الانسيابي إلى الآية (تقدير متوسط ارتفاع العنصر بـ 115 بكسل)
+                  // حساب موقع النزول التقديري بناءً على وضع الأسطر الجديد
                   _scrollController.animateTo(
-                    targetIndex * 115.0,
+                    targetIndex * 120.0,
                     duration: const Duration(milliseconds: 800),
                     curve: Curves.easeInOut,
                   );
@@ -210,49 +218,69 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
           title: Text(widget.surahName, style: const TextStyle(fontFamily: 'ahmed')), 
           backgroundColor: const Color(0xFF333300),
         ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: const Color(0xFF333300),
+          child: const Icon(Icons.pin_drop, color: Colors.white),
+          onPressed: () => _showGoToVerseDialog(context),
+        ),
         body: FutureBuilder<Map>(
           future: loadSurahData(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-            if (snapshot.hasError || !snapshot.hasData) return Center(child: Text("خطأ في تحميل سورة ${widget.surahNumber}", style: const TextStyle(color: Colors.white)));
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return Center(child: Text("خطأ في تحميل سورة ${widget.surahNumber}", style: const TextStyle(color: Colors.white)));
+            }
             
             Map verseData = snapshot.data!['verse'] ?? {};
-            int count = snapshot.data!['count'] ?? verseData.length;
             List<String> verses = [];
             
-            for(int i = 1; i <= count; i++) {
-               if(verseData.containsKey('verse_$i')) {
+            for (int i = 1; i <= totalVersesCount; i++) {
+               if (verseData.containsKey('verse_$i')) {
                   String verseText = verseData['verse_$i'] ?? "";
                   String arabicNumbered = toArabicNumbers(i);
                   verses.add("$verseText $arabicNumbered"); 
                }
             }
 
-            bool hasBasmalah = (widget.surahNumber != 1 && widget.surahNumber != 9);
+            return ListView.builder(
+              controller: _scrollController,
+              itemCount: verses.length + (hasBasmalah ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (hasBasmalah && index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 25.0),
+                    child: Text(
+                      "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 28, color: Colors.white, fontFamily: 'ahmed'),
+                    ),
+                  );
+                }
 
-            // إضافة زر الذهاب للآية بشكل ديناميكي بعد معرفة عدد الآيات الكلي
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                // نتحقق من عدم تكرار إضافة الزر عبر الـ Actions
-              }
-            });
+                int verseIndex = hasBasmalah ? index - 1 : index;
 
-            return Scaffold(
-              backgroundColor: const Color(0xFF1A1A1A),
-              floatingActionButton: FloatingActionButton(
-                backgroundColor: const Color(0xFF333300),
-                child: const Icon(Icons.pin_drop, color: Colors.white),
-                onPressed: () => _showGoToVerseDialog(context, count, hasBasmalah),
-              ),
-              body: ListView.builder(
-                controller: _scrollController,
-                itemCount: verses.length + (hasBasmalah ? 1 : 0),
-                itemBuilder: (context, index) {
-                  // السطر الأول مخصص للبسملة إذا لم تكن الفاتحة أو التوبة
-                  if (hasBasmalah && index == 0) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 25.0),
-                      child: Text(
-                        "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 28, color
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        verses[verseIndex],
+                        textAlign: TextAlign.justify,
+                        style: const TextStyle(fontSize: 24, color: Colors.white, height: 1.9, fontFamily: 'ahmed'),
+                      ),
+                      const SizedBox(height: 8),
+                      const Divider(color: Colors.white12, thickness: 1),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
