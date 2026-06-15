@@ -104,7 +104,7 @@ class SurahDetailsScreen extends StatelessWidget {
           
           Map verseMap = snapshot.data!['verse'];
           List keys = verseMap.keys.toList();
-          int verseCounter = 0; // عداد الترقيم الصحيح
+          int verseCounter = 0; 
 
           return ListView.builder(
             itemCount: keys.length,
@@ -112,10 +112,9 @@ class SurahDetailsScreen extends StatelessWidget {
               String key = keys[index];
               String verseText = verseMap[key];
               
-              // كشف البسملة بأي شكل كانت
-              bool isBasmala = verseText.contains("بسم الله الرحمن الرحيم");
+              // الحل الذكي: إذا احتوى النص على كلمة "بسم" فهو بسملة، ولا نزيد العداد
+              bool isBasmala = verseText.contains("بسم");
               
-              // زيادة العداد فقط للآيات
               if (!isBasmala) {
                 verseCounter++;
               }
