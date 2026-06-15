@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 void main() {
-  runApp(const MaterialApp(home: SurahListScreen()));
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: SurahListScreen(),
+  ));
 }
 
 class SurahListScreen extends StatefulWidget {
@@ -23,28 +26,33 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadAllData() async {
-    final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
-    List indexData = json.decode(indexResponse);
-    indexData.sort((a, b) => a['number'].compareTo(b['number']));
+    try {
+      final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
+      List indexData = json.decode(indexResponse);
+      indexData.sort((a, b) => a['number'].compareTo(b['number']));
 
-    final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
-    final List fullData = json.decode(fullResponse);
+      final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
+      final List fullData = json.decode(fullResponse);
 
-    Map tempDetails = {};
-    for (var item in fullData) {
-      tempDetails[item['index']] = item;
+      Map tempDetails = {};
+      for (var item in fullData) {
+        tempDetails[item['index'].toString().padLeft(3, '0')] = item;
+      }
+
+      setState(() {
+        surahs = indexData;
+        surahDetails = tempDetails;
+      });
+    } catch (e) {
+      print("Error loading data: $e");
     }
-
-    setState(() {
-      surahs = indexData;
-      surahDetails = tempDetails;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("القرآن الكريم")),
+      backgroundColor: const Color(0xFF1A1A1A),
+      appBar: AppBar(title: const Text("القرآن الكريم"), backgroundColor: const Color(0xFF333300)),
       body: surahs.isEmpty 
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
@@ -55,21 +63,10 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 String type = details != null ? details['type'] : "";
 
                 return ListTile(
-                  leading: Icon(
-                    type == 'Makkiyah' ? Icons.location_on : Icons.mosque,
-                    color: type == 'Makkiyah' ? Colors.red : Colors.green,
-                  ),
-                  title: Text(surahs[index]['name']),
+                  leading: Image.asset(type == 'Makkiyah' ? 'assets/mk.png' : 'assets/md.png', width: 40, height: 40, errorBuilder: (c, o, s) => const Icon(Icons.book, color: Colors.white)),
+                  title: Text(surahs[index]['name'], style: const TextStyle(color: Colors.white, fontSize: 20)),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SurahDetailsScreen(
-                          surahNumber: surahs[index]['number'], 
-                          surahName: surahs[index]['name']
-                        ),
-                      ),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => SurahDetailsScreen(surahNumber: surahs[index]['number'], surahName: surahs[index]['name'])));
                   },
                 );
               },
@@ -91,47 +88,32 @@ class SurahDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(surahName)),
+      backgroundColor: const Color(0xFF1A1A1A),
+      appBar: AppBar(title: Text(surahName), backgroundColor: const Color(0xFF333300)),
       body: FutureBuilder<Map>(
         future: loadSurahData(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("خطأ في تحميل البيانات"));
-          }
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return const Center(child: Text("خطأ في تحميل البيانات", style: TextStyle(color: Colors.white)));
           
           Map verseMap = snapshot.data!['verse'];
-          List keys = verseMap.keys.toList();
+          List keys = verseMap.keys.toList()..sort(); 
+          
+          String fullText = "";
+          int counter = 0;
+          for (int i = 0; i < keys.length; i++) {
+            String text = verseMap[keys[i]];
+            if (i == 0) {
+              fullText += "$text ";
+            } else {
+              counter++;
+              fullText += "$text ($counter) ";
+            }
+          }
 
-          return ListView.builder(
-            itemCount: keys.length,
-            itemBuilder: (context, index) {
-              String key = keys[index];
-              String verseText = verseMap[key];
-              
-              // البسملة دائماً هي العنصر الأول (index 0) في ملفاتك
-              bool isBasmala = (index == 0);
-              
-              return Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: verseText + " "),
-                      if (!isBasmala) 
-                        TextSpan(
-                          text: "($index)", 
-                          style: const TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                    ],
-                  ),
-                  style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'),
-                  textAlign: TextAlign.right,
-                ),
-              );
-            },
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(fullText, textAlign: TextAlign.justify, style: const TextStyle(fontFamily: 'ahmed', fontSize: 26, color: Colors.white, height: 2.2)),
           );
         },
       ),
