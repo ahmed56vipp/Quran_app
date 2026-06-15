@@ -15,6 +15,7 @@ class SurahListScreen extends StatefulWidget {
 class _SurahListScreenState extends State<SurahListScreen> {
   List surahs = [];
   Map surahDetails = {};
+  String errorMessage = "";
 
   @override
   void initState() {
@@ -23,28 +24,35 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadAllData() async {
-    final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
-    List indexData = json.decode(indexResponse);
-    
-    // ترتيب السور بعد التأكد من وجود مفتاح "number" في JSON الخاص بك
-    indexData.sort((a, b) => a['number'].compareTo(b['number']));
+    try {
+      final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
+      List indexData = json.decode(indexResponse);
+      indexData.sort((a, b) => a['number'].compareTo(b['number']));
 
-    final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
-    final List fullData = json.decode(fullResponse);
+      final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
+      final List fullData = json.decode(fullResponse);
 
-    Map tempDetails = {};
-    for (var item in fullData) {
-      tempDetails[item['index']] = item;
+      Map tempDetails = {};
+      for (var item in fullData) {
+        tempDetails[item['index']] = item;
+      }
+
+      setState(() {
+        surahs = indexData;
+        surahDetails = tempDetails;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = "خطأ في تحميل البيانات: $e";
+      });
     }
-
-    setState(() {
-      surahs = indexData;
-      surahDetails = tempDetails;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (errorMessage.isNotEmpty) {
+      return Scaffold(body: Center(child: Text(errorMessage)));
+    }
     return Scaffold(
       appBar: AppBar(title: const Text("القرآن الكريم")),
       body: surahs.isEmpty 
@@ -57,12 +65,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 String type = details != null ? details['type'] : "";
 
                 return ListTile(
-                  leading: Icon(
-                    type == 'Makkiyah' ? Icons.location_on : Icons.mosque,
-                    color: type == 'Makkiyah' ? Colors.red : Colors.green,
-                  ),
                   title: Text(surahs[index]['name']),
-                  subtitle: Text(type == 'Makkiyah' ? "مكية" : "مدنية"),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -101,8 +104,8 @@ class SurahDetailsScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("تعذر تحميل البيانات"));
+          if (snapshot.hasError) {
+            return Center(child: Text("خطأ: ${snapshot.error}"));
           }
           
           Map verseMap = snapshot.data!['verse'];
@@ -112,24 +115,12 @@ class SurahDetailsScreen extends StatelessWidget {
             itemCount: verses.length,
             itemBuilder: (context, index) {
               String verseText = verses[index];
-              // شرط التحقق من البسملة
               bool isBasmala = verseText.contains("بسم الله الرحمن الرحيم");
               
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: verseText + " "),
-                      // إضافة رقم الآية فقط إذا لم تكن بسملة
-                      if (!isBasmala) 
-                        TextSpan(
-                          text: "(${index + 1})", 
-                          style: const TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                    ],
-                  ),
-                  // استخدام الخط المخصص هنا
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  verseText + (isBasmala ? "" : " (${index + 1})"),
                   style: const TextStyle(fontSize: 22, fontFamily: 'ahmed'),
                   textAlign: TextAlign.right,
                 ),
