@@ -14,7 +14,7 @@ class QuranApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'القرآن الكريم',
-      // 🌍 إجبار التطبيق على الاتجاه العربي الصحيح من اليمين إلى اليمين
+      // 🌍 إجبار التطبيق على الاتجاه العربي الصحيح من اليمين إلى اليسار
       builder: (context, child) {
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -141,7 +141,7 @@ class SurahListScreen extends StatelessWidget {
   }
 }
 
-// 📖 شاشة عرض وقراءة آيات السورة الجديدة
+// 📖 شاشة عرض وقراءة آيات السورة
 class SurahDetailScreen extends StatelessWidget {
   final dynamic surahData;
   final String surahName;
@@ -150,7 +150,6 @@ class SurahDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // جلب قائمة الآيات من السورة المفتوحة
     final List<dynamic> verses = surahData['verses'] ?? [];
 
     return Scaffold(
@@ -167,7 +166,6 @@ class SurahDetailScreen extends StatelessWidget {
               itemCount: verses.length,
               itemBuilder: (context, index) {
                 final verse = verses[index];
-                // استخراج نص الآية سواء كانت عبارة عن نص مباشر أو خريطة داخلياً
                 String verseText = '';
                 if (verse is String) {
                   verseText = verse;
@@ -187,11 +185,10 @@ class SurahDetailScreen extends StatelessWidget {
                           fontFamily: 'ahmed',
                           fontSize: 24,
                           height: 1.8,
-                          color: Colors.blackDE,
+                          color: Colors.black87, // تم إصلاح الخطأ الإملائي هنا بنجاح
                         ),
                       ),
                       const SizedBox(height: 6),
-                      // رقم الآية في نهاية السطر
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Container(
