@@ -21,7 +21,7 @@ class QuranApp extends StatelessWidget {
         );
       },
       theme: ThemeData(
-        fontFamily: 'ahmed', // استخدام الخط المخصص
+        fontFamily: 'ahmed', // تأكد أن الخط موجود في المسار الصحيح
         primaryColor: const Color(0xFF1B5E20),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1B5E20),
@@ -38,7 +38,6 @@ class SurahListScreen extends StatelessWidget {
   const SurahListScreen({super.key});
 
   Future<List<dynamic>> loadQuranIndex() async {
-    // المسار المحدث للفهرس داخل مجلد data
     final String response = await rootBundle.loadString('assets/data/quran_data.json');
     return json.decode(response);
   }
@@ -50,16 +49,35 @@ class SurahListScreen extends StatelessWidget {
       body: FutureBuilder<List<dynamic>>(
         future: loadQuranIndex(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData) return const Center(child: Text("لا توجد بيانات"));
+          
           final surahs = snapshot.data!;
           return ListView.builder(
             itemCount: surahs.length,
             itemBuilder: (context, index) {
               final surah = surahs[index];
+              final String type = surah['type'] ?? 'مكية';
+              
               return ListTile(
-                leading: CircleAvatar(child: Text("${surah['id']}")),
+                leading: CircleAvatar(
+                  backgroundColor: type == 'مكية' ? Colors.amber[100] : Colors.green[100],
+                  child: Text("${surah['id']}"),
+                ),
                 title: Text(surah['name']),
-                subtitle: Text("${surah['type']} | آياتها: ${surah['verses_count']}"),
+                subtitle: Row(
+                  children: [
+                    Icon(
+                      type == 'مكية' ? Icons.star_border : Icons.mosque,
+                      size: 16,
+                      color: type == 'مكية' ? Colors.red : Colors.green,
+                    ),
+                    const SizedBox(width: 4),
+                    Text("$type | آياتها: ${surah['verses_count']}"),
+                  ],
+                ),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -86,26 +104,46 @@ class SurahDetailScreen extends StatelessWidget {
 
   const SurahDetailScreen({super.key, required this.surahId, required this.surahName});
 
-  Future<List<dynamic>> loadSurah() async {
-    // المسار المحدث للسور داخل مجلد surah
-    final String response = await rootBundle.loadString('assets/surah/surah_$surahId.json');
-    final data = json.decode(response);
-    return data['verses'] ?? [];
+  Future<List<String>> loadSurah() async {
+    try {
+      final String response = await rootBundle.loadString('assets/surah/surah_$surahId.json');
+      final data = json.decode(response);
+      
+      // استخراج الكائن "verse" كما يظهر في ملفاتك
+      Map<String, dynamic> versesMap = data['verse'];
+      
+      // تحويل القيم إلى قائمة نصوص
+      return versesMap.values.map((value) => value.toString()).toList();
+    } catch (e) {
+      return ["حدث خطأ أثناء تحميل السورة"];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(surahName)),
-      body: FutureBuilder<List<dynamic>>(
+      body: FutureBuilder<List<String>>(
         future: loadSurah(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text("لا توجد آيات"));
+          }
+
           final verses = snapshot.data!;
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: verses.length,
-            itemBuilder: (context, index) => ListTile(
-              title: Text(verses[index]['text'], textAlign: TextAlign.justify),
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Text(
+                "${verses[index]} (${index + 1})", 
+                style: const TextStyle(fontSize: 20, fontFamily: 'ahmed'),
+                textAlign: TextAlign.justify,
+              ),
             ),
           );
         },
