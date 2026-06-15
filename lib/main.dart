@@ -143,6 +143,8 @@ class SurahDetailsScreen extends StatefulWidget {
 
 class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   final ScrollController _scrollController = ScrollController();
+  late Future<Map> _surahDataFuture;
+  List<GlobalKey> _verseKeys = [];
   int totalVersesCount = 0;
   bool hasBasmalah = false;
 
@@ -150,6 +152,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   void initState() {
     super.initState();
     hasBasmalah = (widget.surahNumber != 1 && widget.surahNumber != 9);
+    _surahDataFuture = loadSurahData();
   }
 
   Future<Map> loadSurahData() async {
@@ -157,6 +160,10 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     Map data = json.decode(response);
     Map verseData = data['verse'] ?? {};
     totalVersesCount = data['count'] ?? verseData.length;
+    
+    // توليد مفاتيح تتبع ذكية لكل آية لربطها بقرص التنقل
+    _verseKeys = List.generate(totalVersesCount + 1, (index) => GlobalKey());
+    
     return data;
   }
 
@@ -190,14 +197,16 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                 int? verseNum = int.tryParse(_verseInputController.text);
                 if (verseNum != null && verseNum > 0 && verseNum <= totalVersesCount) {
                   Navigator.pop(context);
-                  int targetIndex = hasBasmalah ? verseNum : verseNum - 1;
                   
-                  // حساب موقع النزول التقديري بناءً على وضع الأسطر الجديد
-                  _scrollController.animateTo(
-                    targetIndex * 120.0,
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.easeInOut,
-                  );
+                  // جلب مكان المفتاح الخاص بالآية وسط النص المتصل بدقة
+                  final targetContext = _verseKeys[verseNum].currentContext;
+                  if (targetContext != null) {
+                    Scrollable.ensureVisible(
+                      targetContext,
+                      duration: const Duration(milliseconds: 1000),
+                      curve: Curves.easeInOut,
+                    );
+                  }
                 }
               },
               child: const Text("اذهب", style: TextStyle(color: Colors.yellow, fontWeight: FontWeight.bold)),
@@ -212,74 +221,77 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF1A1A1A),
-        appBar: AppBar(
-          title: Text(widget.surahName, style: const TextStyle(fontFamily: 'ahmed')), 
-          backgroundColor: const Color(0xFF333300),
-        ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: const Color(0xFF333300),
-          child: const Icon(Icons.pin_drop, color: Colors.white),
-          onPressed: () => _showGoToVerseDialog(context),
-        ),
-        body: FutureBuilder<Map>(
-          future: loadSurahData(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError || !snapshot.hasData) {
-              return Center(child: Text("خطأ في تحميل سورة ${widget.surahNumber}", style: const TextStyle(color: Colors.white)));
-            }
-            
-            Map verseData = snapshot.data!['verse'] ?? {};
-            List<String> verses = [];
-            
-            for (int i = 1; i <= totalVersesCount; i++) {
-               if (verseData.containsKey('verse_$i')) {
-                  String verseText = verseData['verse_$i'] ?? "";
-                  String arabicNumbered = toArabicNumbers(i);
-                  verses.add("$verseText $arabicNumbered"); 
-               }
-            }
-
-            return ListView.builder(
-              controller: _scrollController,
-              itemCount: verses.length + (hasBasmalah ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (hasBasmalah && index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 25.0),
-                    child: Text(
-                      "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 28, color: Colors.white, fontFamily: 'ahmed'),
-                    ),
-                  );
-                }
-
-                int verseIndex = hasBasmalah ? index - 1 : index;
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        verses[verseIndex],
-                        textAlign: TextAlign.justify,
-                        style: const TextStyle(fontSize: 24, color: Colors.white, height: 1.9, fontFamily: 'ahmed'),
-                      ),
-                      const SizedBox(height: 8),
-                      const Divider(color: Colors.white12, thickness: 1),
-                    ],
-                  ),
-                );
-              },
+      child: FutureBuilder<Map>(
+        future: _surahDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Scaffold(
+              backgroundColor: const Color(0xFF1A1A1A),
+              appBar: AppBar(title: Text(widget.surahName, style: const TextStyle(fontFamily: 'ahmed')), backgroundColor: const Color(0xFF333300)),
+              body: const Center(child: CircularProgressIndicator()),
             );
-          },
-        ),
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Scaffold(
+              backgroundColor: const Color(0xFF1A1A1A),
+              appBar: AppBar(title: Text(widget.surahName, style: const TextStyle(fontFamily: 'ahmed')), backgroundColor: const Color(0xFF333300)),
+              body: Center(child: Text("خطأ في تحميل سورة ${widget.surahNumber}", style: const TextStyle(color: Colors.white))),
+            );
+          }
+          
+          Map verseData = snapshot.data!['verse'] ?? {};
+          List<InlineSpan> textSpans = [];
+          
+          // إضافة البسملة في البداية بشكل مستقل ومتناسق
+          if (hasBasmalah) {
+            textSpans.add(const TextSpan(
+              text: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\n",
+              style: TextStyle(fontSize: 28, color: Colors.white, fontFamily: 'ahmed'),
+            ));
+          }
+
+          // بناء النص الكامل المسترسل مع دمج نقاط التتبع الخفية لزر الانتقال
+          for (int i = 1; i <= totalVersesCount; i++) {
+             if (verseData.containsKey('verse_$i')) {
+                String verseText = verseData['verse_$i'] ?? "";
+                String arabicNumbered = toArabicNumbers(i);
+                
+                // زرع نقطة مرجعية خفية تماماً بحجم 0 قبل بداية كل آية للتنقل التلقائي
+                textSpans.add(WidgetSpan(
+                  alignment: PlaceholderAlignment.baseline,
+                  baseline: TextBaseline.alphabetic,
+                  child: SizedBox(key: _verseKeys[i], width: 0, height: 0),
+                ));
+
+                // إضافة نص الآية ملتصقاً بما قبله وما بعده دون أسطر جديدة
+                textSpans.add(TextSpan(
+                  text: "$verseText $arabicNumbered  ",
+                ));
+             }
+          }
+
+          return Scaffold(
+            backgroundColor: const Color(0xFF1A1A1A),
+            appBar: AppBar(
+              title: Text(widget.surahName, style: const TextStyle(fontFamily: 'ahmed')), 
+              backgroundColor: const Color(0xFF333300),
+            ),
+            floatingActionButton: FloatingActionButton(
+              backgroundColor: const Color(0xFF333300),
+              child: const Icon(Icons.pin_drop, color: Colors.white),
+              onPressed: () => _showGoToVerseDialog(context),
+            ),
+            body: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 20.0),
+              child: Text.rich(
+                TextSpan(children: textSpans),
+                textAlign: TextAlign.justify, // توزيع النص بشكل متساوٍ وعادل على أطراف الشاشة
+                style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.3, fontFamily: 'ahmed'),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
