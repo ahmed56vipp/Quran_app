@@ -33,7 +33,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
   bool isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
-  // متغيرات حفظ علامة القراءة
   String? bookmarkName;
   int? bookmarkNumber;
 
@@ -41,7 +40,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   void initState() {
     super.initState();
     loadAllData();
-    loadBookmark(); // تحميل العلامة المحفوظة عند فتح التطبيق
+    loadBookmark();
   }
 
   Future<void> loadAllData() async {
@@ -52,7 +51,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
     });
   }
 
-  // جلب السورة المحفوظة من ذاكرة الهاتف
   Future<void> loadBookmark() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -117,7 +115,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  // بطاقة مواصلة القراءة تظهر فقط إذا كان هناك حفظ سابق ولم نكن في وضع البحث
                   if (bookmarkNumber != null && !isSearching)
                     Card(
                       color: const Color(0xFF333300),
@@ -131,12 +128,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
                         onTap: () async {
                           await Navigator.push(context, MaterialPageRoute(builder: (context) => 
                             SurahDetailsScreen(surahNumber: bookmarkNumber!, surahName: bookmarkName!)));
-                          loadBookmark(); // تحديث الحفظ عند العودة للرئيسية
+                          loadBookmark();
                         },
                       ),
                     ),
                   
-                  // قائمة السور
                   Expanded(
                     child: ListView.builder(
                       itemCount: filteredSurahs.length,
@@ -161,7 +157,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                           onTap: () async {
                             await Navigator.push(context, MaterialPageRoute(builder: (context) => 
                               SurahDetailsScreen(surahNumber: surah['number'], surahName: surah['name'])));
-                            loadBookmark(); // تحديث الحفظ عند العودة للرئيسية
+                            loadBookmark();
                           },
                         );
                       },
@@ -190,7 +186,6 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
   int totalVersesCount = 0;
   bool hasBasmalah = false;
 
-  // متغيرات التحكم بحجم الخط وحالة الحفظ
   double _fontSize = 26.0;
   bool _isBookmarked = false;
 
@@ -199,7 +194,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     super.initState();
     hasBasmalah = (widget.surahNumber != 1 && widget.surahNumber != 9);
     _surahDataFuture = loadSurahData();
-    _loadSettings(); // جلب حجم الخط وحالة الحفظ الحالية
+    _loadSettings();
   }
 
   Future<Map> loadSurahData() async {
@@ -212,7 +207,6 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     return data;
   }
 
-  // تحميل الإعدادات من الذاكرة المستمرة
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     int? savedNum = prefs.getInt('bookmark_number');
@@ -222,7 +216,6 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     });
   }
 
-  // تغيير حجم الخط وحفظ التفضيل
   Future<void> _changeFontSize(bool increase) async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -232,7 +225,6 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
     });
   }
 
-  // حفظ أو إزالة السورة من علامة القراءة
   Future<void> _toggleBookmark() async {
     final prefs = await SharedPreferences.getInstance();
     if (_isBookmarked) {
@@ -283,7 +275,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                   final targetContext = _verseKeys[verseNum].currentContext;
                   if (targetContext != null) {
                     Scrollable.ensureVisible(
-                      targetContext,
+                      MosesGetContext(targetContext),
                       duration: const Duration(milliseconds: 1000),
                       curve: Curves.easeInOut,
                     );
@@ -297,6 +289,8 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
       ),
     );
   }
+
+  BuildContext MosesGetContext(BuildContext context) => context;
 
   @override
   Widget build(BuildContext context) {
@@ -335,14 +329,22 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                 String verseText = verseData['verse_$i'] ?? "";
                 String arabicNumbered = toArabicNumbers(i);
                 
+                // نقطة التتبع الخفية للتنقل
                 textSpans.add(WidgetSpan(
                   alignment: PlaceholderAlignment.baseline,
                   baseline: TextBaseline.alphabetic,
                   child: SizedBox(key: _verseKeys[i], width: 0, height: 0),
                 ));
 
+                // 1. نص الآية باللون الأبيض المعتاد
                 textSpans.add(TextSpan(
-                  text: "$verseText $arabicNumbered  ",
+                  text: "$verseText ",
+                ));
+
+                // 2. ترميز نهاية الآية بالرمز المميز (۝) والرقم داخله باللون الأحمر
+                textSpans.add(TextSpan(
+                  text: " ۝$arabicNumbered  ",
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                 ));
              }
           }
@@ -353,13 +355,11 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
               title: Text(widget.surahName, style: const TextStyle(fontFamily: 'ahmed')), 
               backgroundColor: const Color(0xFF333300),
               actions: [
-                // زر الحفظ / المفضلة
                 IconButton(
                   icon: Icon(_isBookmarked ? Icons.bookmark : Icons.bookmark_border, color: Colors.yellow),
                   onPressed: _toggleBookmark,
                   tooltip: "حفظ علامة القراءة",
                 ),
-                // أزرار التحكم بالخط
                 IconButton(
                   icon: const Icon(Icons.text_increase, color: Colors.white),
                   onPressed: () => _changeFontSize(true),
