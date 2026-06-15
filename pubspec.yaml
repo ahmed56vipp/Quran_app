@@ -10,8 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
 flutter:
-  uses-material-design: true # تأكد من وجود هذا السطر
-  
+  uses-material-design: true
+
   assets:
     - assets/quran_data.json
     - assets/quran_full.json
