@@ -336,16 +336,16 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                   child: SizedBox(key: _verseKeys[i], width: 0, height: 0),
                 ));
 
-                // 1. نص الآية - يأخذ ستايل منفصل تماماً باللون الأبيض لعدم التأثير على ما بعده
+                // 1. نص الآية باللون الأبيض (ويحتوي تلقائياً على الرمز الأول من الـ JSON)
                 textSpans.add(TextSpan(
                   text: "$verseText ",
                   style: TextStyle(fontSize: _fontSize, color: Colors.white, height: 2.3, fontFamily: 'ahmed'),
                 ));
 
-                // 2. رمز نهاية الآية والرقم - يأخذ ستايل منفصل باللون الأحمر الصريح ويجبر النظام على تلوينه
+                // 2. عرض رقم الآية فقط باللون الذهبي الدافئ (بدون كتابة الرمز يدوياً لمنع التكرار)
                 textSpans.add(TextSpan(
-                  text: " ۝$arabicNumbered  ",
-                  style: TextStyle(fontSize: _fontSize, color: Colors.red, fontWeight: FontWeight.bold, height: 2.3, fontFamily: 'ahmed'),
+                  text: " $arabicNumbered  ",
+                  style: TextStyle(fontSize: _fontSize, color: Colors.amber, fontWeight: FontWeight.bold, height: 2.3, fontFamily: 'ahmed'),
                 ));
              }
           }
