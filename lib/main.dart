@@ -42,7 +42,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
               itemCount: surahs.length,
               itemBuilder: (context, index) {
                 var surah = surahs[index];
-                // مطابقة الكلمة العربية من ملف JSON
+                // مطابقة كلمة "مكية" أو "مدنية" كما في ملفك
                 String type = surah['type']; 
 
                 return ListTile(
@@ -69,7 +69,7 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
-    // تحميل الملف مباشرة باسمه البسيط كما في مجلدك
+    // تحميل الملف حسب رقم السورة (مثال: surah_1.json)
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -83,14 +83,24 @@ class SurahDetailsScreen extends StatelessWidget {
         future: loadSurahData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Text("خطأ: ${snapshot.error}", style: const TextStyle(color: Colors.white)));
+          if (snapshot.hasError || !snapshot.hasData) return Center(child: Text("خطأ في تحميل سورة $surahNumber", style: const TextStyle(color: Colors.white)));
           
-          // افتراض هيكلية ملفات JSON الخاصة بك
-          String fullText = snapshot.data!['text'] ?? "لا يوجد نص";
+          // استخراج النصوص من الـ Map الموجودة في 'verse'
+          Map verseData = snapshot.data!['verse'];
+          List<String> verses = [];
+          
+          // الترتيب بناءً على المفاتيح الموجودة في ملفك (verse_1, verse_2...)
+          for(int i=1; i <= verseData.length; i++) {
+             verses.add(verseData['verse_$i'] ?? "");
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: Text(fullText, textAlign: TextAlign.justify, style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.2)),
+            child: Text(
+              verses.join(" "), 
+              textAlign: TextAlign.justify, 
+              style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.2, fontFamily: 'ahmed'),
+            ),
           );
         },
       ),
