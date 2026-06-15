@@ -68,7 +68,6 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
-    // جلب ملف السورة بناءً على رقمها المتغير
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -83,15 +82,14 @@ class SurahDetailsScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           
-          // إذا حدث خطأ، سيظهر لك الخطأ الفعلي هنا لتعرفه
+          // تم تصحيح الخطأ هنا الإملائي هنا لتنجح عملية الـ Build
           if (snapshot.hasError) return Center(child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text("خطأ: ${snapshot.error}", style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: Center),
+            child: Text("خطأ: ${snapshot.error}", style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: TextAlign.center),
           ));
           
           if (!snapshot.hasData) return const Center(child: Text("لا توجد بيانات", style: TextStyle(color: Colors.white)));
           
-          // قراءة البيانات من داخل مفتاح verse كما في ملفك تماماً
           Map verseData = snapshot.data!['verse'] ?? {};
           int count = snapshot.data!['count'] ?? verseData.length;
           List<String> verses = [];
