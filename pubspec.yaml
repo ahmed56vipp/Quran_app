@@ -10,12 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 flutter:
-  uses-material-design: true
   assets:
     - assets/quran_data.json
     - assets/quran_full.json
-    - assets/
-  fonts:
-    - family: ahmed
-      fonts:
-        - asset: assets/ahmed.ttf
+    - assets/Aa.png
+    - assets/mk.png
+    - assets/md.png
+    - assets/ahmed.ttf
