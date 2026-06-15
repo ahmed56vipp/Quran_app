@@ -320,7 +320,7 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
           if (hasBasmalah) {
             textSpans.add(TextSpan(
               text: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\n",
-              style: TextStyle(fontSize: _fontSize + 4, color: Colors.white, fontFamily: 'ahmed'),
+              style: TextStyle(fontSize: _fontSize + 4, color: Colors.white, height: 2.3, fontFamily: 'ahmed'),
             ));
           }
 
@@ -336,15 +336,16 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
                   child: SizedBox(key: _verseKeys[i], width: 0, height: 0),
                 ));
 
-                // 1. نص الآية باللون الأبيض المعتاد
+                // 1. نص الآية - يأخذ ستايل منفصل تماماً باللون الأبيض لعدم التأثير على ما بعده
                 textSpans.add(TextSpan(
                   text: "$verseText ",
+                  style: TextStyle(fontSize: _fontSize, color: Colors.white, height: 2.3, fontFamily: 'ahmed'),
                 ));
 
-                // 2. ترميز نهاية الآية بالرمز المميز (۝) والرقم داخله باللون الأحمر
+                // 2. رمز نهاية الآية والرقم - يأخذ ستايل منفصل باللون الأحمر الصريح ويجبر النظام على تلوينه
                 textSpans.add(TextSpan(
                   text: " ۝$arabicNumbered  ",
-                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: _fontSize, color: Colors.red, fontWeight: FontWeight.bold, height: 2.3, fontFamily: 'ahmed'),
                 ));
              }
           }
@@ -383,7 +384,6 @@ class _SurahDetailsScreenState extends State<SurahDetailsScreen> {
               child: Text.rich(
                 TextSpan(children: textSpans),
                 textAlign: TextAlign.justify,
-                style: TextStyle(fontSize: _fontSize, color: Colors.white, height: 2.3, fontFamily: 'ahmed'),
               ),
             ),
           );
