@@ -17,7 +17,6 @@ class SurahListScreen extends StatefulWidget {
 
 class _SurahListScreenState extends State<SurahListScreen> {
   List surahs = [];
-  Map surahDetails = {};
 
   @override
   void initState() {
@@ -26,21 +25,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> loadAllData() async {
-    final String indexResponse = await rootBundle.loadString('assets/quran_data.json');
-    List indexData = json.decode(indexResponse);
-    indexData.sort((a, b) => a['number'].compareTo(b['number']));
-
-    final String fullResponse = await rootBundle.loadString('assets/quran_full.json');
-    final List fullData = json.decode(fullResponse);
-
-    Map tempDetails = {};
-    for (var item in fullData) {
-      tempDetails[item['index'].toString()] = item;
-    }
-
+    final String response = await rootBundle.loadString('assets/quran_data.json');
     setState(() {
-      surahs = indexData;
-      surahDetails = tempDetails;
+      surahs = json.decode(response);
     });
   }
 
@@ -49,23 +36,29 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       appBar: AppBar(title: const Text("القرآن الكريم"), backgroundColor: const Color(0xFF333300)),
-      body: ListView.builder(
-        itemCount: surahs.length,
-        itemBuilder: (context, index) {
-          String surahNumber = surahs[index]['number'].toString();
-          var details = surahDetails[surahNumber];
-          String type = details != null ? details['type'] : "";
+      body: surahs.isEmpty 
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: surahs.length,
+              itemBuilder: (context, index) {
+                var surah = surahs[index];
+                // مطابقة الكلمة العربية من ملف JSON
+                String type = surah['type']; 
 
-          return ListTile(
-            leading: Image.asset(type == 'Makkiyah' ? 'assets/mk.png' : 'assets/md.png', width: 40, height: 40),
-            title: Text(surahs[index]['name'], style: const TextStyle(color: Colors.white, fontSize: 20)),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => 
-                SurahDetailsScreen(surahNumber: int.parse(surahNumber), surahName: surahs[index]['name'])));
-            },
-          );
-        },
-      ),
+                return ListTile(
+                  leading: Image.asset(
+                    type == 'مكية' ? 'assets/mk.png' : 'assets/md.png', 
+                    width: 40, height: 40,
+                    errorBuilder: (c, o, s) => const Icon(Icons.book, color: Colors.white),
+                  ),
+                  title: Text(surah['name'], style: const TextStyle(color: Colors.white, fontSize: 20)),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => 
+                      SurahDetailsScreen(surahNumber: surah['number'], surahName: surah['name'])));
+                  },
+                );
+              },
+            ),
     );
   }
 }
@@ -76,7 +69,7 @@ class SurahDetailsScreen extends StatelessWidget {
   const SurahDetailsScreen({super.key, required this.surahNumber, required this.surahName});
 
   Future<Map> loadSurahData() async {
-    // التأكد من استدعاء الملف الصحيح باسمه في مجلد assets
+    // تحميل الملف مباشرة باسمه البسيط كما في مجلدك
     String response = await rootBundle.loadString('assets/surah_$surahNumber.json');
     return json.decode(response);
   }
@@ -90,21 +83,14 @@ class SurahDetailsScreen extends StatelessWidget {
         future: loadSurahData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError || !snapshot.hasData) return Center(child: Text("خطأ: تعذر تحميل سورة $surahNumber", style: const TextStyle(color: Colors.white)));
+          if (snapshot.hasError) return Center(child: Text("خطأ: ${snapshot.error}", style: const TextStyle(color: Colors.white)));
           
-          Map verseMap = snapshot.data!['verse'];
-          // ترتيب مفاتيح الآيات
-          List keys = verseMap.keys.toList()..sort((a, b) => int.parse(a.toString().split('_').last).compareTo(int.parse(b.toString().split('_').last)));
-          
-          String fullText = "";
-          for (int i = 0; i < keys.length; i++) {
-            String text = verseMap[keys[i]];
-            fullText += (i == 0) ? "$text " : "$text (${i}) ";
-          }
+          // افتراض هيكلية ملفات JSON الخاصة بك
+          String fullText = snapshot.data!['text'] ?? "لا يوجد نص";
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: Text(fullText, textAlign: TextAlign.justify, style: const TextStyle(fontFamily: 'ahmed', fontSize: 26, color: Colors.white, height: 2.2)),
+            child: Text(fullText, textAlign: TextAlign.justify, style: const TextStyle(fontSize: 26, color: Colors.white, height: 2.2)),
           );
         },
       ),
