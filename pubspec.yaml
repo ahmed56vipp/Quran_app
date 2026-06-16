@@ -9,17 +9,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # المكتبة اللازمة لحفظ الإعدادات (الوضع الليلي والخط)
   shared_preferences: ^2.2.3
 
 flutter:
   uses-material-design: true
   
-  # تم تحديد المجلدات الفرعية لضمان التعرف على كافة الملفات بداخلها
+  # تحديد المسارات التي تحتوي على ملفاتك لضمان قراءتها
   assets:
     - assets/data/
     - assets/surah/
     - assets/icon/
 
+  # تعريف الخط المخصص
   fonts:
     - family: ahmed
       fonts:
@@ -30,6 +32,7 @@ dev_dependencies:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
 
+# إعدادات أيقونة التطبيق
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
