@@ -65,6 +65,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<List<dynamic>> loadQuranIndex() async {
+    // يستدعي ملف الـ JSON الجديد الخاص بك
     final String response = await rootBundle.loadString('assets/data/quran_data.json');
     return json.decode(response);
   }
@@ -102,6 +103,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                         surahName: _lastSurahName!,
                         versesCount: _lastVersesCount ?? 0,
                         surahType: _lastSurahType ?? 'مكية',
+                        juzData: const [], // فارغة هنا وسيقوم المعالج الداخلي بحسابها تلقائياً للمرجعية
                       ),
                     ),
                   );
@@ -120,8 +122,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
                   itemCount: surahs.length,
                   itemBuilder: (context, index) {
                     final surah = surahs[index];
-                    bool isMeccan = surah['type'] == 'مكية';
-                    int vCount = surah['verses_count'] ?? 0;
+                    
+                    // التعديل لتوافق الـ JSON الجديد:
+                    bool isMeccan = surah['type'] == 'Makkiyah';
+                    int vCount = surah['count'] ?? 0;
+                    int sId = int.parse(surah['index'].toString());
+                    String sName = surah['title']; 
+                    List<dynamic> juzList = surah['juz'] ?? [];
                     
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -131,10 +138,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => SurahDetailScreen(
-                                surahId: surah['id'],
-                                surahName: surah['name'],
+                                surahId: sId,
+                                surahName: sName,
                                 versesCount: vCount,
-                                surahType: surah['type'] ?? 'مكية',
+                                surahType: isMeccan ? 'مكية' : 'مدنية',
+                                juzData: juzList, // تمرير بيانات الأجزاء الذكية للشاشة التالية
                               ),
                             ),
                           );
@@ -165,7 +173,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      surah['name'], 
+                                      sName, 
                                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)
                                     ),
                                     const SizedBox(height: 4),
@@ -198,6 +206,7 @@ class SurahDetailScreen extends StatefulWidget {
   final String surahName;
   final int versesCount;
   final String surahType;
+  final List<dynamic> juzData; // استقبال مصفوفة الأجزاء
 
   const SurahDetailScreen({
     super.key, 
@@ -205,6 +214,7 @@ class SurahDetailScreen extends StatefulWidget {
     required this.surahName,
     required this.versesCount,
     required this.surahType,
+    required this.juzData,
   });
 
   @override
@@ -235,27 +245,41 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await prefs.setInt('last_surah_id', widget.surahId);
     await prefs.setString('last_surah_name', widget.surahName);
     await prefs.setInt('last_verses_count', widget.versesCount);
-    await prefs.setString('last_surah_type', widget.surahType); // تم تصحيح الخطأ الإملائي هنا
+    await prefs.setString('last_surah_type', widget.surahType);
   }
 
+  // دالة ذكية ومحدثة لجلب نص الجزء ديناميكياً من الـ JSON مباشرة
   String _getJuzText(int surahId) {
-    if (surahId == 1) return "الجزء الأول";
-    if (surahId == 2) return "من الجزء 1 إلى 3";
-    if (surahId == 3) return "من الجزء 3 إلى 4";
-    if (surahId == 4) return "من الجزء 4 إلى 6";
-    if (surahId >= 5 && surahId <= 6) return "من الجزء 6 إلى 8";
-    if (surahId >= 7 && surahId <= 9) return "من الجزء 8 إلى 11";
-    if (surahId >= 10 && surahId <= 14) return "من الجزء 11 إلى 13";
-    if (surahId >= 15 && surahId <= 17) return "من الجزء 14 إلى 15";
-    if (surahId >= 18 && surahId <= 20) return "من الجزء 15 إلى 16";
-    if (surahId >= 21 && surahId <= 25) return "من الجزء 17 إلى 19";
-    if (surahId >= 26 && surahId <= 30) return "من الجزء 19 إلى 21";
-    if (surahId >= 31 && surahId <= 36) return "من الجزء 21 إلى 23";
-    if (surahId >= 37 && surahId <= 45) return "من الجزء 23 إلى 25";
-    if (surahId >= 46 && surahId <= 57) return "من الجزء 26 إلى 27";
-    if (surahId >= 58 && surahId <= 66) return "الجزء الثامن والعشرون";
-    if (surahId >= 67 && surahId <= 77) return "الجزء التاسع والعشرون";
-    return "الجزء الثلاثون";
+    if (widget.juzData.isEmpty) {
+      // نظام حماية احتياطي (Fallback) في حال تم فتح السورة من زر "آخر قراءة" ولم تتوفر المصفوفة مباشرة
+      if (surahId == 1) return "الجزء الأول";
+      if (surahId == 2) return "من الجزء 1 إلى 3";
+      if (surahId == 3) return "من الجزء 3 إلى 4";
+      if (surahId == 4) return "من الجزء 4 إلى 6";
+      if (surahId >= 5 && surahId <= 6) return "من الجزء 6 إلى 8";
+      if (surahId >= 7 && surahId <= 9) return "من الجزء 8 إلى 11";
+      if (surahId >= 10 && surahId <= 14) return "من الجزء 11 إلى 13";
+      if (surahId >= 15 && surahId <= 17) return "من الجزء 14 إلى 15";
+      if (surahId >= 18 && surahId <= 20) return "من الجزء 15 إلى 16";
+      if (surahId >= 21 && surahId <= 25) return "من الجزء 17 إلى 19";
+      if (surahId >= 26 && surahId <= 30) return "من الجزء 19 إلى 21";
+      if (surahId >= 31 && surahId <= 36) return "من الجزء 21 إلى 23";
+      if (surahId >= 37 && surahId <= 45) return "من الجزء 23 إلى 25";
+      if (surahId >= 46 && surahId <= 57) return "من الجزء 26 إلى 27";
+      if (surahId >= 58 && surahId <= 66) return "الجزء الثامن والعشرون";
+      if (surahId >= 67 && surahId <= 77) return "الجزء التاسع والعشرون";
+      return "الجزء الثلاثون";
+    }
+
+    // المعالجة الذكية السريعة بناءً على ملف الـ JSON الجديد
+    if (widget.juzData.length == 1) {
+      int juzNum = int.parse(widget.juzData[0]['index'].toString());
+      return "الجزء ${toArabicNumerals(juzNum)}";
+    } else {
+      int startJuz = int.parse(widget.juzData.first['index'].toString());
+      int endJuz = int.parse(widget.juzData.last['index'].toString());
+      return "من الجزء ${toArabicNumerals(startJuz)} إلى ${toArabicNumerals(endJuz)}";
+    }
   }
 
   Future<Map<String, dynamic>> loadSurahData() async {
@@ -445,7 +469,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     border: Border(right: BorderSide(color: Colors.green[800]!, width: 5)),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // تم تصحيح الكلمة هنا تماماً
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
