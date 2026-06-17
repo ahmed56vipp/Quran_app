@@ -340,36 +340,38 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ تعديل هيكلي شامل وشديد الدقة للـ AppBar لفرض مسح البطاقة القديمة وظهور البيانات مدمجة فوراً
+      // ✅ الـ AppBar المحدث والمكبر لضمان وضوح الكلمات والأرقام ومنع صغر الخط
       appBar: AppBar(
         centerTitle: false, 
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
-        toolbarHeight: 70, // زيادة الارتفاع ليتسع للسطرين بوضوح ومظهر منسق
+        toolbarHeight: 85, // زيادة الارتفاع ليعطي مساحة كافية للخطوط الكبيرة دون انضغاط
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // السطر الأول: اسم السورة + نوعها مباشرة
+            // السطر الأول: اسم السورة كبير وعريض + نوع السورة واضح
             Row(
-              textDirection: TextDirection.rtl,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
                   "سورة ${widget.surahName}", 
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Text(
                   "(${widget.surahType})", 
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white70),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            // السطر الثاني: عدد الآيات بالتنسيق العربي الفصيح
+            const SizedBox(height: 6),
+            // السطر الثاني: عدد الآيات والجزء بخط مكبر وواضح بلون أبيض ناصع لقراءته بسهولة
             Text(
-              "آياتها: ${toArabicNumerals(widget.versesCount)}",
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white60),
+              "آياتها: ${toArabicNumerals(widget.versesCount)}  |  الجزء الأول",
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
             ),
           ],
         ),
@@ -447,8 +449,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 📝 تم حذف وقطع الـ Container الأخضر بالكامل لتظهر البسملة أو الآيات بشكل فوري دون تكرار
-                
                 if (basmalahText != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
