@@ -8,7 +8,6 @@ void main() async {
   runApp(const QuranApp());
 }
 
-// دالة تحويل الأرقام الإنجليزية إلى أرقام عربية (١، ٢، ٣...)
 String toArabicNumerals(int number) {
   const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
   return number.toString().split('').map((char) {
@@ -27,7 +26,7 @@ class QuranApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.green,
-          scaffoldBackgroundColor: const Color(0xFFFDFBF7), // خلفية مريحة للعين
+          scaffoldBackgroundColor: const Color(0xFFFDFBF7),
         ),
         home: const SurahListScreen(),
       ),
@@ -64,7 +63,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
     });
   }
 
-  // تحميل فهرس السور المطابق تماماً لملف quran_data.json الخاص بك
   Future<List<dynamic>> loadQuranIndex() async {
     final String response = await rootBundle.loadString('assets/data/quran_data.json');
     return json.decode(response) as List<dynamic>;
@@ -81,7 +79,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
       ),
       body: Column(
         children: [
-          // زر العودة لآخر موضع قراءة في حال وجود قراءة سابقة
           if (_lastSurahId != null && _lastSurahName != null)
             Container(
               width: double.infinity,
@@ -138,7 +135,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                   itemBuilder: (context, index) {
                     final surah = surahs[index];
                     
-                    // استخدام المفاتيح الفعلية الموجودة في ملف quran_data.json الخاص بك
                     final int sId = int.tryParse(surah['id'].toString()) ?? (index + 1);
                     final String sName = surah['name'] ?? 'بدون اسم';
                     final String sType = surah['type'] ?? 'مكية';
@@ -154,12 +150,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => SurahDetailScreen(
-                                {
-                                  'id': sId,
-                                  'name': sName,
-                                  'verses_count': vCount,
-                                  'type': sType,
-                                }, // تمرير البيانات بشكل آمن
                                 surahId: sId,
                                 surahName: sName,
                                 versesCount: vCount,
@@ -184,7 +174,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                           ),
                           child: Row(
                             children: [
-                              // أيقونة مخصصة لنوع السورة (مكية/مدنية)
                               SizedBox(
                                 width: 36,
                                 height: 36,
@@ -275,25 +264,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await prefs.setString('last_surah_type', widget.surahType);
   }
 
-  // معالجة ملفات السور الفردية المطابقة لبنية أسماء ملفاتك (مثل surah_1.json)
   Future<Map<String, dynamic>> loadSurahData() async {
     final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
     final data = json.decode(response);
     
-    // استخراج الخريطة الداخلية للآيات
     Map<String, dynamic> versesMap = Map<String, dynamic>.from(data['verse']);
-    
-    // تحويل القيم إلى قائمة من النصوص بالترتيب الصحيح
     List<String> allVerses = versesMap.values.map((value) => value.toString()).toList();
     
     String? basmalah;
     List<String> dynamicVerses = [];
 
-    // سورة الفاتحة (1) وسورة التوبة (9) لا يتم عزل السطر الأول منهما كبث مستقل للبسملة
     if (widget.surahId == 1 || widget.surahId == 9) {
       dynamicVerses = allVerses;
     } else {
-      // التحقق مما إذا كانت السورة تحتوي على بسملة مستقلة في الآية الأولى
       if (allVerses.isNotEmpty && (allVerses[0].contains("بِسْمِ") || allVerses[0].startsWith("بِسمِ"))) {
         basmalah = allVerses[0];
         dynamicVerses = allVerses.sublist(1);
@@ -472,7 +455,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // بطاقة معلومات السورة العلوية
                 Container(
                   margin: const EdgeInsets.only(bottom: 24),
                   padding: const EdgeInsets.all(14),
@@ -503,7 +485,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ),
                 ),
 
-                // عرض البسملة بشكل منسق ومستقل إن وجدت
                 if (basmalahText != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
@@ -525,14 +506,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                   ),
 
-                // عرض آيات السورة بالتتابع الكامل مع أرقام الآيات
                 Text.rich(
                   TextSpan(
                     children: List.generate(versesList.length, (index) {
-                      // تحديد رقم الآية الفعلي بناءً على حالة وجود البسملة المعزولة
                       int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
                       if (widget.surahId == 1) {
-                        actualVerseNum = index + 1; // الفاتحة تعرض آياتها بالتسلسل من 1 مباشرة
+                        actualVerseNum = index + 1;
                       }
                       
                       return TextSpan(
