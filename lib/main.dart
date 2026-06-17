@@ -71,7 +71,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('فهرس القرآن الكريم', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.green[800], // تم إصلاح الخطأ هنا وحذف const
+        backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
@@ -167,11 +167,21 @@ class SurahDetailScreen extends StatefulWidget {
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
   double _fontSize = 24.0;
+  final ScrollController _scrollController = ScrollController();
+  late Future<Map<String, dynamic>> _surahDataFuture;
+  List<String> _currentVerses = []; // لحفظ الآيات الحالية واستخدامها في دالة التنقل
 
   @override
   void initState() {
     super.initState();
     _saveLastReadPosition();
+    _surahDataFuture = loadSurahData();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   // حفظ موضع القراءة الحالي تلقائياً فور الدخول للسورة
@@ -191,16 +201,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     String? basmalah;
     List<String> dynamicVerses = [];
 
-    // سورة الفاتحة (1): البسملة آية مرقمة داخل النص
-    if (widget.surahId == 1) {
+    if (widget.surahId == 1 || widget.surahId == 9) {
       dynamicVerses = allVerses;
-    } 
-    // سورة التوبة (9): لا تحتوي على بسملة مطلقاً
-    else if (widget.surahId == 9) {
-      dynamicVerses = allVerses;
-    } 
-    // باقي السور: نأخذ أول سطر كبسملة مستقلة بدون ترميز، والباقي آيات مرقمة
-    else {
+    } else {
       if (allVerses.isNotEmpty && (allVerses[0].contains("بِسْمِ") || allVerses[0].startsWith("بِسمِ"))) {
         basmalah = allVerses[0];
         dynamicVerses = allVerses.sublist(1);
@@ -209,20 +212,94 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       }
     }
 
+    _currentVerses = dynamicVerses; // تخزين محلي للآيات لعمل دالة السكرول
     return {
       'basmalah': basmalah,
       'verses': dynamicVerses,
     };
   }
 
+  // دالة حساب موضع الانتقال السلس للآية المطلوبة بدقة
+  void _goToVerse(int verseNumber) {
+    if (verseNumber < 1 || verseNumber > _currentVerses.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('رقم الآية غير صحيح! السورة تحتوي على ${_currentVerses.length} آية.')),
+      );
+      return;
+    }
+
+    // حساب إجمالي عدد الحروف في السورة كاملة
+    int totalCharacters = _currentVerses.fold(0, (sum, verse) => sum + verse.length);
+    
+    // حساب عدد الحروف حتى الوصول للآية المستهدفة
+    int targetCharacters = 0;
+    for (int i = 0; i < verseNumber - 1; i++) {
+      targetCharacters += _currentVerses[i].length;
+    }
+
+    // حساب النسبة والتنقل الذكي
+    double ratio = targetCharacters / totalCharacters;
+    double targetOffset = _scrollController.position.maxScrollExtent * ratio;
+
+    _scrollController.animateTo(
+      targetOffset,
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  // نافذة إدخال رقم الآية
+  void _showGoToVerseDialog() {
+    final TextEditingController inputController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('الذهاب إلى آية', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: inputController,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          decoration: InputDecoration(
+            hintText: 'أدخل رقم الآية (1 - ${_currentVerses.length})',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.red, fontSize: 16)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
+            onPressed: () {
+              final int? verseNum = int.tryParse(inputController.text);
+              Navigator.pop(context);
+              if (verseNum != null) {
+                _goToVerse(verseNum);
+              }
+            },
+            child: const Text('ذهاب', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold)), // تم إصلاح الخطأ الإملائي هنا
-        backgroundColor: Colors.green[800], // تم إصلاح الخطأ هنا وحذف const
+        title: Text(widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
         actions: [
+          // زر ميزة الانتقال للآية الجديد
+          IconButton(
+            icon: const Icon(Icons.find_in_page, size: 26),
+            tooltip: 'الذهاب إلى آية',
+            onPressed: _currentVerses.isEmpty ? null : _showGoToVerseDialog,
+          ),
           // أزرار التحكم في حجم الخط بترميز A+ و A-
           TextButton(
             onPressed: () => setState(() => _fontSize += 2),
@@ -235,7 +312,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: loadSurahData(),
+        future: _surahDataFuture,
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           
@@ -243,6 +320,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           final versesList = snapshot.data!['verses'] as List<String>;
 
           return SingleChildScrollView(
+            controller: _scrollController, // ربط السكرول هنا ليعمل الانتقال بدقة
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -267,7 +345,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 Text.rich(
                   TextSpan(
                     children: List.generate(versesList.length, (index) {
-                      // ترتيب أرقام الآيات يبدأ من 1 دائماً بعد عزل البسملة
                       int actualVerseNum = index + 1; 
                       
                       return TextSpan(
@@ -278,7 +355,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               fontSize: _fontSize, 
                               fontFamily: 'ahmed', 
                               height: 2.2, 
-                              color: Colors.black87, // تم تصحيح الخطأ الإملائي للون هنا
+                              color: Colors.black87,
                             ),
                           ),
                           // إدراج رمز خاتمة الآية مع الرقم العربي داخله بشكل موحد
