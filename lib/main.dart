@@ -22,19 +22,16 @@ class QuranApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      
-      // ✅ جعل الـ RTL شاملاً وتلقائياً لكل شاشات وقوائم التطبيق بناءً على الكود الجديد
       builder: (context, child) {
         return Directionality(
           textDirection: TextDirection.rtl,
           child: child!,
         );
       },
-
       theme: ThemeData(
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: const Color(0xFFFDFBF7),
-        fontFamily: 'ahmed', // ✅ ربط التطبيق بخطك الأصلي المسجل في الـ pubspec بحروف صغيرة
+        fontFamily: 'ahmed', 
       ),
       home: const SurahListScreen(),
     );
@@ -62,7 +59,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
     _loadLastReadPosition();
   }
 
-  // جلب بيانات الفهرس من المسار الصحيح المعتمد بالتطبيق
   Future<void> _loadIndexData() async {
     final String response = await rootBundle.loadString('assets/data/quran_data.json');
     setState(() {
@@ -91,7 +87,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
       ),
       body: Column(
         children: [
-          // 🔖 زر العودة إلى آخر موضع قراءة
           if (_lastSurahId != null && _lastSurahName != null)
             Container(
               width: double.infinity,
@@ -122,7 +117,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
               ),
             ),
           
-          // 📖 قائمة الفهرس (محاذاة لجهة اليمين تماماً وبشكل منسق)
           Expanded(
             child: surahs.isEmpty
                 ? const Center(child: CircularProgressIndicator())
@@ -146,7 +140,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            // محاذاة النص لليمين المطلق في الفهرس
                             title: Text(
                               sName,
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'ahmed'),
@@ -246,7 +239,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await prefs.setString('last_surah_type', widget.surahType);
   }
 
-  // قراءة ملفات السور المنفصلة بشكل صحيح كما هي محفوظة في مجلد assets/surah/ الخاص بك
   Future<Map<String, dynamic>> loadSurahData() async {
     final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
     final data = json.decode(response);
@@ -268,7 +260,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       }
     }
 
-    // تهيئة وتحديث فوري بمجرد رسم أول إطار لحل مشكلة القفز إلى آية بشكل نهائي وبأي حجم خط
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
@@ -349,11 +340,39 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ تعديل هيكلي شامل وشديد الدقة للـ AppBar لفرض مسح البطاقة القديمة وظهور البيانات مدمجة فوراً
       appBar: AppBar(
-        centerTitle: false, // ليبقى اسم السورة في الأعلى جهة اليمين
-        title: Text(widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'ahmed')),
+        centerTitle: false, 
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
+        toolbarHeight: 70, // زيادة الارتفاع ليتسع للسطرين بوضوح ومظهر منسق
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // السطر الأول: اسم السورة + نوعها مباشرة
+            Row(
+              textDirection: TextDirection.rtl,
+              children: [
+                Text(
+                  "سورة ${widget.surahName}", 
+                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  "(${widget.surahType})", 
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white70),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            // السطر الثاني: عدد الآيات بالتنسيق العربي الفصيح
+            Text(
+              "آياتها: ${toArabicNumerals(widget.versesCount)}",
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white60),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.find_in_page, size: 26),
@@ -428,42 +447,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ✅ بطاقة تفاصيل السورة محاذية بالكامل جهة اليمين مع بقية التفاصيل بشكل منسق
-                Container(
-                  margin: const EdgeInsets.only(bottom: 24),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.green[50],
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border(right: BorderSide(color: Colors.green[800]!, width: 5)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start, // اليمين التام والافتراضي في وضع الـ RTL
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              "سورة ${widget.surahName}",
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[900], fontFamily: 'ahmed'),
-                              textAlign: TextAlign.right,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "${widget.surahType} | آياتها: ${widget.versesCount}",
-                              style: TextStyle(fontSize: 14, color: Colors.green[700], fontWeight: FontWeight.w500, fontFamily: 'ahmed'),
-                              textAlign: TextAlign.right,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.menu_book, color: Colors.green[800], size: 28),
-                    ],
-                  ),
-                ),
-
+                // 📝 تم حذف وقطع الـ Container الأخضر بالكامل لتظهر البسملة أو الآيات بشكل فوري دون تكرار
+                
                 if (basmalahText != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 24),
