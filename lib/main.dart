@@ -235,7 +235,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await prefs.setInt('last_surah_id', widget.surahId);
     await prefs.setString('last_surah_name', widget.surahName);
     await prefs.setInt('last_verses_count', widget.versesCount);
-    await prefs.setString('last_surah_type', widget.surahType);
+    await prefs.setString('last_surah_type', widget.surphType ?? widget.surahType);
   }
 
   String _getJuzText(int surahId) {
@@ -445,7 +445,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     border: Border(right: BorderSide(color: Colors.green[800]!, width: 5)),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // تم تصحيح الكلمة هنا تماماً
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
