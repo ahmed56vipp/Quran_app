@@ -7,12 +7,19 @@ void main() async {
   runApp(const QuranApp());
 }
 
+// دالة تحويل الأرقام إلى عربية
+String toArabicNumerals(int number) {
+  const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return number.toString().split('').map((char) {
+    return arabicDigits[int.parse(char)];
+  }).join();
+}
+
 class QuranApp extends StatelessWidget {
   const QuranApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // فرض اتجاه اليمين لليسار على كامل التطبيق
     return Directionality(
       textDirection: TextDirection.rtl,
       child: MaterialApp(
@@ -88,13 +95,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
     final data = json.decode(response);
     Map<String, dynamic> versesMap = data['verse'];
-    List<String> allVerses = versesMap.values.map((value) => value.toString()).toList();
-    
-    // منطق البسملة: تُحذف فقط في سورة التوبة (ID 9)
-    if (widget.surahId == 9 && allVerses.isNotEmpty) {
-      return allVerses.sublist(1);
-    }
-    return allVerses;
+    // جلب النصوص مباشرة
+    return versesMap.values.map((value) => value.toString()).toList();
   }
 
   @override
@@ -112,15 +114,21 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final verses = snapshot.data!;
+          
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: verses.length,
             itemBuilder: (context, index) {
+              // تنسيق الآية: النص + رمز ۝ + الرقم بالعربية
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Text(
-                  "${verses[index]} \u06DD ${index + 1}",
-                  style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed'),
+                  "${verses[index]} ۝ ${toArabicNumerals(index + 1)}",
+                  style: TextStyle(
+                    fontSize: _fontSize, 
+                    fontFamily: 'ahmed', // تأكد من اسم الخط المطابق للمجلد لديك
+                    height: 1.8
+                  ),
                   textAlign: TextAlign.justify,
                 ),
               );
