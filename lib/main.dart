@@ -45,6 +45,8 @@ class SurahListScreen extends StatefulWidget {
 class _SurahListScreenState extends State<SurahListScreen> {
   int? _lastSurahId;
   String? _lastSurahName;
+  int? _lastVersesCount;
+  String? _lastSurahType;
 
   @override
   void initState() {
@@ -52,12 +54,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
     _loadLastReadPosition();
   }
 
-  // تحميل آخر موضع قراءة تم حفظه
   Future<void> _loadLastReadPosition() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _lastSurahId = prefs.getInt('last_surah_id');
       _lastSurahName = prefs.getString('last_surah_name');
+      _lastVersesCount = prefs.getInt('last_verses_count');
+      _lastSurahType = prefs.getString('last_surah_type');
     });
   }
 
@@ -77,7 +80,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
       ),
       body: Column(
         children: [
-          // عرض زر العودة لآخر موضع قراءة إذا كان متوفراً
           if (_lastSurahId != null && _lastSurahName != null)
             Container(
               width: double.infinity,
@@ -98,15 +100,16 @@ class _SurahListScreenState extends State<SurahListScreen> {
                       builder: (context) => SurahDetailScreen(
                         surahId: _lastSurahId!,
                         surahName: _lastSurahName!,
+                        versesCount: _lastVersesCount ?? 0,
+                        surahType: _lastSurahType ?? 'مكية',
                       ),
                     ),
                   );
-                  _loadLastReadPosition(); // تحديث الموضع عند الرجوع
+                  _loadLastReadPosition();
                 },
               ),
             ),
           
-          // قائمة السور
           Expanded(
             child: FutureBuilder<List<dynamic>>(
               future: loadQuranIndex(),
@@ -118,31 +121,70 @@ class _SurahListScreenState extends State<SurahListScreen> {
                   itemBuilder: (context, index) {
                     final surah = surahs[index];
                     bool isMeccan = surah['type'] == 'مكية';
+                    int vCount = surah['verses_count'] ?? 0;
                     
-                    return ListTile(
-                      leading: SizedBox(
-                        width: 35,
-                        height: 35,
-                        child: Image.asset(
-                          isMeccan ? 'assets/icon/mk.png' : 'assets/icon/md.png',
-                          fit: BoxFit.contain,
+                    // تصميم مخصص من الجهة اليمنى للفهرس وبمحاذاة تامة
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: InkWell(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SurahDetailScreen(
+                                surahId: surah['id'],
+                                surahName: surah['name'],
+                                versesCount: vCount,
+                                surahType: surah['type'] ?? 'مكية',
+                              ),
+                            ),
+                          );
+                          _loadLastReadPosition();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              // الأيقونة جهة اليمين
+                              SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: Image.asset(
+                                  isMeccan ? 'assets/icon/mk.png' : 'assets/icon/md.png',
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              // النصوص بمحاذاة يمين كاملة
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      surah['name'], 
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      isMeccan ? "مكية | آياتها: $vCount" : "مدنية | آياتها: $vCount",
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // سهم التنقل جهة اليسار
+                              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                            ],
+                          ),
                         ),
                       ),
-                      title: Text(surah['name'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                      subtitle: Text(isMeccan ? "مكية | آياتها: ${surah['verses_count'] ?? ''}" : "مدنية | آياتها: ${surah['verses_count'] ?? ''}"),
-                      trailing: const Icon(Icons.arrow_back_ios, size: 16, color: Colors.grey),
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SurahDetailScreen(
-                              surahId: surah['id'],
-                              surahName: surah['name'],
-                            ),
-                          ),
-                        );
-                        _loadLastReadPosition(); // تحديث الموضع بعد العودة للفهرس
-                      },
                     );
                   },
                 );
@@ -158,8 +200,16 @@ class _SurahListScreenState extends State<SurahListScreen> {
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
   final String surahName;
+  final int versesCount;
+  final String surahType;
 
-  const SurahDetailScreen({super.key, required this.surahId, required this.surahName});
+  const SurahDetailScreen({
+    super.key, 
+    required this.surahId, 
+    required this.surahName,
+    required this.versesCount,
+    required this.surahType,
+  });
 
   @override
   State<SurahDetailScreen> createState() => _SurahDetailScreenState();
@@ -169,7 +219,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   double _fontSize = 24.0;
   final ScrollController _scrollController = ScrollController();
   late Future<Map<String, dynamic>> _surahDataFuture;
-  List<String> _currentVerses = []; // لحفظ الآيات الحالية واستخدامها في دالة التنقل
+  List<String> _currentVerses = [];
 
   @override
   void initState() {
@@ -184,14 +234,35 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  // حفظ موضع القراءة الحالي تلقائياً فور الدخول للسورة
   Future<void> _saveLastReadPosition() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('last_surah_id', widget.surahId);
     await prefs.setString('last_surah_name', widget.surahName);
+    await prefs.setInt('last_verses_count', widget.versesCount);
+    await prefs.setString('last_surah_type', widget.surahType);
   }
 
-  // دالة معالجة السورة وفصل البسملة عن الآيات المرقّرة
+  // دالة تحديد الجزء بناءً على رقم السورة (تقريبية ذكية وهيكلية)
+  String _getJuzText(int surahId) {
+    if (surahId == 1) return "الجزء الأول";
+    if (surahId == 2) return "من الجزء 1 إلى 3";
+    if (surahId == 3) return "من الجزء 3 إلى 4";
+    if (surahId == 4) return "من الجزء 4 إلى 6";
+    if (surahId >= 5 && surahId <= 6) return "من الجزء 6 إلى 8";
+    if (surahId >= 7 && surahId <= 9) return "من الجزء 8 إلى 11";
+    if (surahId >= 10 && surahId <= 14) return "من الجزء 11 إلى 13";
+    if (surahId >= 15 && surahId <= 17) return "من الجزء 14 إلى 15";
+    if (surahId >= 18 && surahId <= 20) return "من الجزء 15 إلى 16";
+    if (surahId >= 21 && surahId <= 25) return "من الجزء 17 إلى 19";
+    if (surahId >= 26 && surahId <= 30) return "من الجزء 19 إلى 21";
+    if (surahId >= 31 && surahId <= 36) return "من الجزء 21 إلى 23";
+    if (surahId >= 37 && surahId <= 45) return "من الجزء 23 إلى 25";
+    if (surahId >= 46 && surahId <= 57) return "من الجزء 26 إلى 27";
+    if (surahId >= 58 && surahId <= 66) return "الجزء الثامن والعشرون";
+    if (surahId >= 67 && surahId <= 77) return "الجزء التاسع والعشرون";
+    return "الجزء الثلاثون";
+  }
+
   Future<Map<String, dynamic>> loadSurahData() async {
     final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
     final data = json.decode(response);
@@ -212,14 +283,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       }
     }
 
-    _currentVerses = dynamicVerses; // تخزين محلي للآيات لعمل دالة السكرول
+    _currentVerses = dynamicVerses;
     return {
       'basmalah': basmalah,
       'verses': dynamicVerses,
     };
   }
 
-  // دالة حساب موضع الانتقال السلس للآية المطلوبة بدقة
   void _goToVerse(int verseNumber) {
     if (verseNumber < 1 || verseNumber > _currentVerses.length) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -228,156 +298,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       return;
     }
 
-    // حساب إجمالي عدد الحروف في السورة كاملة
     int totalCharacters = _currentVerses.fold(0, (sum, verse) => sum + verse.length);
-    
-    // حساب عدد الحروف حتى الوصول للآية المستهدفة
     int targetCharacters = 0;
     for (int i = 0; i < verseNumber - 1; i++) {
       targetCharacters += _currentVerses[i].length;
     }
 
-    // حساب النسبة والتنقل الذكي
     double ratio = targetCharacters / totalCharacters;
     double targetOffset = _scrollController.position.maxScrollExtent * ratio;
-
-    _scrollController.animateTo(
-      targetOffset,
-      duration: const Duration(seconds: 1),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  // نافذة إدخال رقم الآية
-  void _showGoToVerseDialog() {
-    final TextEditingController inputController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('الذهاب إلى آية', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: inputController,
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          decoration: InputDecoration(
-            hintText: 'أدخل رقم الآية (1 - ${_currentVerses.length})',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.red, fontSize: 16)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
-            onPressed: () {
-              final int? verseNum = int.tryParse(inputController.text);
-              Navigator.pop(context);
-              if (verseNum != null) {
-                _goToVerse(verseNum);
-              }
-            },
-            child: const Text('ذهاب', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.green[800],
-        foregroundColor: Colors.white,
-        actions: [
-          // زر ميزة الانتقال للآية الجديد
-          IconButton(
-            icon: const Icon(Icons.find_in_page, size: 26),
-            tooltip: 'الذهاب إلى آية',
-            onPressed: _currentVerses.isEmpty ? null : _showGoToVerseDialog,
-          ),
-          // أزرار التحكم في حجم الخط بترميز A+ و A-
-          TextButton(
-            onPressed: () => setState(() => _fontSize += 2),
-            child: const Text('A+', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
-          TextButton(
-            onPressed: () => setState(() => _fontSize -= 2),
-            child: const Text('A-', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _surahDataFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          
-          final basmalahText = snapshot.data!['basmalah'] as String?;
-          final versesList = snapshot.data!['verses'] as List<String>;
-
-          return SingleChildScrollView(
-            controller: _scrollController, // ربط السكرول هنا ليعمل الانتقال بدقة
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 1. عرض البسملة في المنتصف مستقلة تماماً وبدون أي رموز أو أرقام
-                if (basmalahText != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: Text(
-                      basmalahText,
-                      style: TextStyle(
-                        fontSize: _fontSize + 4, 
-                        fontFamily: 'ahmed', 
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                // 2. عرض نص السورة بشكل مستمر ومترابط تماماً مثل المصحف الورقي
-                Text.rich(
-                  TextSpan(
-                    children: List.generate(versesList.length, (index) {
-                      int actualVerseNum = index + 1; 
-                      
-                      return TextSpan(
-                        children: [
-                          TextSpan(
-                            text: "${versesList[index]} ",
-                            style: TextStyle(
-                              fontSize: _fontSize, 
-                              fontFamily: 'ahmed', 
-                              height: 2.2, 
-                              color: Colors.black87,
-                            ),
-                          ),
-                          // إدراج رمز خاتمة الآية مع الرقم العربي داخله بشكل موحد
-                          TextSpan(
-                            text: "\u06DD${toArabicNumerals(actualVerseNum)} ",
-                            style: TextStyle(
-                              fontSize: _fontSize - 2, 
-                              fontFamily: 'ahmed', 
-                              color: Colors.green[900],
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-                  textAlign: TextAlign.justify, // محاذاة النص من الطرفين ليماثل السطر الورقي
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
