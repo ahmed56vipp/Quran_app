@@ -71,7 +71,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('فهرس القرآن الكريم', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Colors.green[800],
+        backgroundColor: Colors.green[800], // تم إصلاح الخطأ هنا وحذف const
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
@@ -120,7 +120,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     bool isMeccan = surah['type'] == 'مكية';
                     
                     return ListTile(
-                      borderOnForeground: true,
                       leading: SizedBox(
                         width: 35,
                         height: 35,
@@ -220,8 +219,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Colors.green[800],
+        title: Text(widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold)), // تم إصلاح الخطأ الإملائي هنا
+        backgroundColor: Colors.green[800], // تم إصلاح الخطأ هنا وحذف const
         foregroundColor: Colors.white,
         actions: [
           // أزرار التحكم في حجم الخط بترميز A+ و A-
@@ -279,7 +278,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               fontSize: _fontSize, 
                               fontFamily: 'ahmed', 
                               height: 2.2, 
-                              color: Colors.blackDE,
+                              color: Colors.black87, // تم تصحيح الخطأ الإملائي للون هنا
                             ),
                           ),
                           // إدراج رمز خاتمة الآية مع الرقم العربي داخله بشكل موحد
