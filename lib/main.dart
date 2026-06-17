@@ -186,6 +186,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                 ),
                               ),
                               const SizedBox(width: 16),
+                              // ضبط المحاذاة داخل الفهرس لتكون جهة اليمين تماماً
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,11 +194,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                     Text(
                                       sName, 
                                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                                      textAlign: TextAlign.right,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       "$sType | آياتها: $vCount",
                                       style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                      textAlign: TextAlign.right,
                                     ),
                                   ],
                                 ),
@@ -285,7 +288,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       }
     }
 
-    _currentVerses = dynamicVerses;
+    // هنا نقوم بتحديث الحالة لضمان تهيئة ميزة البحث فور تحميل النصوص
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _currentVerses = dynamicVerses;
+        });
+      }
+    });
+
     return {
       'basmalah': basmalah,
       'verses': dynamicVerses,
@@ -293,6 +304,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _goToVerse(int verseNumber) {
+    if (_currentVerses.isEmpty) return;
+
     if (verseNumber < 1 || verseNumber > _currentVerses.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('رقم الآية غير صحيح! السورة تحتوي على ${_currentVerses.length} آية.')),
@@ -357,6 +370,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // إجبار عنوان الـ AppBar على البقاء في جهة اليمين مع تفاصيل السورة وليس في المنتصف أو اليسار
+        centerTitle: false,
         title: Text(widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
@@ -455,6 +470,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // بطاقة معلومات السورة العلوية - تم تعديلها لتكون من الجهة اليمنى بالكامل
                 Container(
                   margin: const EdgeInsets.only(bottom: 24),
                   padding: const EdgeInsets.all(14),
@@ -467,16 +483,18 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start, // يبدأ من اليمين بناء على RTL
                         children: [
                           Text(
                             "سورة ${widget.surahName}",
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[900]),
+                            textAlign: TextAlign.right,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             "${widget.surahType} | آياتها: ${widget.versesCount}",
                             style: TextStyle(fontSize: 14, color: Colors.green[700], fontWeight: FontWeight.w500),
+                            textAlign: TextAlign.right,
                           ),
                         ],
                       ),
