@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # المكتبة اللازمة لحفظ الإعدادات (الوضع الليلي والخط)
+  cupertino_icons: ^1.0.2
   shared_preferences: ^2.2.3
 
 flutter:
@@ -38,7 +38,3 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/icon/app_icon.png" 
   min_sdk_android: 21
-dependencies:
-  flutter:
-    sdk: flutter
-  shared_preferences: ^2.2.0 # أو أي إصدار حديث متوافق
