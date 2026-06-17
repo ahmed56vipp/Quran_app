@@ -173,6 +173,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                             ],
                           ),
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start, // يبدأ من اليمين تماماً
                             children: [
                               SizedBox(
                                 width: 36,
@@ -186,21 +187,22 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              // ضبط المحاذاة داخل الفهرس لتكون جهة اليمين تماماً
+                              // تعديل الفهرس: إجبار النصوص على محاذاة اليمين المطلقة داخل الـ Column
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start, // لليمين في بيئة RTL
+                                  mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     Text(
                                       sName, 
                                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                                      textAlign: TextAlign.right,
+                                      textAlign: Alignment.topRight == Alignment.topRight ? TextAlign.right : TextAlign.start,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       "$sType | آياتها: $vCount",
                                       style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                                      textAlign: TextAlign.right,
+                                      textAlign: Alignment.topRight == Alignment.topRight ? TextAlign.right : TextAlign.start,
                                     ),
                                   ],
                                 ),
@@ -288,7 +290,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       }
     }
 
-    // هنا نقوم بتحديث الحالة لضمان تهيئة ميزة البحث فور تحميل النصوص
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
@@ -370,8 +371,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // إجبار عنوان الـ AppBar على البقاء في جهة اليمين مع تفاصيل السورة وليس في المنتصف أو اليسار
-        centerTitle: false,
+        centerTitle: false, // إلغاء التوسيط التلقائي ليبقى الاسم جهة اليمين
         title: Text(widget.surahName, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
@@ -470,7 +470,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // بطاقة معلومات السورة العلوية - تم تعديلها لتكون من الجهة اليمنى بالكامل
+                // تعديل بطاقة معلومات السورة: إجبار محاذاة عناصر العمود والـ Row بالكامل لترتيب اليمين
                 Container(
                   margin: const EdgeInsets.only(bottom: 24),
                   padding: const EdgeInsets.all(14),
@@ -482,21 +482,24 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start, // يبدأ من اليمين بناء على RTL
-                        children: [
-                          Text(
-                            "سورة ${widget.surahName}",
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[900]),
-                            textAlign: TextAlign.right,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "${widget.surahType} | آياتها: ${widget.versesCount}",
-                            style: TextStyle(fontSize: 14, color: Colors.green[700], fontWeight: FontWeight.w500),
-                            textAlign: TextAlign.right,
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start, // اليمين المطلق في وضع RTL
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              "سورة ${widget.surahName}",
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[900]),
+                              textAlign: TextAlign.right,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "${widget.surahType} | آياتها: ${widget.versesCount}",
+                              style: TextStyle(fontSize: 14, color: Colors.green[700], fontWeight: FontWeight.w500),
+                              textAlign: TextAlign.right,
+                            ),
+                          ],
+                        ),
                       ),
                       Icon(Icons.menu_book, color: Colors.green[800], size: 28),
                     ],
