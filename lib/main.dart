@@ -365,4 +365,278 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
       if (start > currentIdx) {
         spans.add(TextSpan(
-          text: verseText
+          text: verseText.substring(currentIdx, start),
+          style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+        ));
+      }
+
+      spans.add(TextSpan(
+        text: verseText.substring(start, end),
+        style: TextStyle(
+          fontSize: _fontSize,
+          fontFamily: 'ahmed',
+          height: 2.2,
+          color: Colors.red[700], 
+          fontWeight: FontWeight.bold,
+        ),
+      ));
+
+      currentIdx = end;
+    }
+
+    if (currentIdx < verseText.length) {
+      spans.add(TextSpan(
+        text: verseText.substring(currentIdx),
+        style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+      ));
+    }
+
+    return spans;
+  }
+
+  void _goToVerse(int verseNumber) {
+    if (_currentVerses.isEmpty) return;
+
+    if (verseNumber < 1 || verseNumber > _currentVerses.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('رقم الآية غير صحيح! السورة تحتوي على ${_currentVerses.length} آية.', style: const TextStyle(fontFamily: 'ahmed'))),
+      );
+      return;
+    }
+
+    int totalCharacters = _currentVerses.fold(0, (sum, verse) => sum + verse.length);
+    int targetCharacters = 0;
+    for (int i = 0; i < verseNumber - 1; i++) {
+      targetCharacters += _currentVerses[i].length;
+    }
+
+    double ratio = totalCharacters > 0 ? (targetCharacters / totalCharacters) : 0.0;
+    double targetOffset = _scrollController.position.maxScrollExtent * ratio;
+
+    _scrollController.animateTo(
+      targetOffset,
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _showGoToVerseDialog() {
+    final TextEditingController inputController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('الذهاب إلى آية', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'ahmed')),
+        content: TextField(
+          controller: inputController,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          decoration: InputDecoration(
+            hintText: 'أدخل رقم الآية (1 - ${_currentVerses.length})',
+            hintStyle: const TextStyle(fontFamily: 'ahmed', fontSize: 14),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.red, fontSize: 16, fontFamily: 'ahmed')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
+            onPressed: () {
+              final int? verseNum = int.tryParse(inputController.text);
+              Navigator.pop(context);
+              if (verseNum != null) {
+                _goToVerse(verseNum);
+              }
+            },
+            child: const Text('ذهاب', style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'ahmed')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: false, 
+        backgroundColor: Colors.green[800],
+        foregroundColor: Colors.white,
+        toolbarHeight: 85, 
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  "سورة ${widget.surahName}", 
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "(${widget.surahType})", 
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "آياتها: ${toArabicNumerals(widget.versesCount)}",
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.find_in_page, size: 26, color: Colors.white),
+            tooltip: 'الذهاب إلى آية',
+            onPressed: _currentVerses.isEmpty ? null : _showGoToVerseDialog,
+          ),
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.text_fields, size: 26, color: Colors.white),
+              tooltip: 'إعدادات الخط',
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          ),
+        ],
+      ),
+      
+      endDrawer: Drawer(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.text_fields, color: Colors.green[800], size: 28),
+                    const SizedBox(width: 10),
+                    Text(
+                      'إعدادات الخط',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green[800], fontFamily: 'ahmed'),
+                    ),
+                  ],
+                ),
+                const Divider(height: 30, thickness: 1.2),
+                Text(
+                  'حجم خط القراءة الحالي: ${_fontSize.toInt()}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, fontFamily: 'ahmed'),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800], foregroundColor: Colors.white),
+                      onPressed: () => setState(() => _fontSize += 2),
+                      child: const Text('A+', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[700], foregroundColor: Colors.white),
+                      onPressed: () => setState(() => _fontSize = (_fontSize > 16) ? _fontSize - 2 : _fontSize),
+                      child: const Text('A-', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+
+      body: _errorMessage.isNotEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : FutureBuilder<Map<String, dynamic>>(
+              future: _surahDataFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                
+                final basmalahText = snapshot.data!['basmalah'] as String?;
+                final versesList = snapshot.data!['verses'] as List<String>;
+
+                if (versesList.isEmpty && _errorMessage.isEmpty) {
+                  return const Center(child: Text("جاري تحميل آيات السورة...", style: TextStyle(fontFamily: 'ahmed')));
+                }
+
+                return SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (basmalahText != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF4EDE2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+                          ),
+                          child: SelectableText.rich(
+                            TextSpan(
+                              children: _buildDynamicTajweedSpans(basmalahText, 1),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+
+                      SelectableText.rich(
+                        TextSpan(
+                          children: List.generate(versesList.length, (index) {
+                            int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
+                            if (widget.surahId == 1 || widget.surahId == 9) {
+                              actualVerseNum = index + 1;
+                            }
+                            
+                            int tajweedJsonIndex = index + 1;
+                            if (basmalahText != null) {
+                              tajweedJsonIndex = index + 2; 
+                            }
+
+                            final String rawVerseText = versesList[index];
+
+                            return TextSpan(
+                              children: [
+                                ..._buildDynamicTajweedSpans(rawVerseText, tajweedJsonIndex),
+                                TextSpan(
+                                  text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
+                                  style: TextStyle(
+                                    fontSize: _fontSize - 2, 
+                                    fontFamily: 'ahmed', 
+                                    color: Colors.green[800],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
