@@ -437,4 +437,79 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical:
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(8)),
+                  child: Text(
+                    verseText,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87, fontFamily: 'ahmed'),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                TabBar(
+                  labelColor: Colors.green[800],
+                  unselectedLabelColor: Colors.grey[600],
+                  indicatorColor: Colors.green[800],
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, fontFamily: 'ahmed'),
+                  tabs: const [
+                    Tab(text: "التفسير الميسر"),
+                    Tab(text: "English"),
+                    Tab(text: "Indonesia"),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          _getTafsirOrTranslationText(_tafsirArData, verseNumber),
+                          style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.black87, fontFamily: 'ahmed'),
+                          textAlign: TextAlign.justify,
+                        ),
+                      ),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            _getTafsirOrTranslationText(_translationEnData, verseNumber),
+                            style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ),
+                      ),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            _getTafsirOrTranslationText(_translationIdData, verseNumber),
+                            style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _goToVerse(int verseNumber) {
+    if (_currentVerses.isEmpty) return;
+
+    if (verseNumber < 1 || verseNumber > _currentVerses.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('رقم الآية غير صحيح! السورة تحتوي على ${_currentVerses.length} آية.')),
+      );
+      return;
+    }
+
+    int totalCharacters = _currentVerses.fold(0, (sum, verse) => sum + verse.length);
+    int targetCharacters = 0;
+    for (
