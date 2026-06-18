@@ -6,16 +6,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 1. جلب الكود من المستودع
       - uses: actions/checkout@v4
+
+      # 2. إعداد بيئة فلاتر بشكل صحيح
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: flutter pub get
-      
-      
-      - run: flutter pub run flutter_launcher_icons
-      
-      - run: flutter build apk --release
+          cache: true # تسريع البناء في المرات القادمة
+
+      # 3. تحميل كل الحزم والمكتبات (بما فيها shared_preferences)
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 4. توليد أيقونات التطبيق
+      - name: Generate Launcher Icons
+        run: flutter pub run flutter_launcher_icons
+
+      # 5. بناء نسخة الـ APK النهائية
+      - name: Build Release APK
+        run: flutter build apk --release --no-pub # تمنع إعادة الفحص الباهت أثناء البناء
+
+      # 6. رفع الملف الناتج لتقوم بتحميله على هاتفك
       - uses: actions/upload-artifact@v4
         with:
           name: release-apk
