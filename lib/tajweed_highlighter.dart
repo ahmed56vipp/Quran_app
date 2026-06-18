@@ -104,7 +104,7 @@ class TajweedHighlighter {
     return spans;
   }
 
-  /// تحويل النص إلى TextSpan مع ألوان التجويد
+  /// تحويل النص إلى TextSpan مع تسطير ملون (Underline Style)
   static TextSpan applyTajweedColoring(String text, double fontSize) {
     final spans = analyzeTajweed(text);
     
@@ -139,7 +139,7 @@ class TajweedHighlighter {
         );
       }
 
-      // إضافة النص بلون التجويد
+      // إضافة النص مع تسطير ملون تحته
       textSpans.add(
         TextSpan(
           text: text.substring(span.start, span.end),
@@ -147,8 +147,10 @@ class TajweedHighlighter {
             fontSize: fontSize,
             fontFamily: 'ahmed',
             height: 2.2,
-            color: Colors.white,
-            backgroundColor: span.color,
+            color: Colors.black87,
+            decoration: TextDecoration.underline,
+            decorationColor: span.color,
+            decorationThickness: 3.0,
             fontWeight: FontWeight.w600,
           ),
         ),
