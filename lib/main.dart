@@ -60,10 +60,14 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> _loadIndexData() async {
-    final String response = await rootBundle.loadString('assets/data/quran_data.json');
-    setState(() {
-      surahs = json.decode(response);
-    });
+    try {
+      final String response = await rootBundle.loadString('assets/data/quran_data.json');
+      setState(() {
+        surahs = json.decode(response);
+      });
+    } catch (e) {
+      debugPrint("خطأ في تحميل الفهرس الرئيسي: $e");
+    }
   }
 
   Future<void> _loadLastReadPosition() async {
@@ -125,7 +129,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     itemBuilder: (context, index) {
                       final surah = surahs[index];
                       
-                      final int sId = int.tryParse(surah['id'].toString()) ?? (index + 1);
+                      // معالجة الأرقام العربية والإنجليزية في الفهرس لمنع الأخطاء
+                      String rawId = surah['id'].toString().trim();
+                      rawId = rawId.replaceAll('٠', '0').replaceAll('١', '1').replaceAll('٢', '2')
+                                   .replaceAll('٣', '3').replaceAll('٤', '4').replaceAll('٥', '5')
+                                   .replaceAll('٦', '6').replaceAll('٧', '7').replaceAll('٨', '8').replaceAll('٩', '9');
+                      
+                      final int sId = int.tryParse(rawId) ?? (index + 1);
                       final String sName = surah['name'] ?? 'بدون اسم';
                       final String sType = surah['type'] ?? 'مكية';
                       final int vCount = int.tryParse(surah['verses_count'].toString()) ?? 0;
@@ -217,8 +227,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   late Future<Map<String, dynamic>> _surahDataFuture;
   List<String> _currentVerses = [];
+  String _errorMessage = '';
 
-  // مستودعات الحفظ المسبق للتراجم والتفاسير
   Map<String, dynamic>? _tafsirArData;
   Map<String, dynamic>? _translationEnData;
   Map<String, dynamic>? _translationIdData;
@@ -246,41 +256,47 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   Future<Map<String, dynamic>> loadSurahData() async {
-    final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
-    final data = json.decode(response);
-    
-    Map<String, dynamic> versesMap = Map<String, dynamic>.from(data['verse']);
-    List<String> allVerses = versesMap.values.map((value) => value.toString()).toList();
-    
-    String? basmalah;
-    List<String> dynamicVerses = [];
+    try {
+      final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
+      final data = json.decode(response);
+      
+      Map<String, dynamic> versesMap = Map<String, dynamic>.from(data['verse']);
+      List<String> allVerses = versesMap.values.map((value) => value.toString()).toList();
+      
+      String? basmalah;
+      List<String> dynamicVerses = [];
 
-    if (widget.surahId == 1 || widget.surahId == 9) {
-      dynamicVerses = allVerses;
-    } else {
-      if (allVerses.isNotEmpty && (allVerses[0].contains("بِسْمِ") || allVerses[0].startsWith("بِسمِ"))) {
-        basmalah = allVerses[0];
-        dynamicVerses = allVerses.sublist(1);
-      } else {
+      if (widget.surahId == 1 || widget.surahId == 9) {
         dynamicVerses = allVerses;
+      } else {
+        if (allVerses.isNotEmpty && (allVerses[0].contains("بِسْمِ") || allVerses[0].startsWith("بِسمِ"))) {
+          basmalah = allVerses[0];
+          dynamicVerses = allVerses.sublist(1);
+        } else {
+          dynamicVerses = allVerses;
+        }
       }
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentVerses = dynamicVerses;
+          });
+        }
+      });
+
+      return {
+        'basmalah': basmalah,
+        'verses': dynamicVerses,
+      };
+    } catch (e) {
+      setState(() {
+        _errorMessage = "لم يتم العثور على ملف السورة رقم ${widget.surahId} أو أن الصيغة غير صحيحة.";
+      });
+      return {'basmalah': null, 'verses': <String>[]};
     }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _currentVerses = dynamicVerses;
-        });
-      }
-    });
-
-    return {
-      'basmalah': basmalah,
-      'verses': dynamicVerses,
-    };
   }
 
-  // تحميل الملفات من المسارات الجديدة المقررة في الحافظة assets/translation/
   Future<void> _preloadTafsirAndTranslations() async {
     try {
       final arString = await rootBundle.loadString('assets/translation/ar/ar_translation_${widget.surahId}.json');
@@ -299,7 +315,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   String _getTafsirOrTranslationText(Map<String, dynamic>? data, int verseNum) {
-    if (data == null || data['verse'] == null) return "النص غير متوفر حالياً.";
+    if (data == null || data['verse'] == null) return "النص غير متوفر حالياً لهذا الخيار.";
     var verseMap = data['verse'];
     
     if (verseMap is Map) {
@@ -307,6 +323,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         return verseMap['verse_$verseNum'].toString();
       } else if (verseMap.containsKey('verse_${verseNum - 1}')) {
         return verseMap['verse_${verseNum - 1}'].toString();
+      } else if (verseMap.containsKey(verseNum.toString())) {
+        return verseMap[verseNum.toString()].toString();
       }
     }
     return "النص غير متوفر لهذه الآية.";
@@ -500,7 +518,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "آياتها: ${toArabicNumerals(widget.versesCount)}  |  الجزء الأول",
+              "آياتها: ${toArabicNumerals(widget.versesCount)}",
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
             ),
           ],
@@ -565,89 +583,104 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         ),
       ),
 
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _surahDataFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          
-          final basmalahText = snapshot.data!['basmalah'] as String?;
-          final versesList = snapshot.data!['verses'] as List<String>;
+      body: _errorMessage.isNotEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : FutureBuilder<Map<String, dynamic>>(
+              future: _surahDataFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                
+                final basmalahText = snapshot.data!['basmalah'] as String?;
+                final versesList = snapshot.data!['verses'] as List<String>;
 
-          return SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (basmalahText != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4EDE2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
-                    ),
-                    child: Text(
-                      basmalahText,
-                      style: TextStyle(
-                        fontSize: _fontSize + 2, 
-                        fontFamily: 'ahmed', 
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1B4226),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                if (versesList.isEmpty && _errorMessage.isEmpty) {
+                  return const Center(child: Text("جاري تحميل آيات السورة..."));
+                }
 
-                Text.rich(
-                  TextSpan(
-                    children: List.generate(versesList.length, (index) {
-                      int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
-                      if (widget.surahId == 1) {
-                        actualVerseNum = index + 1;
-                      }
-                      
-                      final String rawVerseText = versesList[index];
-
-                      return WidgetSpan(
-                        child: GestureDetector(
-                          onTap: () => _showTafsirBottomSheet(actualVerseNum, rawVerseText),
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: "$rawVerseText ",
-                                  style: TextStyle(
-                                    fontSize: _fontSize, 
-                                    fontFamily: 'ahmed', 
-                                    height: 2.2, 
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                                  style: TextStyle(
-                                    fontSize: _fontSize - 2, 
-                                    fontFamily: 'ahmed', 
-                                    color: Colors.green[800],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                return SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (basmalahText != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF4EDE2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+                          ),
+                          child: Text(
+                            basmalahText,
+                            style: TextStyle(
+                              fontSize: _fontSize + 2, 
+                              fontFamily: 'ahmed', 
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1B4226),
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
-                      );
-                    }),
+
+                      Text.rich(
+                        TextSpan(
+                          children: List.generate(versesList.length, (index) {
+                            int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
+                            if (widget.surahId == 1 || widget.surahId == 9) {
+                              actualVerseNum = index + 1;
+                            }
+                            
+                            final String rawVerseText = versesList[index];
+
+                            return WidgetSpan(
+                              child: GestureDetector(
+                                onTap: () => _showTafsirBottomSheet(actualVerseNum, rawVerseText),
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: "$rawVerseText ",
+                                        style: TextStyle(
+                                          fontSize: _fontSize, 
+                                          fontFamily: 'ahmed', 
+                                          height: 2.2, 
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
+                                        style: TextStyle(
+                                          fontSize: _fontSize - 2, 
+                                          fontFamily: 'ahmed', 
+                                          color: Colors.green[800],
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.justify,
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }
