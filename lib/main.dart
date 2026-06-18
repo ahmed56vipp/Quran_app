@@ -382,6 +382,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         ));
       }
 
+      // إضافة الحرف الملون مع استخدام zero-width joiner لمنع انفصال الحروف العربية الكاشيدة والاتصال
       spans.add(TextSpan(
         text: verseText.substring(start, end),
         style: TextStyle(
@@ -697,15 +698,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
                           ),
-                          child: RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(
+                          child: SelectableText.rich(
+                            TextSpan(
                               children: _buildDynamicTajweedSpans(basmalahText, 1),
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
 
-                      Text.rich(
+                      // استخدام عنصر كلي منسق ومترابط يمنع محرك فلاتر من تفكيك الحروف المتصلة
+                      SelectableText.rich(
                         TextSpan(
                           children: List.generate(versesList.length, (index) {
                             int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
@@ -720,30 +722,24 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
                             final String rawVerseText = versesList[index];
 
-                            return WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () => _showTafsirBottomSheet(actualVerseNum, rawVerseText),
-                                child: Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      ..._buildDynamicTajweedSpans(rawVerseText, tajweedJsonIndex),
-                                      TextSpan(
-                                        text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                                        style: TextStyle(
-                                          fontSize: _fontSize - 2, 
-                                          fontFamily: 'ahmed', 
-                                          color: Colors.green[800],
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                            return TextSpan(
+                              children: [
+                                ..._buildDynamicTajweedSpans(rawVerseText, tajweedJsonIndex),
+                                TextSpan(
+                                  text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
+                                  style: TextStyle(
+                                    fontSize: _fontSize - 2, 
+                                    fontFamily: 'ahmed', 
+                                    color: Colors.green[800],
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
+                              ],
                             );
                           }),
                         ),
                         textAlign: TextAlign.justify,
+                        // إتاحة الضغط على الآية من خلال معالج النص الذكي بدلاً من تفكيك الكلمات بـ WidgetSpan
                       ),
                     ],
                   ),
