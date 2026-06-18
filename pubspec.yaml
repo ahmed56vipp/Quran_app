@@ -20,6 +20,9 @@ flutter:
     - assets/surah/
     - assets/tajweed/
     - assets/translation/
+    - assets/translation/ar/
+    - assets/translation/en/
+    - assets/translation/id/
     - assets/icon/
 
   fonts:
