@@ -19,7 +19,6 @@ flutter:
     - assets/data/
     - assets/surah/
     - assets/icon/
-    
     - assets/translation/ar/
     - assets/translation/en/
     - assets/translation/id/
