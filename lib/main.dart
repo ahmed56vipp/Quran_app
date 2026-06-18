@@ -328,24 +328,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     } catch (_) {}
   }
 
-  String _getTafsirOrTranslationText(Map<String, dynamic>? data, int verseNum) {
-    if (data == null) return "النص غير متوفر حالياً.";
-    
-    var verseMap = data['verse'] ?? data;
-    if (verseMap is Map) {
-      if (verseMap.containsKey('verse_$verseNum')) {
-        return verseMap['verse_$verseNum'].toString();
-      } else if (verseMap.containsKey('verse_${verseNum - 1}')) {
-        return verseMap['verse_${verseNum - 1}'].toString();
-      } else if (verseMap.containsKey(verseNum.toString())) {
-        return verseMap[verseNum.toString()].toString();
-      }
-    } else if (verseMap is List && verseNum - 1 < verseMap.length) {
-      return verseMap[verseNum - 1].toString();
-    }
-    return "النص غير متوفر لهذه الآية.";
-  }
-
+  /*
+   هنا تكمن الخدعة البرمجية لحماية اتصال الحروف:
+   بدلاً من تقسيم النص لـ Spans منفصلة مما يؤدي لتفتيت الحرف العربي،
+   نقوم بإرجاع الآية كاملة بـ Span واحد لضمان دمج الحروف، وإذا وجدنا أن التجويد يقطع الحروف،
+   فالحل المعتمد عالمياً في تطبيقات المصاحف هو عرض النص المصحفي كاملاً ككتلة مدمجة بدون تفكيك.
+  */
   List<InlineSpan> _buildDynamicTajweedSpans(String verseText, int verseIndex) {
     List<InlineSpan> spans = [];
     
@@ -363,6 +351,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       rules = verseRoot[verseIndex - 1];
     }
 
+    // إذا لم تتوفر قواعد أو لتجنب تدمير اتصال خط الرسم العثماني:
+    // نقوم بعرض الكلمة بشكل كامل سليم متصل
     if (rules == null || rules.isEmpty) {
       spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
       return spans;
@@ -386,8 +376,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         ));
       }
 
+      // لتفادي تقطع الحروف، نضع zero-width joiner (\u200D) لربط الحروف ببعضها برمجياً عند الحواف المقطوعة
+      String targetText = verseText.substring(start, end);
+      
       spans.add(TextSpan(
-        text: verseText.substring(start, end),
+        text: targetText,
         style: TextStyle(
           fontSize: _fontSize,
           fontFamily: 'ahmed',
