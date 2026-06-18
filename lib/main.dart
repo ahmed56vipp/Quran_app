@@ -231,6 +231,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Map<String, dynamic>? _tafsirArData;
   Map<String, dynamic>? _translationEnData;
   Map<String, dynamic>? _translationIdData;
+  Map<String, dynamic>? _tajweedRulesData; 
 
   @override
   void initState() {
@@ -256,18 +257,18 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   Future<Map<String, dynamic>> loadSurahData() async {
     try {
-      String response;
-      try {
-        // محاولة تحميل ملف التجويد أولاً
-        response = await rootBundle.loadString('assets/tajweed/surah_${widget.surahId}.json');
-      } catch (_) {
-        // إذا لم يتوفر ملف التجويد، يتم الرجوع لملف السورة العادي تلقائياً كخيار احتياطي آمن
-        response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
-      }
-
-      final data = json.decode(response);
-      Map<String, dynamic> versesMap = Map<String, dynamic>.from(data['verse']);
+      final textResponse = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
+      final textData = json.decode(textResponse);
+      Map<String, dynamic> versesMap = Map<String, dynamic>.from(textData['verse']);
       List<String> allVerses = versesMap.values.map((value) => value.toString()).toList();
+
+      try {
+        final tajweedResponse = await rootBundle.loadString('assets/tajweed/surah_${widget.surahId}.json');
+        _tajweedRulesData = json.decode(tajweedResponse);
+      } catch (e) {
+        debugPrint("لم يتوفر ملف تجويد بالإحداثيات لهذه السورة: $e");
+        _tajweedRulesData = null;
+      }
       
       String? basmalah;
       List<String> dynamicVerses = [];
@@ -336,55 +337,67 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return "النص غير متوفر لهذه الآية.";
   }
 
-  // دالة ذكية لتحديد ألوان التجويد بناءً على الرموز المخفية في ملف الجيسون العالمية
-  Color _getTajweedColor(String code) {
-    switch (code) {
-      case 'm': return Colors.red[700]!;      // المدود
-      case 'g': return Colors.orange[700]!;   // الغنة
-      case 'i': return Colors.blue[700]!;     // الإدغام
-      case 'f': return Colors.teal[700]!;     // الإخفاء
-      case 'q': return Colors.green[700]!;    // القلقلة
-      default: return Colors.black87;
-    }
+  Color _getTajweedColorByRule(String rule) {
+    if (rule.contains('madd')) return Colors.red[700]!;            
+    if (rule.contains('ghunnah')) return Colors.orange[700]!;       
+    if (rule.contains('idghaam')) return Colors.blue[700]!;         
+    if (rule.contains('ikhfa')) return Colors.teal[700]!;           
+    if (rule.contains('qalqalah')) return Colors.green[700]!;       
+    if (rule.contains('iqlab')) return Colors.purple[700]!;         
+    return Colors.black87; 
   }
 
-  // تفكيك النص القرآني المرمز وعرضه كقطع نصية ملونة RichText احترافية
-  List<InlineSpan> _buildTajweedSpans(String text) {
+  List<InlineSpan> _buildDynamicTajweedSpans(String verseText, int verseIndex) {
     List<InlineSpan> spans = [];
-    // تعبير منتظم لقراءة وسوم التجويد بصيغة [c:text] أو الأكواد المدمجة
-    final RegExp regExp = RegExp(r'\[([a-z]):([^\]]+)\]');
-    int lastMatchEnd = 0;
+    
+    if (_tajweedRulesData == null || _tajweedRulesData!['verse'] == null) {
+      spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
+      return spans;
+    }
 
-    final Iterable<Match> matches = regExp.allMatches(text);
+    final String key = 'verse_$verseIndex';
+    final List<dynamic>? rules = _tajweedRulesData!['verse'][key];
 
-    for (final Match match in matches) {
-      if (match.start > lastMatchEnd) {
+    if (rules == null || rules.isEmpty) {
+      spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
+      return spans;
+    }
+
+    List<dynamic> sortedRules = List.from(rules);
+    sortedRules.sort((a, b) => (a['start'] as int).compareTo(b['start'] as int));
+
+    int currentIdx = 0;
+    for (var ruleMap in sortedRules) {
+      int start = ruleMap['start'] as int;
+      int end = ruleMap['end'] as int;
+      String ruleName = ruleMap['rule'] as String;
+
+      if (start < currentIdx || start > verseText.length || end > verseText.length || start > end) continue;
+
+      if (start > currentIdx) {
         spans.add(TextSpan(
-          text: text.substring(lastMatchEnd, match.start),
+          text: verseText.substring(currentIdx, start),
           style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
         ));
       }
 
-      String code = match.group(1) ?? '';
-      String tajweedText = match.group(2) ?? '';
-
       spans.add(TextSpan(
-        text: tajweedText,
+        text: verseText.substring(start, end),
         style: TextStyle(
           fontSize: _fontSize,
           fontFamily: 'ahmed',
           height: 2.2,
-          color: _getTajweedColor(code),
-          fontWeight: FontWeight.bold,
+          color: _getTajweedColorByRule(ruleName),
+          fontWeight: ruleName.contains('hamzat_wasl') ? FontWeight.normal : FontWeight.bold,
         ),
       ));
 
-      lastMatchEnd = match.end;
+      currentIdx = end;
     }
 
-    if (lastMatchEnd < text.length) {
+    if (currentIdx < verseText.length) {
       spans.add(TextSpan(
-        text: text.substring(lastMatchEnd),
+        text: verseText.substring(currentIdx),
         style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
       ));
     }
@@ -393,9 +406,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _showTafsirBottomSheet(int verseNumber, String verseText) {
-    // إزالة وسوم التجويد البرمجية قبل عرض نص الآية في نافذة التفسير ليظهر نظيفاً للقراءة
-    String cleanVerseText = verseText.replaceAll(RegExp(r'\[[a-z]:([^\]]+)\]'), r'\1');
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -430,7 +440,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(8)),
                   child: Text(
-                    cleanVerseText,
+                    verseText,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87, fontFamily: 'ahmed'),
                     textAlign: TextAlign.center,
                   ),
@@ -562,7 +572,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         foregroundColor: Colors.white,
         toolbarHeight: 85, 
         title: Column(
-          cross CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
@@ -598,142 +608,4 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             builder: (context) => IconButton(
               icon: const Icon(Icons.text_fields, size: 26),
               tooltip: 'إعدادات الخط',
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
-            ),
-          ),
-        ],
-      ),
-      
-      endDrawer: Drawer(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.text_fields, color: Colors.green[800], size: 28),
-                    const SizedBox(width: 10),
-                    Text(
-                      'إعدادات الخط',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green[800], fontFamily: 'ahmed'),
-                    ),
-                  ],
-                ),
-                const Divider(height: 30, thickness: 1.2),
-                Text(
-                  'حجم خط القراءة الحالي: ${_fontSize.toInt()}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, fontFamily: 'ahmed'),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800], foregroundColor: Colors.white),
-                      onPressed: () => setState(() => _fontSize += 2),
-                      child: const Text('A+', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[700], foregroundColor: Colors.white),
-                      onPressed: () => setState(() => _fontSize = (_fontSize > 16) ? _fontSize - 2 : _fontSize),
-                      child: const Text('A-', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-
-      body: _errorMessage.isNotEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            )
-          : FutureBuilder<Map<String, dynamic>>(
-              future: _surahDataFuture,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                
-                final basmalahText = snapshot.data!['basmalah'] as String?;
-                final versesList = snapshot.data!['verses'] as List<String>;
-
-                if (versesList.isEmpty && _errorMessage.isEmpty) {
-                  return const Center(child: Text("جاري تحميل آيات السورة..."));
-                }
-
-                return SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (basmalahText != null)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 24),
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF4EDE2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
-                          ),
-                          child: RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(
-                              children: _buildTajweedSpans(basmalahText),
-                            ),
-                          ),
-                        ),
-
-                      Text.rich(
-                        TextSpan(
-                          children: List.generate(versesList.length, (index) {
-                            int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
-                            if (widget.surahId == 1 || widget.surahId == 9) {
-                              actualVerseNum = index + 1;
-                            }
-                            
-                            final String rawVerseText = versesList[index];
-
-                            return WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () => _showTafsirBottomSheet(actualVerseNum, rawVerseText),
-                                child: Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      ..._buildTajweedSpans(rawVerseText),
-                                      TextSpan(
-                                        text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                                        style: TextStyle(
-                                          fontSize: _fontSize - 2, 
-                                          fontFamily: 'ahmed', 
-                                          color: Colors.green[800],
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
-                        textAlign: TextAlign.justify,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-    );
-  }
-}
+              onPressed: () => Scaffold.of(context).
