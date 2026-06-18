@@ -129,7 +129,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     itemBuilder: (context, index) {
                       final surah = surahs[index];
                       
-                      // معالجة الأرقام العربية والإنجليزية في الفهرس لمنع الأخطاء
                       String rawId = surah['id'].toString().trim();
                       rawId = rawId.replaceAll('٠', '0').replaceAll('١', '1').replaceAll('٢', '2')
                                    .replaceAll('٣', '3').replaceAll('٤', '4').replaceAll('٥', '5')
@@ -257,9 +256,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   Future<Map<String, dynamic>> loadSurahData() async {
     try {
-      final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
+      String response;
+      try {
+        // محاولة تحميل ملف التجويد أولاً
+        response = await rootBundle.loadString('assets/tajweed/surah_${widget.surahId}.json');
+      } catch (_) {
+        // إذا لم يتوفر ملف التجويد، يتم الرجوع لملف السورة العادي تلقائياً كخيار احتياطي آمن
+        response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
+      }
+
       final data = json.decode(response);
-      
       Map<String, dynamic> versesMap = Map<String, dynamic>.from(data['verse']);
       List<String> allVerses = versesMap.values.map((value) => value.toString()).toList();
       
@@ -330,7 +336,66 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return "النص غير متوفر لهذه الآية.";
   }
 
+  // دالة ذكية لتحديد ألوان التجويد بناءً على الرموز المخفية في ملف الجيسون العالمية
+  Color _getTajweedColor(String code) {
+    switch (code) {
+      case 'm': return Colors.red[700]!;      // المدود
+      case 'g': return Colors.orange[700]!;   // الغنة
+      case 'i': return Colors.blue[700]!;     // الإدغام
+      case 'f': return Colors.teal[700]!;     // الإخفاء
+      case 'q': return Colors.green[700]!;    // القلقلة
+      default: return Colors.black87;
+    }
+  }
+
+  // تفكيك النص القرآني المرمز وعرضه كقطع نصية ملونة RichText احترافية
+  List<InlineSpan> _buildTajweedSpans(String text) {
+    List<InlineSpan> spans = [];
+    // تعبير منتظم لقراءة وسوم التجويد بصيغة [c:text] أو الأكواد المدمجة
+    final RegExp regExp = RegExp(r'\[([a-z]):([^\]]+)\]');
+    int lastMatchEnd = 0;
+
+    final Iterable<Match> matches = regExp.allMatches(text);
+
+    for (final Match match in matches) {
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: text.substring(lastMatchEnd, match.start),
+          style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+        ));
+      }
+
+      String code = match.group(1) ?? '';
+      String tajweedText = match.group(2) ?? '';
+
+      spans.add(TextSpan(
+        text: tajweedText,
+        style: TextStyle(
+          fontSize: _fontSize,
+          fontFamily: 'ahmed',
+          height: 2.2,
+          color: _getTajweedColor(code),
+          fontWeight: FontWeight.bold,
+        ),
+      ));
+
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastMatchEnd),
+        style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+      ));
+    }
+
+    return spans;
+  }
+
   void _showTafsirBottomSheet(int verseNumber, String verseText) {
+    // إزالة وسوم التجويد البرمجية قبل عرض نص الآية في نافذة التفسير ليظهر نظيفاً للقراءة
+    String cleanVerseText = verseText.replaceAll(RegExp(r'\[[a-z]:([^\]]+)\]'), r'\1');
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -365,7 +430,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(8)),
                   child: Text(
-                    verseText,
+                    cleanVerseText,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87, fontFamily: 'ahmed'),
                     textAlign: TextAlign.center,
                   ),
@@ -497,7 +562,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         foregroundColor: Colors.white,
         toolbarHeight: 85, 
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          cross CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
@@ -621,15 +686,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
                           ),
-                          child: Text(
-                            basmalahText,
-                            style: TextStyle(
-                              fontSize: _fontSize + 2, 
-                              fontFamily: 'ahmed', 
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1B4226),
-                            ),
+                          child: RichText(
                             textAlign: TextAlign.center,
+                            text: TextSpan(
+                              children: _buildTajweedSpans(basmalahText),
+                            ),
                           ),
                         ),
 
@@ -649,15 +710,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                 child: Text.rich(
                                   TextSpan(
                                     children: [
-                                      TextSpan(
-                                        text: "$rawVerseText ",
-                                        style: TextStyle(
-                                          fontSize: _fontSize, 
-                                          fontFamily: 'ahmed', 
-                                          height: 2.2, 
-                                          color: Colors.black87,
-                                        ),
-                                      ),
+                                      ..._buildTajweedSpans(rawVerseText),
                                       TextSpan(
                                         text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
                                         style: TextStyle(
