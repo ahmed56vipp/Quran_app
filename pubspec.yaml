@@ -13,13 +13,14 @@ dependencies:
   shared_preferences: ^2.2.3
 
 flutter:
+  uses-material-design: true
+
   assets:
     - assets/data/
     - assets/surah/
     - assets/tajweed/
-    - assets/translation/ar/
-    - assets/translation/en/
-    - assets/translation/id/
+    - assets/translation/
+    - assets/icon/
 
   fonts:
     - family: ahmed
@@ -34,5 +35,5 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icon/app_icon.png" 
+  image_path: "assets/icon/app_icon.png"
   min_sdk_android: 21
