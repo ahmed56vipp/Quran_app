@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'tajweed_highlighter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -223,7 +222,6 @@ class SurahDetailScreen extends StatefulWidget {
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
   double _fontSize = 24.0;
-  bool _enableTajweed = true;
   final ScrollController _scrollController = ScrollController();
   late Future<Map<String, dynamic>> _surahDataFuture;
   List<String> _currentVerses = [];
@@ -239,25 +237,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     _saveLastReadPosition();
     _surahDataFuture = loadSurahData();
     _preloadTafsirAndTranslations();
-    _loadTajweedPreference();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadTajweedPreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _enableTajweed = prefs.getBool('enable_tajweed') ?? true;
-    });
-  }
-
-  Future<void> _saveTajweedPreference(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('enable_tajweed', value);
   }
 
   Future<void> _saveLastReadPosition() async {
@@ -402,16 +387,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.green.withOpacity(0.2)),
                       ),
-                      child: _enableTajweed
-                          ? Text.rich(
-                              TajweedHighlighter.applyTajweedColoring(verseText, 20),
-                              textAlign: TextAlign.center,
-                            )
-                          : Text(
-                              verseText,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 20, fontFamily: 'ahmed', height: 1.8, color: Colors.black87),
-                            ),
+                      child: Text(
+                        verseText,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 20, fontFamily: 'ahmed', height: 1.8, color: Colors.black87),
+                      ),
                     ),
                     const Divider(height: 30, thickness: 1),
                     
@@ -593,7 +573,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     Icon(Icons.text_fields, color: Colors.green[800], size: 28),
                     const SizedBox(width: 10),
                     Text(
-                      'إعدادات القراءة',
+                      'إعدادات الخط',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green[800], fontFamily: 'ahmed'),
                     ),
                   ],
@@ -619,75 +599,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 30),
-                const Divider(height: 1, thickness: 1.2),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.highlight, color: Colors.green[800], size: 24),
-                        const SizedBox(width: 12),
-                        Text(
-                          'تفعيل التجويد',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, fontFamily: 'ahmed', color: Colors.green[800]),
-                        ),
-                      ],
-                    ),
-                    Switch(
-                      value: _enableTajweed,
-                      onChanged: (value) {
-                        setState(() => _enableTajweed = value);
-                        _saveTajweedPreference(value);
-                      },
-                      activeColor: Colors.green[800],
-                    ),
-                  ],
-                ),
-                if (_enableTajweed) ...[
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green[200]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'قواعد التجويد:',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.green[800]),
-                        ),
-                        const SizedBox(height: 8),
-                        ...TajweedHighlighter.getTajweedLegend().map((item) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 16,
-                                  height: 16,
-                                  decoration: BoxDecoration(
-                                    color: item['color'] as Color,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  item['name'] as String,
-                                  style: const TextStyle(fontSize: 12, fontFamily: 'ahmed'),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -734,16 +645,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
                             ),
-                            child: _enableTajweed
-                                ? Text.rich(
-                                    TajweedHighlighter.applyTajweedColoring(basmalahText, _fontSize),
-                                    textAlign: TextAlign.center,
-                                  )
-                                : Text(
-                                    basmalahText,
-                                    style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
-                                    textAlign: TextAlign.center,
-                                  ),
+                            child: Text(
+                              basmalahText,
+                              style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
 
@@ -760,46 +666,25 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             return WidgetSpan(
                               child: GestureDetector(
                                 onTap: () => _showTafsirBottomSheet(rawVerseText, actualVerseNum),
-                                child: _enableTajweed
-                                    ? Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(
-                                              children: [
-                                                TajweedHighlighter.applyTajweedColoring(rawVerseText, _fontSize),
-                                              ],
-                                            ),
-                                            TextSpan(
-                                              text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                                              style: TextStyle(
-                                                fontSize: _fontSize - 2, 
-                                                fontFamily: 'ahmed', 
-                                                color: Colors.green[800],
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(
-                                              text: rawVerseText,
-                                              style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
-                                            ),
-                                            TextSpan(
-                                              text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                                              style: TextStyle(
-                                                fontSize: _fontSize - 2, 
-                                                fontFamily: 'ahmed', 
-                                                color: Colors.green[800],
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: rawVerseText,
+                                        style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+                                      ),
+                                      TextSpan(
+                                        text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
+                                        style: TextStyle(
+                                          fontSize: _fontSize - 2, 
+                                          fontFamily: 'ahmed', 
+                                          color: Colors.green[800],
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             );
                           }),
