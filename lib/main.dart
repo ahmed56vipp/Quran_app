@@ -31,7 +31,7 @@ class QuranApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: const Color(0xFFFDFBF7),
-        fontFamily: 'ahmed', 
+        // تم إزالة fontFamily العام من هنا لإصلاح اختفاء الأيقونات
       ),
       home: const SurahListScreen(),
     );
@@ -84,7 +84,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('فهرس القرآن الكريم', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'ahmed')),
+        title: const Text('فهرس القرآن الكريم', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white)),
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -102,8 +102,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                icon: const Icon(Icons.bookmark),
-                label: Text('العودة إلى آخر موضع قراءة: $_lastSurahName', style: const TextStyle(fontFamily: 'ahmed')),
+                icon: const Icon(Icons.bookmark, color: Colors.white),
+                label: Text('العودة إلى آخر موضع قراءة: $_lastSurahName', style: const TextStyle(fontFamily: 'ahmed', fontSize: 16)),
                 onPressed: () async {
                   await Navigator.push(
                     context,
@@ -151,17 +151,17 @@ class _SurahListScreenState extends State<SurahListScreen> {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                             title: Text(
                               sName,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'ahmed'),
+                              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'ahmed'),
                               textAlign: TextAlign.right,
                             ),
                             subtitle: Text(
-                              "$sType | آياتها: $vCount",
-                              style: TextStyle(color: Colors.grey[600], fontSize: 13, fontFamily: 'ahmed'),
+                              "$sType | آياتها: ${toArabicNumerals(vCount)}",
+                              style: TextStyle(color: Colors.grey[600], fontSize: 14, fontFamily: 'ahmed'),
                               textAlign: TextAlign.right,
                             ),
                             leading: SizedBox(
-                              width: 36,
-                              height: 36,
+                              width: 38,
+                              height: 38,
                               child: Image.asset(
                                 isMeccan ? 'assets/icon/mk.png' : 'assets/icon/md.png',
                                 fit: BoxFit.contain,
@@ -170,13 +170,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                     backgroundColor: Colors.green[50],
                                     child: Text(
                                       toArabicNumerals(sId),
-                                      style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
+                                      style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
                                     ),
                                   );
                                 },
                               ),
                             ),
-                            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
                             onTap: () async {
                               await Navigator.push(
                                 context,
@@ -349,7 +349,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   List<InlineSpan> _buildDynamicTajweedSpans(String verseText, int verseIndex) {
     List<InlineSpan> spans = [];
-    const String zwj = '\u200D'; 
     
     if (_tajweedRulesData == null || _tajweedRulesData!['verse'] == null) {
       spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
@@ -378,13 +377,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
       if (start > currentIdx) {
         spans.add(TextSpan(
-          text: verseText.substring(currentIdx, start) + zwj,
+          text: verseText.substring(currentIdx, start), // تم إزالة الرمز الخفي المسبب للنقاط السوداء
           style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
         ));
       }
 
       spans.add(TextSpan(
-        text: (start > 0 ? zwj : "") + verseText.substring(start, end) + (end < verseText.length ? zwj : ""),
+        text: verseText.substring(start, end), // تم إزالة الرمز الخفي المسبب للنقاط السوداء
         style: TextStyle(
           fontSize: _fontSize,
           fontFamily: 'ahmed',
@@ -399,7 +398,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
     if (currentIdx < verseText.length) {
       spans.add(TextSpan(
-        text: (currentIdx > 0 ? zwj : "") + verseText.substring(currentIdx),
+        text: verseText.substring(currentIdx),
         style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
       ));
     }
@@ -507,7 +506,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
     if (verseNumber < 1 || verseNumber > _currentVerses.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('رقم الآية غير صحيح! السورة تحتوي على ${_currentVerses.length} آية.')),
+        SnackBar(content: Text('رقم الآية غير صحيح! السورة تحتوي على ${_currentVerses.length} آية.', style: const TextStyle(fontFamily: 'ahmed'))),
       );
       return;
     }
@@ -540,6 +539,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           textAlign: TextAlign.center,
           decoration: InputDecoration(
             hintText: 'أدخل رقم الآية (1 - ${_currentVerses.length})',
+            hintStyle: const TextStyle(fontFamily: 'ahmed', fontSize: 14),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
@@ -602,13 +602,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.find_in_page, size: 26),
+            icon: const Icon(Icons.find_in_page, size: 26, color: Colors.white),
             tooltip: 'الذهاب إلى آية',
             onPressed: _currentVerses.isEmpty ? null : _showGoToVerseDialog,
           ),
           Builder(
             builder: (context) => IconButton(
-              icon: const Icon(Icons.text_fields, size: 26),
+              icon: const Icon(Icons.text_fields, size: 26, color: Colors.white),
               tooltip: 'إعدادات الخط',
               onPressed: () => Scaffold.of(context).openEndDrawer(),
             ),
@@ -666,7 +666,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 padding: const EdgeInsets.all(24.0),
                 child: Text(
                   _errorMessage,
-                  style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -680,7 +680,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 final versesList = snapshot.data!['verses'] as List<String>;
 
                 if (versesList.isEmpty && _errorMessage.isEmpty) {
-                  return const Center(child: Text("جاري تحميل آيات السورة..."));
+                  return const Center(child: Text("جاري تحميل آيات السورة...", style: TextStyle(fontFamily: 'ahmed')));
                 }
 
                 return SingleChildScrollView(
@@ -725,7 +725,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               children: [
                                 ..._buildDynamicTajweedSpans(rawVerseText, tajweedJsonIndex),
                                 TextSpan(
-                                  text: " ﴿${toArabicNumerals(actualVerseNum)} \u200D﴾ ",
+                                  text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
                                   style: TextStyle(
                                     fontSize: _fontSize - 2, 
                                     fontFamily: 'ahmed', 
