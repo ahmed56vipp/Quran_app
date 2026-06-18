@@ -370,7 +370,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         padding: const EdgeInsets.all(16),
                         child: Text(
                           _getTafsirOrTranslationText(_tafsirArData, verseNumber),
-                          style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.blackDE, fontFamily: 'ahmed'),
+                          style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.black87, fontFamily: 'ahmed'),
                           textAlign: TextAlign.justify,
                         ),
                       ),
