@@ -230,7 +230,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Map<String, dynamic>? _tafsirArData;
   Map<String, dynamic>? _translationEnData;
   Map<String, dynamic>? _translationIdData;
-  Map<String, dynamic>? _tajweedRulesData; 
 
   @override
   void initState() {
@@ -267,14 +266,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         allVerses = textData.values.map((value) => value.toString()).toList();
       } else if (textData is List) {
         allVerses = textData.map((value) => value.toString()).toList();
-      }
-
-      try {
-        final tajweedResponse = await rootBundle.loadString('assets/tajweed/surah_${widget.surahId}.json');
-        _tajweedRulesData = json.decode(tajweedResponse);
-      } catch (e) {
-        debugPrint("لم يتوفر ملف تجويد: $e");
-        _tajweedRulesData = null;
       }
       
       String? basmalah;
@@ -326,81 +317,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       final idString = await rootBundle.loadString('assets/translation/id/id_translation_${widget.surahId}.json');
       _translationIdData = json.decode(idString);
     } catch (_) {}
-  }
-
-  /*
-   هنا تكمن الخدعة البرمجية لحماية اتصال الحروف:
-   بدلاً من تقسيم النص لـ Spans منفصلة مما يؤدي لتفتيت الحرف العربي،
-   نقوم بإرجاع الآية كاملة بـ Span واحد لضمان دمج الحروف، وإذا وجدنا أن التجويد يقطع الحروف،
-   فالحل المعتمد عالمياً في تطبيقات المصاحف هو عرض النص المصحفي كاملاً ككتلة مدمجة بدون تفكيك.
-  */
-  List<InlineSpan> _buildDynamicTajweedSpans(String verseText, int verseIndex) {
-    List<InlineSpan> spans = [];
-    
-    if (_tajweedRulesData == null) {
-      spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
-      return spans;
-    }
-
-    var verseRoot = _tajweedRulesData!['verse'] ?? _tajweedRulesData;
-    List<dynamic>? rules;
-    
-    if (verseRoot is Map) {
-      rules = verseRoot['verse_$verseIndex'] ?? verseRoot[verseIndex.toString()];
-    } else if (verseRoot is List && verseIndex - 1 < verseRoot.length) {
-      rules = verseRoot[verseIndex - 1];
-    }
-
-    // إذا لم تتوفر قواعد أو لتجنب تدمير اتصال خط الرسم العثماني:
-    // نقوم بعرض الكلمة بشكل كامل سليم متصل
-    if (rules == null || rules.isEmpty) {
-      spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
-      return spans;
-    }
-
-    List<dynamic> sortedRules = List.from(rules);
-    sortedRules.sort((a, b) => (a['start'] as int).compareTo(b['start'] as int));
-
-    int currentIdx = 0;
-    for (int i = 0; i < sortedRules.length; i++) {
-      final ruleMap = sortedRules[i];
-      int start = ruleMap['start'] as int;
-      int end = ruleMap['end'] as int;
-
-      if (start < currentIdx || start > verseText.length || end > verseText.length || start > end) continue;
-
-      if (start > currentIdx) {
-        spans.add(TextSpan(
-          text: verseText.substring(currentIdx, start),
-          style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
-        ));
-      }
-
-      // لتفادي تقطع الحروف، نضع zero-width joiner (\u200D) لربط الحروف ببعضها برمجياً عند الحواف المقطوعة
-      String targetText = verseText.substring(start, end);
-      
-      spans.add(TextSpan(
-        text: targetText,
-        style: TextStyle(
-          fontSize: _fontSize,
-          fontFamily: 'ahmed',
-          height: 2.2,
-          color: Colors.red[700], 
-          fontWeight: FontWeight.bold,
-        ),
-      ));
-
-      currentIdx = end;
-    }
-
-    if (currentIdx < verseText.length) {
-      spans.add(TextSpan(
-        text: verseText.substring(currentIdx),
-        style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
-      ));
-    }
-
-    return spans;
   }
 
   void _goToVerse(int verseNumber) {
@@ -600,10 +516,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
                           ),
-                          child: SelectableText.rich(
-                            TextSpan(
-                              children: _buildDynamicTajweedSpans(basmalahText, 1),
-                            ),
+                          child: SelectableText(
+                            basmalahText,
+                            style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -615,17 +530,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             if (widget.surahId == 1 || widget.surahId == 9) {
                               actualVerseNum = index + 1;
                             }
-                            
-                            int tajweedJsonIndex = index + 1;
-                            if (basmalahText != null) {
-                              tajweedJsonIndex = index + 2; 
-                            }
 
                             final String rawVerseText = versesList[index];
 
                             return TextSpan(
                               children: [
-                                ..._buildDynamicTajweedSpans(rawVerseText, tajweedJsonIndex),
+                                TextSpan(
+                                  text: rawVerseText,
+                                  style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+                                ),
                                 TextSpan(
                                   text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
                                   style: TextStyle(
