@@ -18,7 +18,6 @@ flutter:
   assets:
     - assets/data/
     - assets/surah/
-    - assets/tajweed/
     - assets/translation/
     - assets/translation/ar/
     - assets/translation/en/
