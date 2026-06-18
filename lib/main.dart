@@ -258,8 +258,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     try {
       final textResponse = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
       final textData = json.decode(textResponse);
-      Map<String, dynamic> versesMap = Map<String, dynamic>.from(textData['verse']);
-      List<String> allVerses = versesMap.values.map((value) => value.toString()).toList();
+      
+      List<String> allVerses = [];
+      if (textData is Map && textData.containsKey('verse')) {
+        Map<String, dynamic> versesMap = Map<String, dynamic>.from(textData['verse']);
+        allVerses = versesMap.values.map((value) => value.toString()).toList();
+      } else if (textData is Map) {
+        allVerses = textData.values.map((value) => value.toString()).toList();
+      } else if (textData is List) {
+        allVerses = textData.map((value) => value.toString()).toList();
+      }
 
       try {
         final tajweedResponse = await rootBundle.loadString('assets/tajweed/surah_${widget.surahId}.json');
@@ -321,9 +329,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   String _getTafsirOrTranslationText(Map<String, dynamic>? data, int verseNum) {
-    if (data == null || data['verse'] == null) return "النص غير متوفر حالياً.";
-    var verseMap = data['verse'];
+    if (data == null) return "النص غير متوفر حالياً.";
     
+    var verseMap = data['verse'] ?? data;
     if (verseMap is Map) {
       if (verseMap.containsKey('verse_$verseNum')) {
         return verseMap['verse_$verseNum'].toString();
@@ -332,6 +340,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       } else if (verseMap.containsKey(verseNum.toString())) {
         return verseMap[verseNum.toString()].toString();
       }
+    } else if (verseMap is List && verseNum - 1 < verseMap.length) {
+      return verseMap[verseNum - 1].toString();
     }
     return "النص غير متوفر لهذه الآية.";
   }
@@ -339,13 +349,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   List<InlineSpan> _buildDynamicTajweedSpans(String verseText, int verseIndex) {
     List<InlineSpan> spans = [];
     
-    if (_tajweedRulesData == null || _tajweedRulesData!['verse'] == null) {
+    if (_tajweedRulesData == null) {
       spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
       return spans;
     }
 
-    final String key = 'verse_$verseIndex';
-    final List<dynamic>? rules = _tajweedRulesData!['verse'][key];
+    var verseRoot = _tajweedRulesData!['verse'] ?? _tajweedRulesData;
+    List<dynamic>? rules;
+    
+    if (verseRoot is Map) {
+      rules = verseRoot['verse_$verseIndex'] ?? verseRoot[verseIndex.toString()];
+    } else if (verseRoot is List && verseIndex - 1 < verseRoot.length) {
+      rules = verseRoot[verseIndex - 1];
+    }
 
     if (rules == null || rules.isEmpty) {
       spans.add(TextSpan(text: verseText, style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87)));
@@ -488,7 +504,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "آياتها: ${toArabicNumerals(widget.versesCount)}",
+              "آياتها: ${toArabicNumerals(_currentVerses.isNotEmpty ? _currentVerses.length : widget.versesCount)}",
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
             ),
           ],
