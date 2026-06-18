@@ -218,11 +218,17 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   late Future<Map<String, dynamic>> _surahDataFuture;
   List<String> _currentVerses = [];
 
+  // مستودعات الحفظ المسبق للتراجم والتفاسير
+  Map<String, dynamic>? _tafsirArData;
+  Map<String, dynamic>? _translationEnData;
+  Map<String, dynamic>? _translationIdData;
+
   @override
   void initState() {
     super.initState();
     _saveLastReadPosition();
     _surahDataFuture = loadSurahData();
+    _preloadTafsirAndTranslations();
   }
 
   @override
@@ -272,6 +278,133 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       'basmalah': basmalah,
       'verses': dynamicVerses,
     };
+  }
+
+  // تحميل الملفات من المسارات الجديدة المقررة في الحافظة assets/translation/
+  Future<void> _preloadTafsirAndTranslations() async {
+    try {
+      final arString = await rootBundle.loadString('assets/translation/ar/ar_translation_${widget.surahId}.json');
+      _tafsirArData = json.decode(arString);
+    } catch (_) {}
+
+    try {
+      final enString = await rootBundle.loadString('assets/translation/en/en_translation_${widget.surahId}.json');
+      _translationEnData = json.decode(enString);
+    } catch (_) {}
+
+    try {
+      final idString = await rootBundle.loadString('assets/translation/id/id_translation_${widget.surahId}.json');
+      _translationIdData = json.decode(idString);
+    } catch (_) {}
+  }
+
+  String _getTafsirOrTranslationText(Map<String, dynamic>? data, int verseNum) {
+    if (data == null || data['verse'] == null) return "النص غير متوفر حالياً.";
+    var verseMap = data['verse'];
+    
+    if (verseMap is Map) {
+      if (verseMap.containsKey('verse_$verseNum')) {
+        return verseMap['verse_$verseNum'].toString();
+      } else if (verseMap.containsKey('verse_${verseNum - 1}')) {
+        return verseMap['verse_${verseNum - 1}'].toString();
+      }
+    }
+    return "النص غير متوفر لهذه الآية.";
+  }
+
+  void _showTafsirBottomSheet(int verseNumber, String verseText) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DefaultTabController(
+          length: 3,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.55,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFDFBF7),
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 10),
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    "الآية (${toArabicNumerals(verseNumber)})",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green[800], fontFamily: 'ahmed'),
+                  ),
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(8)),
+                  child: Text(
+                    verseText,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87, fontFamily: 'ahmed'),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                TabBar(
+                  labelColor: Colors.green[800],
+                  unselectedLabelColor: Colors.grey[600],
+                  indicatorColor: Colors.green[800],
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, fontFamily: 'ahmed'),
+                  tabs: const [
+                    Tab(text: "التفسير الميسر"),
+                    Tab(text: "English"),
+                    Tab(text: "Indonesia"),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          _getTafsirOrTranslationText(_tafsirArData, verseNumber),
+                          style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.blackDE, fontFamily: 'ahmed'),
+                          textAlign: TextAlign.justify,
+                        ),
+                      ),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            _getTafsirOrTranslationText(_translationEnData, verseNumber),
+                            style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ),
+                      ),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            _getTafsirOrTranslationText(_translationIdData, verseNumber),
+                            style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _goToVerse(int verseNumber) {
@@ -340,17 +473,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ الـ AppBar المحدث والمكبر لضمان وضوح الكلمات والأرقام ومنع صغر الخط
       appBar: AppBar(
         centerTitle: false, 
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
-        toolbarHeight: 85, // زيادة الارتفاع ليعطي مساحة كافية للخطوط الكبيرة دون انضغاط
+        toolbarHeight: 85, 
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // السطر الأول: اسم السورة كبير وعريض + نوع السورة واضح
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -368,7 +499,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               ],
             ),
             const SizedBox(height: 6),
-            // السطر الثاني: عدد الآيات والجزء بخط مكبر وواضح بلون أبيض ناصع لقراءته بسهولة
             Text(
               "آياتها: ${toArabicNumerals(widget.versesCount)}  |  الجزء الأول",
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
@@ -478,27 +608,36 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         actualVerseNum = index + 1;
                       }
                       
-                      return TextSpan(
-                        children: [
-                          TextSpan(
-                            text: "${versesList[index]} ",
-                            style: TextStyle(
-                              fontSize: _fontSize, 
-                              fontFamily: 'ahmed', 
-                              height: 2.2, 
-                              color: Colors.black87,
+                      final String rawVerseText = versesList[index];
+
+                      return WidgetSpan(
+                        child: GestureDetector(
+                          onTap: () => _showTafsirBottomSheet(actualVerseNum, rawVerseText),
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: "$rawVerseText ",
+                                  style: TextStyle(
+                                    fontSize: _fontSize, 
+                                    fontFamily: 'ahmed', 
+                                    height: 2.2, 
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
+                                  style: TextStyle(
+                                    fontSize: _fontSize - 2, 
+                                    fontFamily: 'ahmed', 
+                                    color: Colors.green[800],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          TextSpan(
-                            text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                            style: TextStyle(
-                              fontSize: _fontSize - 2, 
-                              fontFamily: 'ahmed', 
-                              color: Colors.green[800],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                        ),
                       );
                     }),
                   ),
