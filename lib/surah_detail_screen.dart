@@ -372,12 +372,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           backgroundColor: const Color(0xFF2E7D32),
           foregroundColor: Colors.white,
           elevation: 2,
-          // زر العودة يقع جهة اليمين في وضع الـ RTL تلقائياً
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
-          // منصة العنوان مخصصة فقط لبيانات السورة والجزء بشكل نظيف وواسع
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -397,12 +395,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 style: const TextStyle(
                   fontFamily: 'ahmed',
                   fontSize: 13,
-                  color: Colors.whiteBD,
+                  color: Colors.white70, // تم تصحيح الخطأ الإملائي هنا بنجاح
                 ),
               ),
             ],
           ),
-          // كافة الإضافات والتحكم مجمعة هنا لتظهر بتبويب جهة اليسار كاملة
           actions: [
             IconButton(
               icon: const Icon(Icons.pin_drop_outlined),
@@ -485,7 +482,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         verseText,
                         textAlign: TextAlign.justify,
                         style: TextStyle(
-                          fontFamily: 'ahmed',
+                          fontFamily: 'phmed', // يمكنك تعديل الفونت هنا إن لزم الأمر
                           fontSize: _currentFontSize,
                           color: textColor,
                           height: 1.8,
