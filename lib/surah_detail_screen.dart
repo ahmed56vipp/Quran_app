@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -36,6 +37,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Map<String, dynamic>? _translationEnData;
   Map<String, dynamic>? _translationIdData;
 
+  // متغيرات الميزات الجديدة
+  bool _isFullScreen = false;
+  bool _isAutoScrolling = false;
+  bool _showSidebar = false;
+  double _scrollSpeed = 2.0; // سرعة التمرير (بكسل في الثانية)
+  Timer? _scrollTimer;
+
   @override
   void initState() {
     super.initState();
@@ -50,8 +58,65 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   void dispose() {
+    _stopAutoScroll();
     _scrollController.dispose();
+    // إعادة النظام لوضعه الطبيعي عند الخروج من الصفحة
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
     super.dispose();
+  }
+
+  // تفعيل وإلغاء وضع ملء الشاشة
+  void _toggleFullScreen() {
+    setState(() {
+      _isFullScreen = !_isFullScreen;
+      if (_isFullScreen) {
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      } else {
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+      }
+    });
+  }
+
+  // إدارة القراءة الآلية (التمرير التلقائي)
+  void _startAutoScroll() {
+    _stopAutoScroll();
+    setState(() {
+      _isAutoScrolling = true;
+    });
+    // تايمر يتكرر كل 50 ميلي ثانية لتوفير تمرير سلس ونظيف (Smooth Scroll)
+    _scrollTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (_scrollController.hasClients) {
+        double maxScroll = _scrollController.position.maxScrollExtent;
+        double currentScroll = _scrollController.position.pixels;
+        
+        if (currentScroll >= maxScroll) {
+          _stopAutoScroll();
+        } else {
+          // حساب المسافة المقطوعة بناءً على السرعة المحددة
+          double nextScroll = currentScroll + (_scrollSpeed * 0.05);
+          _scrollController.jumpTo(nextScroll);
+        }
+      }
+    });
+  }
+
+  void _stopAutoScroll() {
+    if (_scrollTimer != null && _scrollTimer!.isActive) {
+      _scrollTimer!.cancel();
+    }
+    if (mounted) {
+      setState(() {
+        _isAutoScrolling = false;
+      });
+    }
+  }
+
+  void _toggleAutoScroll() {
+    if (_isAutoScrolling) {
+      _stopAutoScroll();
+    } else {
+      _startAutoScroll();
+    }
   }
 
   Future<void> _saveLastReadPosition() async {
@@ -76,7 +141,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         }
       }
 
-      // قراءة تصاعدية إجبارية من 1 إلى العدد الإجمالي للسورة لضمان الترتيب القرآني الصحيح
       List<String> allVerses = [];
       for (int i = 1; i <= widget.versesCount; i++) {
         String keyStr = i.toString();
@@ -89,7 +153,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         }
       }
 
-      // حل احتياطي في حال وجود اختلاف في ملفات الـ JSON
       if (allVerses.isEmpty && versesMap.isNotEmpty) {
         var sortedKeys = versesMap.keys.toList()..sort((a, b) {
           int intA = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -104,7 +167,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       String? basmalah;
       List<String> dynamicVerses = [];
 
-      // سورة الفاتحة وسورة التوبة لا تفصل البسملة منهما
       if (widget.surahId == 1 || widget.surahId == 9) {
         dynamicVerses = allVerses;
       } else {
@@ -408,7 +470,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      // إخفاء الـ AppBar اختيارياً في وضع ملء الشاشة
+      appBar: _isFullScreen ? null : AppBar(
         centerTitle: false, 
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
@@ -448,6 +511,21 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Icon(_showSidebar ? Icons.auto_stories : Icons.play_circle_outline, size: 26, color: Colors.white),
+            tooltip: 'شريط القراءة الآلية',
+            onPressed: () {
+              setState(() {
+                _showSidebar = !_showSidebar;
+                if (!_showSidebar) _stopAutoScroll();
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.fullscreen, size: 26, color: Colors.white),
+            tooltip: 'وضع ملء الشاشة',
+            onPressed: _toggleFullScreen,
+          ),
           IconButton(
             icon: const Icon(Icons.find_in_page, size: 26, color: Colors.white),
             tooltip: 'الذهاب إلى آية',
@@ -507,101 +585,194 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         ),
       ),
 
-      body: _errorMessage.isNotEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            )
-          : FutureBuilder<Map<String, dynamic>>(
-              future: _surahDataFuture,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                
-                final basmalahText = snapshot.data!['basmalah'] as String?;
-                final versesList = snapshot.data!['verses'] as List<String>;
-
-                if (versesList.isEmpty && _errorMessage.isEmpty) {
-                  return const Center(child: Text("جاري تحميل آيات السورة...", style: TextStyle(fontFamily: 'ahmed')));
-                }
-
-                return NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    _updateJuzTitleBasedOnScroll();
-                    return false;
-                  },
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (basmalahText != null)
-                          GestureDetector(
-                            onTap: () => _showTafsirBottomSheet(basmalahText, 1),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 24),
-                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF4EDE2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
-                              ),
-                              child: Text(
-                                basmalahText,
-                                style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-
-                        // استخدام النص المتدفق المريح (المصحف الورقي المنسق تماماً)
-                        Directionality(
-                          textDirection: TextDirection.rtl,
-                          child: Text.rich(
-                            TextSpan(
-                              children: List.generate(versesList.length, (index) {
-                                final int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
-                                final String rawVerseText = versesList[index];
-
-                                return TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: "$rawVerseText ",
-                                      style: TextStyle(
-                                        fontSize: _fontSize, 
-                                        fontFamily: 'ahmed', 
-                                        height: 2.3, 
-                                        color: Colors.black87
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: "﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                                      style: TextStyle(
-                                        fontSize: _fontSize - 3, 
-                                        fontFamily: 'ahmed', 
-                                        color: Colors.green[800],
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }),
-                            ),
-                            textAlign: TextAlign.justify,
-                          ),
-                        ),
-                      ],
+      // تداخل العناصر لإتاحة وجود الشريط الجانبي والزر العائم الخاص بملء الشاشة
+      body: Stack(
+        children: [
+          _errorMessage.isNotEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                );
-              },
+                )
+              : FutureBuilder<Map<String, dynamic>>(
+                  future: _surahDataFuture,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                    
+                    final basmalahText = snapshot.data!['basmalah'] as String?;
+                    final versesList = snapshot.data!['verses'] as List<String>;
+
+                    if (versesList.isEmpty && _errorMessage.isEmpty) {
+                      return const Center(child: Text("جاري تحميل آيات السورة...", style: TextStyle(fontFamily: 'ahmed')));
+                    }
+
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        _updateJuzTitleBasedOnScroll();
+                        return false;
+                      },
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        padding: EdgeInsets.only(
+                          key: const Key('surah_scroll'),
+                          left: _showSidebar ? 80 : 20, // إضافة مساحة إضافية حتى لا يغطي الشريط الجانبي على النص الكريّم
+                          right: 20, 
+                          top: _isFullScreen ? 40 : 24, 
+                          bottom: 40
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (basmalahText != null)
+                              GestureDetector(
+                                onTap: () => _showTafsirBottomSheet(basmalahText, 1),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 24),
+                                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF4EDE2),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+                                  ),
+                                  child: Text(
+                                    basmalahText,
+                                    style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+
+                            Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: Text.rich(
+                                TextSpan(
+                                  children: List.generate(versesList.length, (index) {
+                                    final int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
+                                    final String rawVerseText = versesList[index];
+
+                                    return TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: "$rawVerseText ",
+                                          style: TextStyle(
+                                            fontSize: _fontSize, 
+                                            fontFamily: 'ahmed', 
+                                            height: 2.3, 
+                                            color: Colors.black87
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: "﴿${toArabicNumerals(actualVerseNum)}﴾ ",
+                                          style: TextStyle(
+                                            fontSize: _fontSize - 3, 
+                                            fontFamily: 'ahmed', 
+                                            color: Colors.green[800],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }),
+                                ),
+                                textAlign: TextAlign.justify,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+          // 1. الشريط الجانبي الذكي للقراءة الآلية (Sidebar Control)
+          if (_showSidebar)
+            Positioned(
+              left: 10,
+              top: MediaQuery.of(context).size.height * 0.25,
+              child: Material(
+                elevation: 6,
+                borderRadius: BorderRadius.circular(30),
+                color: Colors.green[800]!.withOpacity(0.95),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // زر التشغيل والإيقاف المؤقت
+                      IconButton(
+                        icon: Icon(_isAutoScrolling ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 36, color: Colors.white),
+                        onPressed: _toggleAutoScroll,
+                      ),
+                      const SizedBox(height: 12),
+                      // زر تسريع التمرير
+                      IconButton(
+                        icon: const Icon(Icons.fast_forward, size: 26, color: Colors.white),
+                        tooltip: 'تسريع القراءة الآلية',
+                        onPressed: () {
+                          setState(() {
+                            _scrollSpeed = (_scrollSpeed < 15.0) ? _scrollSpeed + 1.0 : _scrollSpeed;
+                            if (_isAutoScrolling) _startAutoScroll(); // إعادة التشغيل بالسرعة الجديدة
+                          });
+                        },
+                      ),
+                      // مؤشر السرعة الحالية
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          "${_scrollSpeed.toInt()}x",
+                          style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      // زر تبطئ القراءة
+                      IconButton(
+                        icon: const Icon(Icons.fast_rewind, size: 26, color: Colors.white),
+                        tooltip: 'تبطئة القراءة الآلية',
+                        onPressed: () {
+                          setState(() {
+                            _scrollSpeed = (_scrollSpeed > 1.0) ? _scrollSpeed - 1.0 : _scrollSpeed;
+                            if (_isAutoScrolling) _startAutoScroll();
+                          });
+                        },
+                      ),
+                      const Divider(color: Colors.white54, height: 20, thickness: 1),
+                      // زر لإغلاق الشريط الجانبي بسرعة
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20, color: Colors.white70),
+                        onPressed: () {
+                          setState(() {
+                            _showSidebar = false;
+                            _stopAutoScroll();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
+
+          // 2. زر عائم صغير وشفاف يظهر فقط في وضع ملء الشاشة للخروج منه وإظهار الـ AppBar مجدداً
+          if (_isFullScreen)
+            Positioned(
+              right: 16,
+              top: 16,
+              child: Opacity(
+                opacity: 0.5,
+                child: FloatingActionButton.small(
+                  backgroundColor: Colors.black87,
+                  foregroundColor: Colors.white,
+                  onPressed: _toggleFullScreen,
+                  child: const Icon(Icons.fullscreen_exit),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
