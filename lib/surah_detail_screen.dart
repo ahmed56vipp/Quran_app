@@ -67,24 +67,51 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       final textResponse = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
       final textData = json.decode(textResponse);
       
+      Map<String, dynamic> versesMap = {};
+      if (textData is Map) {
+        if (textData.containsKey('verse')) {
+          versesMap = Map<String, dynamic>.from(textData['verse']);
+        } else {
+          versesMap = Map<String, dynamic>.from(textData);
+        }
+      }
+
+      // ترتيب الآيات ترتيباً تصاعدياً صحيحاً بناءً على أرقامها (1, 2, 3...) لضمان عدم انعكاس السورة
       List<String> allVerses = [];
-      if (textData is Map && textData.containsKey('verse')) {
-        Map<String, dynamic> versesMap = Map<String, dynamic>.from(textData['verse']);
+      int vIndex = 1;
+      while (true) {
+        String keyStr = vIndex.toString();
+        String keyVerseStr = 'verse_$vIndex';
+        
+        if (versesMap.containsKey(keyStr)) {
+          allVerses.add(versesMap[keyStr].toString());
+        } else if (versesMap.containsKey(keyVerseStr)) {
+          allVerses.add(versesMap[keyVerseStr].toString());
+        } else {
+          // إذا لم يجد الآية التالية وتخطى العدد الفعلي المتوقع، يتوقف
+          if (vIndex > widget.versesCount && vIndex > 10) {
+            break;
+          }
+          // حماية إضافية للسور القصيرة جداً أو الطويلة لضمان استخراج كل الأنماط
+          if (vIndex > 300) {
+            break;
+          }
+        }
+        vIndex++;
+      }
+
+      // إذا فشل الترتيب المنظم نعود للطريقة الاحتياطية
+      if (allVerses.isEmpty && versesMap.isNotEmpty) {
         allVerses = versesMap.values.map((value) => value.toString()).toList();
-      } else if (textData is Map) {
-        allVerses = textData.values.map((value) => value.toString()).toList();
-      } else if (textData is List) {
-        allVerses = textData.map((value) => value.toString()).toList();
       }
       
       String? basmalah;
       List<String> dynamicVerses = [];
 
-      // سورة الفاتحة وسورة التوبة لا يتم فصل البسملة منهما
+      // سورة الفاتحة (1) وسورة التوبة (9) لا يتم فصل البسملة منهما
       if (widget.surahId == 1 || widget.surahId == 9) {
         dynamicVerses = allVerses;
       } else {
-        // إذا كان ملف السورة يحتوي على نص البسملة في أول خانة نقوم بفصلها للعرض المستقل
         if (allVerses.isNotEmpty && (allVerses[0].contains("بِسْمِ") || allVerses[0].startsWith("بِسمِ"))) {
           basmalah = allVerses[0];
           dynamicVerses = allVerses.sublist(1);
@@ -419,7 +446,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "آياتها: ${toArabicNumerals(_currentVerses.isNotEmpty ? _currentVerses.length : widget.versesCount)}",
+              "آياتها: ${toArabicNumerals(_currentVerses.isNotEmpty ? (_currentVerses.length + (snapshotHasBasmalah ? 1 : 0)) : widget.versesCount)}",
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
             ),
           ],
@@ -540,8 +567,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         Text.rich(
                           TextSpan(
                             children: List.generate(versesList.length, (index) {
-                              // تم تصحيح الترقيم التلقائي هنا لتبدأ السورة من الآية رقم 1 بشكل سليم دائماً
-                              final int actualVerseNum = index + 1;
+                              // حساب رقم الآية الفعلي الصحيح بشكل مستقر وثابت تبعا للموقع في القائمة المرتبة
+                              final int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
                               final String rawVerseText = versesList[index];
 
                               return WidgetSpan(
