@@ -76,35 +76,35 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         }
       }
 
-      // ترتيب الآيات ترتيباً تصاعدياً صحيحاً بناءً على أرقامها (1, 2, 3...) لضمان عدم انعكاس السورة
+      // قراءة تصاعدية إجبارية من 1 إلى العدد الإجمالي للسورة لضمان الترتيب القرآني الصحيح
       List<String> allVerses = [];
-      int vIndex = 1;
-      while (true) {
-        String keyStr = vIndex.toString();
-        String keyVerseStr = 'verse_$vIndex';
+      for (int i = 1; i <= widget.versesCount; i++) {
+        String keyStr = i.toString();
+        String keyVerseStr = 'verse_$i';
         
         if (versesMap.containsKey(keyStr)) {
-          allVerses.add(versesMap[keyStr].toString());
+          allVerses.add(versesMap[keyStr].toString().trim());
         } else if (versesMap.containsKey(keyVerseStr)) {
-          allVerses.add(versesMap[keyVerseStr].toString());
-        } else {
-          if (vIndex > widget.versesCount && vIndex > 10) {
-            break;
-          }
-          if (vIndex > 300) {
-            break;
-          }
+          allVerses.add(versesMap[keyVerseStr].toString().trim());
         }
-        vIndex++;
       }
 
+      // حل احتياطي في حال وجود اختلاف في ملفات الـ JSON
       if (allVerses.isEmpty && versesMap.isNotEmpty) {
-        allVerses = versesMap.values.map((value) => value.toString()).toList();
+        var sortedKeys = versesMap.keys.toList()..sort((a, b) {
+          int intA = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          int intB = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          return intA.compareTo(intB);
+        });
+        for (var key in sortedKeys) {
+          allVerses.add(versesMap[key].toString().trim());
+        }
       }
       
       String? basmalah;
       List<String> dynamicVerses = [];
 
+      // سورة الفاتحة وسورة التوبة لا تفصل البسملة منهما
       if (widget.surahId == 1 || widget.surahId == 9) {
         dynamicVerses = allVerses;
       } else {
@@ -560,39 +560,41 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             ),
                           ),
 
-                        Text.rich(
-                          TextSpan(
-                            children: List.generate(versesList.length, (index) {
-                              final int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
-                              final String rawVerseText = versesList[index];
+                        // استخدام النص المتدفق المريح (المصحف الورقي المنسق تماماً)
+                        Directionality(
+                          textDirection: TextDirection.rtl,
+                          child: Text.rich(
+                            TextSpan(
+                              children: List.generate(versesList.length, (index) {
+                                final int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
+                                final String rawVerseText = versesList[index];
 
-                              return WidgetSpan(
-                                child: GestureDetector(
-                                  onTap: () => _showTafsirBottomSheet(rawVerseText, actualVerseNum),
-                                  child: Text.rich(
+                                return TextSpan(
+                                  children: [
                                     TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: rawVerseText,
-                                          style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.2, color: Colors.black87),
-                                        ),
-                                        TextSpan(
-                                          text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
-                                          style: TextStyle(
-                                            fontSize: _fontSize - 2, 
-                                            fontFamily: 'ahmed', 
-                                            color: Colors.green[800],
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
+                                      text: "$rawVerseText ",
+                                      style: TextStyle(
+                                        fontSize: _fontSize, 
+                                        fontFamily: 'ahmed', 
+                                        height: 2.3, 
+                                        color: Colors.black87
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            }),
+                                    TextSpan(
+                                      text: "﴿${toArabicNumerals(actualVerseNum)}﴾ ",
+                                      style: TextStyle(
+                                        fontSize: _fontSize - 3, 
+                                        fontFamily: 'ahmed', 
+                                        color: Colors.green[800],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }),
+                            ),
+                            textAlign: TextAlign.justify,
                           ),
-                          textAlign: TextAlign.justify,
                         ),
                       ],
                     ),
