@@ -547,7 +547,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       children: [
                                         TextSpan(
                                           text: "$rawVerseText ",
-                                          style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.3, color: Colors.blackDE),
+                                          style: TextStyle(fontSize: _fontSize, fontFamily: 'ahmed', height: 2.3, color: Colors.black),
                                         ),
                                         TextSpan(
                                           text: " ﴿${toArabicNumerals(actualVerseNum)}﴾ ",
