@@ -46,6 +46,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   @override
   void initState() {
     super.initState();
+    // توليد مفاتيح فريدة لكل الآيات بالإضافة إلى البسملة
     _verseKeys.addAll(List.generate(widget.versesCount + 1, (index) => GlobalKey()));
     _loadSurahVerses();
     _scrollController.addListener(_onScroll);
@@ -59,31 +60,76 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  // تم تصحيح المسار هنا إلى quran_full.json ليعمل جلب السور بنجاح
+  // دالة جلب الميتا داتا ونصوص الآيات بشكل آمن ودفاعي
   Future<void> _loadSurahVerses() async {
     try {
-      final String response = await rootBundle.loadString('assets/data/quran_full.json');
-      final List<dynamic> data = json.decode(response);
+      // 1. جلب الميتا داتا ونطاقات الأجزاء
+      final String responseMeta = await rootBundle.loadString('assets/data/quran_full.json');
+      final List<dynamic> dataMeta = json.decode(responseMeta);
       
-      final surahData = data.firstWhere(
-        (element) => int.tryParse(element['id'].toString()) == widget.surahId,
+      final surahData = dataMeta.firstWhere(
+        (element) => int.tryParse(element['index'].toString()) == widget.surahId,
         orElse: () => null,
       );
 
       if (surahData != null) {
         setState(() {
-          _versesMap = surahData['verse'] as Map<String, dynamic>?;
           _surahJuzRanges = surahData['juz'] as List<dynamic>? ?? [];
         });
       }
+
+      // 2. جلب النص الفعلي للآيات من المجلد المخصص
+      String surahTextResponse = '';
+      try {
+        surahTextResponse = await rootBundle.loadString('assets/surah/${widget.surahId}.json');
+      } catch (_) {
+        surahTextResponse = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
+      }
+
+      final dynamic parsedText = json.decode(surahTextResponse);
+      Map<String, dynamic> localVersesMap = {};
+
+      if (parsedText is Map) {
+        parsedText.forEach((key, value) {
+          String cleanKey = key.toString();
+          if (!cleanKey.startsWith('verse_') && cleanKey != '0') {
+            localVersesMap['verse_$cleanKey'] = value;
+          } else {
+            localVersesMap[cleanKey] = value;
+          }
+        });
+      } else if (parsedText is List) {
+        // تصحيح ذكي لتفادي إزاحة الآيات بمقدار آية واحدة (Off-by-One Bug)
+        if (parsedText.length == widget.versesCount) {
+          for (int i = 0; i < parsedText.length; i++) {
+            localVersesMap['verse_${i + 1}'] = parsedText[i].toString();
+          }
+        } else {
+          for (int i = 0; i < parsedText.length; i++) {
+            localVersesMap['verse_$i'] = parsedText[i].toString();
+            localVersesMap['$i'] = parsedText[i].toString();
+          }
+        }
+      }
+
+      setState(() {
+        _versesMap = localVersesMap;
+      });
+
     } catch (e) {
-      debugPrint("خطأ في تحميل آيات السورة: $e");
+      debugPrint("خطأ أثناء جلب آيات السورة: $e");
+      setState(() {
+        _versesMap = {'verse_0': 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'};
+      });
     }
   }
 
+  // تتبع موضع التمرير لتحديد رقم الآية الحالية بدقة وبدون استدعاءات تسبب الـ Crash
   void _onScroll() {
     if (_verseKeys.isEmpty || !mounted) return;
-    double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 100.0;
+    
+    // تم الإصلاح هنا باستخدام الحساب المعياري الآمن بدلاً من التفتيش العكسي للشاشة
+    double appBarHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
     int detectedVerse = _currentVisibleVerse;
 
     for (int i = 1; i <= widget.versesCount; i++) {
@@ -179,9 +225,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 if (targetVerse != null && targetVerse > 0 && targetVerse <= widget.versesCount) {
                   Navigator.pop(context);
                   final targetContext = _verseKeys[targetVerse].currentContext;
+                  
                   if (targetContext != null) {
                     Scrollable.ensureVisible(
                       targetContext,
+                      duration: const Duration(seconds: 1),
+                      curve: Curves.easeInOut,
+                    );
+                  } else {
+                    // تم الإصلاح هنا بوضع آلية الانتقال الحسابي التعويضي في حال كانت الآية غير محملة في الذاكرة بعد
+                    double maxScroll = _scrollController.position.maxScrollExtent;
+                    double estimatedOffset = (targetVerse / widget.versesCount) * maxScroll;
+                    _scrollController.animateTo(
+                      estimatedOffset,
                       duration: const Duration(seconds: 1),
                       curve: Curves.easeInOut,
                     );
@@ -318,17 +374,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (_surahJuzRanges.isEmpty) return _getFallbackJuz();
 
     for (var juz in _surahJuzRanges) {
-      final startStr = juz['verse']['start'].toString().replaceAll('verse_', '');
-      final endStr = juz['verse']['end'].toString().replaceAll('verse_', '');
-      
-      int start = int.tryParse(startStr) ?? 1;
-      int end = int.tryParse(endStr) ?? widget.versesCount;
-      
-      if (_currentVisibleVerse >= start && _currentVisibleVerse <= end) {
-        return juz['index'].toString();
+      if (juz['verse'] != null && juz['verse']['start'] != null && juz['verse']['end'] != null) {
+        final startStr = juz['verse']['start'].toString().replaceAll('verse_', '');
+        final endStr = juz['verse']['end'].toString().replaceAll('verse_', '');
+        
+        int start = int.tryParse(startStr) ?? 1;
+        int end = int.tryParse(endStr) ?? widget.versesCount;
+        
+        if (_currentVisibleVerse >= start && _currentVisibleVerse <= end) {
+          return juz['index'].toString();
+        }
       }
     }
-    return _surahJuzRanges.first['index'].toString();
+    return _surahJuzRanges.first['index']?.toString() ?? _getFallbackJuz();
   }
 
   String _getFallbackJuz() {
@@ -395,7 +453,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 style: const TextStyle(
                   fontFamily: 'ahmed',
                   fontSize: 13,
-                  color: Colors.white70, // تم تصحيح الخطأ الإملائي هنا بنجاح
+                  color: Colors.white70,
                 ),
               ),
             ],
@@ -455,7 +513,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           color: cardColor,
                         ),
                         child: Text(
-                          _versesMap?['verse_0'] ?? "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                          _versesMap?['verse_0'] ?? _versesMap?['0'] ?? "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'ahmed',
@@ -467,7 +525,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       );
                     }
 
-                    final String verseText = _versesMap?['verse_$index'] ?? '';
+                    final String verseText = _versesMap?['verse_$index'] ?? _versesMap?['$index'] ?? _versesMap?[index.toString()] ?? '';
 
                     return Container(
                       key: _verseKeys[index],
@@ -482,7 +540,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         verseText,
                         textAlign: TextAlign.justify,
                         style: TextStyle(
-                          fontFamily: 'phmed', // يمكنك تعديل الفونت هنا إن لزم الأمر
+                          fontFamily: 'ahmed', // تم تعديل الاسم هنا ليطابق خط أحمد المخصص بشكل صحيح وثابت
                           fontSize: _currentFontSize,
                           color: textColor,
                           height: 1.8,
