@@ -37,10 +37,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   final List<GlobalKey> _verseKeys = [];
   int _currentVisibleVerse = 1;
 
-  // متغيرات ميزات التحكم التفاعلية الشاملة
-  double _currentFontSize = 24.0; // حجم خط القراءة التفاعلي الافتراضي
-  bool _isAutoScrolling = false;  // حالة التمرير التلقائي الفورية
-  double _scrollSpeed = 2.0;      // سرعة التمرير الافتراضية (من 0.5 إلى 5.0)
+  // خيارات التحكم بحجم الخط والسرعة
+  double _currentFontSize = 24.0; 
+  bool _isAutoScrolling = false;  
+  double _scrollSpeed = 2.0;      
   Timer? _autoScrollTimer;
 
   @override
@@ -59,9 +59,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
+  // تم تصحيح المسار هنا إلى quran_full.json ليعمل جلب السور بنجاح
   Future<void> _loadSurahVerses() async {
     try {
-      final String response = await rootBundle.loadString('assets/data/quran_data.json');
+      final String response = await rootBundle.loadString('assets/data/quran_full.json');
       final List<dynamic> data = json.decode(response);
       
       final surahData = data.firstWhere(
@@ -107,7 +108,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // ميزة التمرير التلقائي الذكي المربوطة كلياً بالمؤقت والسرعة الحية
   void _toggleAutoScroll(bool start) {
     _autoScrollTimer?.cancel();
     setState(() {
@@ -121,17 +121,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           double currentScroll = _scrollController.position.pixels;
           
           if (currentScroll < maxScroll) {
-            // التمرير بسلاسة فائقة متناهية بناءً على متغير السرعة الحية
             _scrollController.jumpTo(currentScroll + (_scrollSpeed * 0.3));
           } else {
-            _toggleAutoScroll(false); // الإيقاف التلقائي الذكي عند الوصول لنهاية السورة
+            _toggleAutoScroll(false);
           }
         }
       });
     }
   }
 
-  // نافذة الانتقال والذهاب للآية المحددة بدقة
   void _showGoToVerseDialog() {
     final TextEditingController textController = TextEditingController();
     
@@ -160,7 +158,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 autofocus: true,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  hintText: "مثال: 100",
+                  hintText: "مثال: 7",
                   prefixIcon: const Icon(Icons.pin_drop, color: Color(0xFF2E7D32)),
                 ),
               ),
@@ -193,7 +191,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     SnackBar(
                       backgroundColor: Colors.redAccent,
                       content: Text(
-                        "خطأ: نطاق الآيات الصحيح بين 1 و ${widget.versesCount}",
+                        "خطأ: نطاق الآيات بين 1 و ${widget.versesCount}",
                         style: const TextStyle(fontFamily: 'ahmed'),
                       ),
                     ),
@@ -208,7 +206,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // لوحة الخيارات السفلية الشاملة المدمجة للتحكم التفاعلي الكامل بحجم الخط والسرعة
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -230,12 +227,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "لوحة التحكم بخيارات القراءة",
+                      "خيارات القراءة والتحكم",
                       style: TextStyle(fontFamily: 'ahmed', fontSize: 18, fontWeight: FontWeight.bold, color: textCol),
                     ),
                     const Divider(),
                     const SizedBox(height: 10),
-                    // ميزة التحكم بحجم الخط الكامل التفاعلي (+A / -A)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -266,11 +262,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 15),
-                    // التحكم بالتمرير التلقائي الشامل والسرعة الحية
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("تشغيل التمرير التلقائي للمصحف:", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 16)),
+                        Text("تشغيل التمرير التلقائي:", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 16)),
                         Switch(
                           value: _isAutoScrolling,
                           activeColor: const Color(0xFF2E7D32),
@@ -286,7 +281,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          Text("سرعة حركة التمرير الفورية:", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 14)),
+                          Text("سرعة التمرير:", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 14)),
                           Expanded(
                             child: Slider(
                               value: _scrollSpeed,
@@ -300,7 +295,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                   _scrollSpeed = value;
                                 });
                                 setModalState(() {
-                                  _toggleAutoScroll(true); // تحديث التمرير حياً بالسرعة الجديدة
+                                  _toggleAutoScroll(true); 
                                 });
                               },
                             ),
@@ -377,73 +372,51 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           backgroundColor: const Color(0xFF2E7D32),
           foregroundColor: Colors.white,
           elevation: 2,
+          // زر العودة يقع جهة اليمين في وضع الـ RTL تلقائياً
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Row(
+          // منصة العنوان مخصصة فقط لبيانات السورة والجزء بشكل نظيف وواسع
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFFFD700), width: 1.8),
-                  borderRadius: BorderRadius.circular(8),
-                  color: const Color(0xFF1B5E20),
-                ),
-                child: Text(
-                  widget.surahName,
-                  style: const TextStyle(
-                    fontFamily: 'ahmed',
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFFFD700),
-                  ),
+              Text(
+                widget.surahName,
+                style: const TextStyle(
+                  fontFamily: 'ahmed',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFFD700),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "(${widget.surahType}) | جزء: $currentJuz",
-                      style: const TextStyle(
-                        fontFamily: 'ahmed',
-                        fontSize: 17,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      "آياتها: ${widget.versesCount}",
-                      style: const TextStyle(
-                        fontFamily: 'ahmed',
-                        fontSize: 15,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 2),
+              Text(
+                "جزء: $currentJuz | آياتها: ${widget.versesCount} (${widget.surahType})",
+                style: const TextStyle(
+                  fontFamily: 'ahmed',
+                  fontSize: 13,
+                  color: Colors.whiteBD,
                 ),
               ),
             ],
           ),
+          // كافة الإضافات والتحكم مجمعة هنا لتظهر بتبويب جهة اليسار كاملة
           actions: [
             IconButton(
-              icon: const Icon(Icons.pin_drop_outlined, color: Colors.white),
+              icon: const Icon(Icons.pin_drop_outlined),
               tooltip: 'الذهاب إلى آية',
               onPressed: _showGoToVerseDialog,
             ),
             IconButton(
-              icon: const Icon(Icons.tune, color: Colors.white),
-              tooltip: 'لوحة التحكم والخطوط',
+              icon: const Icon(Icons.tune),
+              tooltip: 'خيارات الخط والتمرير',
               onPressed: _showSettingsBottomSheet,
             ),
             IconButton(
-              icon: Icon(
-                _isEyeProtection ? Icons.visibility : Icons.visibility_outlined,
-                color: _isEyeProtection ? const Color(0xFFFFD700) : Colors.white,
-              ),
+              icon: Icon(_isEyeProtection ? Icons.visibility : Icons.visibility_outlined),
+              color: _isEyeProtection ? const Color(0xFFFFD700) : Colors.white,
               tooltip: 'حماية العين',
               onPressed: () {
                 setState(() {
@@ -453,10 +426,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               },
             ),
             IconButton(
-              icon: Icon(
-                _isNightMode ? Icons.dark_mode : Icons.dark_mode_outlined,
-                color: _isNightMode ? const Color(0xFFFFD700) : Colors.white,
-              ),
+              icon: Icon(_isNightMode ? Icons.dark_mode : Icons.dark_mode_outlined),
+              color: _isNightMode ? const Color(0xFFFFD700) : Colors.white,
               tooltip: 'الوضع الليلي',
               onPressed: () {
                 setState(() {
@@ -515,7 +486,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         textAlign: TextAlign.justify,
                         style: TextStyle(
                           fontFamily: 'ahmed',
-                          fontSize: _currentFontSize, // حجم الخط يتغير حياً عند تعديله من اللوحة السفلية
+                          fontSize: _currentFontSize,
                           color: textColor,
                           height: 1.8,
                         ),
