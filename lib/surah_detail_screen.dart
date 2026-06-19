@@ -515,7 +515,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             IconButton(
               icon: const Icon(Icons.text_fields, size: 24, color: Colors.white),
               tooltip: 'إعدادات الخط',
-              // استخدام الـ key هنا يمنع أي توقف فجائي للتطبيق
               onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
             IconButton(
