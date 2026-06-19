@@ -43,7 +43,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _isFullScreen = false;
   bool _isAutoScrolling = false;
   double _baseScrollSpeed = 1.2; // السرعة القياسية الأساسية
-  double _scrollSpeedMultiplier = 0.1; // تبدأ السرعة الآن من 0.1 كحد أدنى بدلاً من 1.0
+  double _scrollSpeedMultiplier = 0.1; // تبدأ السرعة من 0.1 كحد أدنى لمرونة كاملة
   Timer? _scrollTimer;
 
   @override
@@ -92,7 +92,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         if (currentScroll >= maxScroll) {
           _stopAutoScroll();
         } else {
-          // السرعة النهائية = السرعة الأساسية مضروبة في المعامل المتغير (يبدأ التأثير السلس من 0.1)
+          // السرعة النهائية = السرعة الأساسية مضروبة في المعامل المتغير
           double finalSpeed = _baseScrollSpeed * _scrollSpeedMultiplier;
           _scrollController.jumpTo(currentScroll + finalSpeed);
         }
@@ -169,6 +169,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  // تحديث تسمية الجزء ديناميكياً لتطابق صيغة الفهرس (جزء-١) تماماً وبدون أي رموز ۝
   void _updateJuzTitleBasedOnScroll() {
     if (_currentVerses.isEmpty || widget.juzData.isEmpty) return;
 
@@ -196,21 +197,21 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       int juzIndex = int.tryParse(juz['index'].toString()) ?? 0;
 
       if (widget.surahId > startSurah && widget.surahId < endSurah) {
-        detectedJuz = "الجزء ${toArabicNumerals(juzIndex)}";
+        detectedJuz = "جزء-${toArabicNumerals(juzIndex)}";
         break;
       } else if (widget.surahId == startSurah && widget.surahId == endSurah) {
         if (currentVerseNum >= startVerse && currentVerseNum <= endVerse) {
-          detectedJuz = "الجزء ${toArabicNumerals(juzIndex)}";
+          detectedJuz = "جزء-${toArabicNumerals(juzIndex)}";
           break;
         }
       } else if (widget.surahId == startSurah) {
         if (currentVerseNum >= startVerse) {
-          detectedJuz = "الجزء ${toArabicNumerals(juzIndex)}";
+          detectedJuz = "جزء-${toArabicNumerals(juzIndex)}";
           break;
         }
       } else if (widget.surahId == endSurah) {
         if (currentVerseNum <= endVerse) {
-          detectedJuz = "الجزء ${toArabicNumerals(juzIndex)}";
+          detectedJuz = "جزء-${toArabicNumerals(juzIndex)}";
           break;
         }
       }
@@ -389,6 +390,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   Text(" (${widget.surahType})", style: const TextStyle(fontSize: 14, fontFamily: 'ahmed', color: Colors.white70)),
                   if (_currentJuzTitle.isNotEmpty) ...[
                     const Text(" | ", style: TextStyle(fontSize: 16, color: Colors.white30)),
+                    // التسمية هنا تظهر نظيفة تماماً مثل: جزء-١ وبدون زخارف أو علامات إضافية
                     Text(_currentJuzTitle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.amber)),
                   ]
                 ],
@@ -463,7 +465,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       if (_isAutoScrolling) {
                         _stopAutoScroll();
                       } else {
-                        // تلبية لطلبك: الضغط هنا لا يبدأ القراءة بل يوجه المستخدم لتحريك الشريط لبدء آمن وسلس
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('يرجى تحريك شريط السرعة في الأسفل لتبدأ القراءة تلقائياً.', style: TextStyle(fontFamily: 'ahmed')),
@@ -486,16 +487,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ),
                   Slider(
                     value: _scrollSpeedMultiplier,
-                    min: 0.1, // تبدأ القراءة والسرعة من 0.1 تماماً
-                    max: 2.0, // الحد الأقصى المتفق عليه 2x
-                    divisions: 19, // تقسيم دقيق يضمن التنقل بمقدار 0.1 في كل خطوة
+                    min: 0.1, 
+                    max: 2.0, 
+                    divisions: 19, 
                     activeColor: Colors.green[800],
                     inactiveColor: Colors.grey[300],
                     label: "${_scrollSpeedMultiplier.toStringAsFixed(1)}x",
                     onChanged: (value) {
                       setState(() {
                         _scrollSpeedMultiplier = value;
-                        // التعديل الجوهري: بمجرد تحريك الشريط تبدأ القراءة والتحريك الفوري دون الحاجة لزر التشغيل
                         if (!_isAutoScrolling) {
                           _startAutoScroll();
                         }
