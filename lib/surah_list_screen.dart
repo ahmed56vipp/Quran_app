@@ -60,6 +60,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     });
   }
 
+  // الدالة المسؤولة عن عرض الجزء - تم التأكد من خلوها تماماً من علامة ۝
   String _getJuzForSurah(int surahId) {
     if (juzData.isEmpty) return '';
     List<int> parts = [];
@@ -85,7 +86,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('فهرس القرآن الكريم', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white)),
+        // تم تكبير خط عنوان التطبيق الرئيسي
+        title: const Text('فهرس القرآن الكريم', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white)),
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -104,7 +106,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 icon: const Icon(Icons.bookmark, color: Colors.white),
-                label: Text('العودة إلى آخر موضع قراءة: $_lastSurahName', style: const TextStyle(fontFamily: 'ahmed', fontSize: 16)),
+                // تم تكبير خط زر العودة لآخر قراءة
+                label: Text('العودة إلى آخر موضع قراءة: $_lastSurahName', style: const TextStyle(fontFamily: 'ahmed', fontSize: 17)),
                 onPressed: () async {
                   await Navigator.push(
                     context,
@@ -151,47 +154,51 @@ class _SurahListScreenState extends State<SurahListScreen> {
                           color: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             title: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                // تم تكبير خط اسم السورة
                                 Text(
                                   sName,
-                                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'ahmed'),
+                                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'ahmed'),
                                   textAlign: TextAlign.right,
                                 ),
                                 if (sJuz.isNotEmpty)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: Colors.green[50],
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: Colors.green.withOpacity(0.3)),
                                     ),
+                                    // تم تكبير خط الجزء المبين بجانب السورة بدون أي علامات أو زخارف
                                     child: Text(
                                       sJuz,
-                                      style: TextStyle(fontSize: 12, color: Colors.green[800], fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
+                                      style: TextStyle(fontSize: 14, color: Colors.green[800], fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
                                     ),
                                   ),
                               ],
                             ),
+                            // تم تكبير خط تفاصيل السورة (نوعها وعدد الآيات)
                             subtitle: Text(
                               "$sType | آياتها: ${toArabicNumerals(vCount)}",
-                              style: TextStyle(color: Colors.grey[600], fontSize: 14, fontFamily: 'ahmed'),
+                              style: TextStyle(color: Colors.grey[600], fontSize: 15, fontFamily: 'ahmed'),
                               textAlign: TextAlign.right,
                             ),
                             leading: SizedBox(
-                              width: 38,
-                              height: 38,
+                              width: 42,
+                              height: 42,
                               child: Image.asset(
                                 isMeccan ? 'assets/icon/mk.png' : 'assets/icon/md.png',
                                 fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) {
                                   return CircleAvatar(
                                     backgroundColor: Colors.green[50],
+                                    // تم تكبير خط الدائرة البديلة لرقم السورة في حال غياب الأيقونة
                                     child: Text(
                                       toArabicNumerals(sId),
-                                      style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
+                                      style: TextStyle(fontSize: 14, color: Colors.green[800], fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
                                     ),
                                   );
                                 },
