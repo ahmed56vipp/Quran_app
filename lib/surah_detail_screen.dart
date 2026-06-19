@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -23,24 +24,30 @@ class SurahDetailScreen extends StatefulWidget {
 }
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
+  // أوضاع الرؤية وحماية العين
   bool _isNightMode = false;
   bool _isEyeProtection = false;
   
+  // بيانات الآيات والأجزاء
   Map<String, dynamic>? _versesMap;
   List<dynamic> _surahJuzRanges = [];
   
+  // التحكم في التمرير وتتبع الآيات
   final ScrollController _scrollController = ScrollController();
   final List<GlobalKey> _verseKeys = [];
-  int _currentVisibleVerse = 1; // تتبع الآية الحالية الظاهرة في أعلى الشاشة
+  int _currentVisibleVerse = 1;
+
+  // متغيرات ميزات التحكم التفاعلية الشاملة
+  double _currentFontSize = 24.0; // حجم خط القراءة التفاعلي الافتراضي
+  bool _isAutoScrolling = false;  // حالة التمرير التلقائي الفورية
+  double _scrollSpeed = 2.0;      // سرعة التمرير الافتراضية (من 0.5 إلى 5.0)
+  Timer? _autoScrollTimer;
 
   @override
   void initState() {
     super.initState();
-    // إنشاء مفاتيح فريدة لكل آية لتتبع موضعها أثناء التمرير
     _verseKeys.addAll(List.generate(widget.versesCount + 1, (index) => GlobalKey()));
     _loadSurahVerses();
-    
-    // الاستماع لحركة التمرير لتحديث رقم الجزء ديناميكياً
     _scrollController.addListener(_onScroll);
   }
 
@@ -48,16 +55,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _autoScrollTimer?.cancel();
     super.dispose();
   }
 
-  // تحميل آيات السورة الحقيقية وبيانات الأجزاء الخاصة بها من ملف JSON
   Future<void> _loadSurahVerses() async {
     try {
       final String response = await rootBundle.loadString('assets/data/quran_data.json');
       final List<dynamic> data = json.decode(response);
       
-      // البحث عن السورة المطلوبة بواسطة معرف السورة (id)
       final surahData = data.firstWhere(
         (element) => int.tryParse(element['id'].toString()) == widget.surahId,
         orElse: () => null,
@@ -74,20 +80,18 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // دالة تتبع السطر الحالي وتحديد الآية العلوية لتغيير الجزء تلقائياً
   void _onScroll() {
-    if (_verseKeys.isEmpty) return;
-    
+    if (_verseKeys.isEmpty || !mounted) return;
     double appBarHeight = Scaffold.of(context).appBarMaxHeight ?? 100.0;
-    int detectedVerse = 1;
+    int detectedVerse = _currentVisibleVerse;
 
     for (int i = 1; i <= widget.versesCount; i++) {
+      if (i >= _verseKeys.length) break;
       final contextKey = _verseKeys[i].currentContext;
-      if (contextKey != null) {
+      if (contextKey != null && contextKey.mounted) {
         final box = contextKey.findRenderObject() as RenderBox?;
-        if (box != null) {
+        if (box != null && box.hasSize) {
           final positionY = box.localToGlobal(Offset.zero).dy;
-          // إذا كانت الآية قد وصلت إلى منطقة القراءة أسفل الشريط العلوي مباشرة
           if (positionY + box.size.height > appBarHeight) {
             detectedVerse = i;
             break;
@@ -103,11 +107,220 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // حساب رقم الجزء الحالي بناءً على الآية المرئية حالياً
-  String _getDynamicJuzNumber() {
-    if (_surahJuzRanges.isEmpty) {
-      return _getFallbackJuz();
+  // ميزة التمرير التلقائي الذكي المربوطة كلياً بالمؤقت والسرعة الحية
+  void _toggleAutoScroll(bool start) {
+    _autoScrollTimer?.cancel();
+    setState(() {
+      _isAutoScrolling = start;
+    });
+
+    if (start) {
+      _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+        if (_scrollController.hasClients) {
+          double maxScroll = _scrollController.position.maxScrollExtent;
+          double currentScroll = _scrollController.position.pixels;
+          
+          if (currentScroll < maxScroll) {
+            // التمرير بسلاسة فائقة متناهية بناءً على متغير السرعة الحية
+            _scrollController.jumpTo(currentScroll + (_scrollSpeed * 0.3));
+          } else {
+            _toggleAutoScroll(false); // الإيقاف التلقائي الذكي عند الوصول لنهاية السورة
+          }
+        }
+      });
     }
+  }
+
+  // نافذة الانتقال والذهاب للآية المحددة بدقة
+  void _showGoToVerseDialog() {
+    final TextEditingController textController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            "الذهاب إلى آية",
+            style: TextStyle(fontFamily: 'ahmed', fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "أدخل رقم الآية من (1 إلى ${widget.versesCount}):",
+                style: const TextStyle(fontFamily: 'ahmed', fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: textController,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  hintText: "مثال: 100",
+                  prefixIcon: const Icon(Icons.pin_drop, color: Color(0xFF2E7D32)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("إلغاء", style: TextStyle(fontFamily: 'ahmed', color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2E7D32),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                final int? targetVerse = int.tryParse(textController.text);
+                if (targetVerse != null && targetVerse > 0 && targetVerse <= widget.versesCount) {
+                  Navigator.pop(context);
+                  final targetContext = _verseKeys[targetVerse].currentContext;
+                  if (targetContext != null) {
+                    Scrollable.ensureVisible(
+                      targetContext,
+                      duration: const Duration(seconds: 1),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.redAccent,
+                      content: Text(
+                        "خطأ: نطاق الآيات الصحيح بين 1 و ${widget.versesCount}",
+                        style: const TextStyle(fontFamily: 'ahmed'),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text("انتقال", style: TextStyle(fontFamily: 'ahmed', color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // لوحة الخيارات السفلية الشاملة المدمجة للتحكم التفاعلي الكامل بحجم الخط والسرعة
+  void _showSettingsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            Color sheetBg = _isNightMode ? const Color(0xFF1E1E1E) : (_isEyeProtection ? const Color(0xFFEFE5CD) : Colors.white);
+            Color textCol = _isNightMode ? Colors.white : (_isEyeProtection ? const Color(0xFF3E2723) : const Color(0xFF1A1A1A));
+            
+            return Directionality(
+              textDirection: TextDirection.rtl,
+              child: Container(
+                color: sheetBg,
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "لوحة التحكم بخيارات القراءة",
+                      style: TextStyle(fontFamily: 'ahmed', fontSize: 18, fontWeight: FontWeight.bold, color: textCol),
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 10),
+                    // ميزة التحكم بحجم الخط الكامل التفاعلي (+A / -A)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("حجم خط الآيات الكريمة:", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 16)),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.remove_circle_outline, color: textCol, size: 28),
+                              onPressed: () {
+                                if (_currentFontSize > 18) {
+                                  setState(() => _currentFontSize -= 2);
+                                  setModalState(() {});
+                                }
+                              },
+                            ),
+                            Text("${_currentFontSize.toInt()}", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 18, fontWeight: FontWeight.bold)),
+                            IconButton(
+                              icon: Icon(Icons.add_circle_outline, color: textCol, size: 28),
+                              onPressed: () {
+                                if (_currentFontSize < 42) {
+                                  setState(() => _currentFontSize += 2);
+                                  setModalState(() {});
+                                }
+                              },
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    // التحكم بالتمرير التلقائي الشامل والسرعة الحية
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("تشغيل التمرير التلقائي للمصحف:", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 16)),
+                        Switch(
+                          value: _isAutoScrolling,
+                          activeColor: const Color(0xFF2E7D32),
+                          onChanged: (value) {
+                            setModalState(() {
+                              _toggleAutoScroll(value);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    if (_isAutoScrolling) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Text("سرعة حركة التمرير الفورية:", style: TextStyle(fontFamily: 'ahmed', color: textCol, fontSize: 14)),
+                          Expanded(
+                            child: Slider(
+                              value: _scrollSpeed,
+                              min: 0.5,
+                              max: 5.0,
+                              divisions: 9,
+                              activeColor: const Color(0xFF2E7D32),
+                              label: "سرعة: $_scrollSpeed",
+                              onChanged: (value) {
+                                setState(() {
+                                  _scrollSpeed = value;
+                                });
+                                setModalState(() {
+                                  _toggleAutoScroll(true); // تحديث التمرير حياً بالسرعة الجديدة
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _getDynamicJuzNumber() {
+    if (_surahJuzRanges.isEmpty) return _getFallbackJuz();
 
     for (var juz in _surahJuzRanges) {
       final startStr = juz['verse']['start'].toString().replaceAll('verse_', '');
@@ -123,7 +336,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return _surahJuzRanges.first['index'].toString();
   }
 
-  // دالة احتياطية لحساب الجزء في حال عدم توفر المخطط التفصيلي في السورة
   String _getFallbackJuz() {
     if (widget.juzData.isEmpty) return '1';
     List<int> parts = [];
@@ -141,7 +353,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // إعدادات الألوان الذكية للأوضاع الثلاثة
     Color backgroundColor = Colors.white;
     Color textColor = const Color(0xFF1A1A1A);
     Color cardColor = const Color(0xFFFAFAFA);
@@ -151,7 +362,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       textColor = const Color(0xFFE0E0E0);
       cardColor = const Color(0xFF1E1E1E);
     } else if (_isEyeProtection) {
-      backgroundColor = const Color(0xFFF4ECD8); // لون السيبيا المريح للعين
+      backgroundColor = const Color(0xFFF4ECD8);
       textColor = const Color(0xFF3E2723);
       cardColor = const Color(0xFFEFE5CD);
     }
@@ -172,7 +383,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           ),
           title: Row(
             children: [
-              // إطار ذهبي فخم لاسم السورة مع تكبير الخط
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
@@ -191,14 +401,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              // بيانات الجزء والآيات بالأرقام العادية 123 وبخط واضح ومكبر جداً
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "(${widget.surahType}) | جزء: $currentJuz", // يتغير الجزء هنا ديناميكياً 1 أو 2 أو 3 حسب موقع القراءة الحالي
+                      "(${widget.surahType}) | جزء: $currentJuz",
                       style: const TextStyle(
                         fontFamily: 'ahmed',
                         fontSize: 17,
@@ -211,7 +420,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       style: const TextStyle(
                         fontFamily: 'ahmed',
                         fontSize: 15,
-                        color: Colors.whiteA70,
+                        color: Colors.white70,
                       ),
                     ),
                   ],
@@ -220,6 +429,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ],
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.pin_drop_outlined, color: Colors.white),
+              tooltip: 'الذهاب إلى آية',
+              onPressed: _showGoToVerseDialog,
+            ),
+            IconButton(
+              icon: const Icon(Icons.tune, color: Colors.white),
+              tooltip: 'لوحة التحكم والخطوط',
+              onPressed: _showSettingsBottomSheet,
+            ),
             IconButton(
               icon: Icon(
                 _isEyeProtection ? Icons.visibility : Icons.visibility_outlined,
@@ -254,10 +473,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               : ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16.0),
-                  itemCount: widget.versesCount + 1, // +1 من أجل بطاقة البسملة في البداية
+                  itemCount: widget.versesCount + 1,
                   itemBuilder: (context, index) {
                     if (index == 0) {
-                      // عرض بطاقة البسملة المخصصة والمحاطة بإطار ذهبي أنيق
                       return Container(
                         key: _verseKeys[0],
                         width: double.infinity,
@@ -281,11 +499,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       );
                     }
 
-                    // جلب نص الآية الفعلي من ملف البيانات الخاص بك
                     final String verseText = _versesMap?['verse_$index'] ?? '';
 
                     return Container(
-                      key: _verseKeys[index], // المفتاح السحري لتحديد السطر ومتابعة الأجزاء بدقة
+                      key: _verseKeys[index],
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
                       margin: const EdgeInsets.only(bottom: 4),
                       decoration: BoxDecoration(
@@ -298,7 +515,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         textAlign: TextAlign.justify,
                         style: TextStyle(
                           fontFamily: 'ahmed',
-                          fontSize: 23, // خط كبير وواضح جداً لقراءة مريحة للمصحف
+                          fontSize: _currentFontSize, // حجم الخط يتغير حياً عند تعديله من اللوحة السفلية
                           color: textColor,
                           height: 1.8,
                         ),
