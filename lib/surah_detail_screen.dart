@@ -88,11 +88,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         } else if (versesMap.containsKey(keyVerseStr)) {
           allVerses.add(versesMap[keyVerseStr].toString());
         } else {
-          // إذا لم يجد الآية التالية وتخطى العدد الفعلي المتوقع، يتوقف
           if (vIndex > widget.versesCount && vIndex > 10) {
             break;
           }
-          // حماية إضافية للسور القصيرة جداً أو الطويلة لضمان استخراج كل الأنماط
           if (vIndex > 300) {
             break;
           }
@@ -100,7 +98,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         vIndex++;
       }
 
-      // إذا فشل الترتيب المنظم نعود للطريقة الاحتياطية
       if (allVerses.isEmpty && versesMap.isNotEmpty) {
         allVerses = versesMap.values.map((value) => value.toString()).toList();
       }
@@ -108,7 +105,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       String? basmalah;
       List<String> dynamicVerses = [];
 
-      // سورة الفاتحة (1) وسورة التوبة (9) لا يتم فصل البسملة منهما
       if (widget.surahId == 1 || widget.surahId == 9) {
         dynamicVerses = allVerses;
       } else {
@@ -446,7 +442,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              "آياتها: ${toArabicNumerals(_currentVerses.isNotEmpty ? (_currentVerses.length + (snapshotHasBasmalah ? 1 : 0)) : widget.versesCount)}",
+              "آياتها: ${toArabicNumerals(widget.versesCount)}",
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.normal, fontFamily: 'ahmed', color: Colors.white),
             ),
           ],
@@ -567,7 +563,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         Text.rich(
                           TextSpan(
                             children: List.generate(versesList.length, (index) {
-                              // حساب رقم الآية الفعلي الصحيح بشكل مستقر وثابت تبعا للموقع في القائمة المرتبة
                               final int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
                               final String rawVerseText = versesList[index];
 
