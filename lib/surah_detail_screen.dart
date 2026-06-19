@@ -43,7 +43,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _isFullScreen = false;
   bool _isAutoScrolling = false;
   double _baseScrollSpeed = 1.2; // السرعة القياسية الأساسية
-  double _scrollSpeedMultiplier = 1.0; // معامل السرعة يبدأ من 1.0x والحد الأقصى 2.0x
+  double _scrollSpeedMultiplier = 0.1; // تبدأ السرعة الآن من 0.1 كحد أدنى بدلاً من 1.0
   Timer? _scrollTimer;
 
   @override
@@ -92,7 +92,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         if (currentScroll >= maxScroll) {
           _stopAutoScroll();
         } else {
-          // السرعة النهائية = السرعة الأساسية مضروبة في المعامل (من 1.0x إلى 2.0x كحد أقصى)
+          // السرعة النهائية = السرعة الأساسية مضروبة في المعامل المتغير (يبدأ التأثير السلس من 0.1)
           double finalSpeed = _baseScrollSpeed * _scrollSpeedMultiplier;
           _scrollController.jumpTo(currentScroll + finalSpeed);
         }
@@ -106,14 +106,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       setState(() {
         _isAutoScrolling = false;
       });
-    }
-  }
-
-  void _toggleAutoScroll() {
-    if (_isAutoScrolling) {
-      _stopAutoScroll();
-    } else {
-      _startAutoScroll();
     }
   }
 
@@ -419,7 +411,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           ],
         ),
         
-        // التبويب الجانبي المتكامل من الجهة اليسرى ومضاف إليه عناصر التحكم بالسرعة بدقة
         endDrawer: Drawer(
           child: SafeArea(
             child: Padding(
@@ -456,20 +447,30 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ),
                   const SizedBox(height: 30),
                   
-                  // ثانياً: مفتاح التحكم بالقراءة الآلية الثابتة ومؤشر السرعة المطور (بحد أقصى 2x)
+                  // ثانياً: مفتاح التحكم الذكي بالقراءة الآلية ومؤشر السرعة المطور من 0.1
                   Row(
                     children: [
-                      Text('▲ القراءة الآلية', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.green[800], fontFamily: 'ahmed')),
+                      Text('▲ محرك التمرير الآلي', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.green[800], fontFamily: 'ahmed')),
                     ],
                   ),
                   const SizedBox(height: 8),
                   ListTile(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     tileColor: Colors.grey[100],
-                    leading: Icon(_isAutoScrolling ? Icons.pause_circle_filled : Icons.play_circle_filled, color: Colors.green[800]),
-                    title: Text(_isAutoScrolling ? "إيقاف القراءة" : "تشغيل القراءة الآلية", style: const TextStyle(fontSize: 14, fontFamily: 'ahmed')),
+                    leading: Icon(_isAutoScrolling ? Icons.pause_circle_filled : Icons.swipe_vertical, color: Colors.green[800]),
+                    title: Text(_isAutoScrolling ? "إيقاف القراءة الحالية" : "حرك الشريط بالأسفل للبدء", style: const TextStyle(fontSize: 14, fontFamily: 'ahmed')),
                     onTap: () {
-                      _toggleAutoScroll();
+                      if (_isAutoScrolling) {
+                        _stopAutoScroll();
+                      } else {
+                        // تلبية لطلبك: الضغط هنا لا يبدأ القراءة بل يوجه المستخدم لتحريك الشريط لبدء آمن وسلس
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('يرجى تحريك شريط السرعة في الأسفل لتبدأ القراءة تلقائياً.', style: TextStyle(fontFamily: 'ahmed')),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
                     },
                   ),
                   const SizedBox(height: 16),
@@ -478,22 +479,26 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     children: [
                       const Text('سرعة التمرير:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'ahmed')),
                       Text(
-                        "${_scrollSpeedMultiplier.toStringAsFixed(1)}x ${_scrollSpeedMultiplier == 2.0 ? '(max x 2)' : ''}", 
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _scrollSpeedMultiplier == 2.0 ? Colors.red : Colors.green[800], fontFamily: 'ahmed')
+                        "${_scrollSpeedMultiplier.toStringAsFixed(1)}x ${_scrollSpeedMultiplier >= 2.0 ? '(max x 2)' : ''}", 
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _scrollSpeedMultiplier >= 2.0 ? Colors.red : Colors.green[800], fontFamily: 'ahmed')
                       ),
                     ],
                   ),
                   Slider(
                     value: _scrollSpeedMultiplier,
-                    min: 1.0,
-                    max: 2.0,
-                    divisions: 10,
+                    min: 0.1, // تبدأ القراءة والسرعة من 0.1 تماماً
+                    max: 2.0, // الحد الأقصى المتفق عليه 2x
+                    divisions: 19, // تقسيم دقيق يضمن التنقل بمقدار 0.1 في كل خطوة
                     activeColor: Colors.green[800],
                     inactiveColor: Colors.grey[300],
                     label: "${_scrollSpeedMultiplier.toStringAsFixed(1)}x",
                     onChanged: (value) {
                       setState(() {
                         _scrollSpeedMultiplier = value;
+                        // التعديل الجوهري: بمجرد تحريك الشريط تبدأ القراءة والتحريك الفوري دون الحاجة لزر التشغيل
+                        if (!_isAutoScrolling) {
+                          _startAutoScroll();
+                        }
                       });
                     },
                   ),
@@ -526,7 +531,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                       final versesList = snapshot.data!['verses'] as List<String>;
 
-                      // عند النقر على الشاشة أثناء القراءة الآلية يتم إيقافها فوراً لتوفير سهولة تامة في الاستخدام بعد حذف الأزرار العائمة
                       return GestureDetector(
                         onTap: () {
                           if (_isAutoScrolling) {
@@ -595,7 +599,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     },
                   ),
 
-            // زر عائم شفاف ومستقر لإلغاء وضع ملء الشاشة عند تفعيله
             if (_isFullScreen)
               Positioned(
                 left: 20,
