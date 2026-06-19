@@ -80,9 +80,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       String? basmalah;
       List<String> dynamicVerses = [];
 
+      // سورة الفاتحة وسورة التوبة لا يتم فصل البسملة منهما
       if (widget.surahId == 1 || widget.surahId == 9) {
         dynamicVerses = allVerses;
       } else {
+        // إذا كان ملف السورة يحتوي على نص البسملة في أول خانة نقوم بفصلها للعرض المستقل
         if (allVerses.isNotEmpty && (allVerses[0].contains("بِسْمِ") || allVerses[0].startsWith("بِسمِ"))) {
           basmalah = allVerses[0];
           dynamicVerses = allVerses.sublist(1);
@@ -538,11 +540,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         Text.rich(
                           TextSpan(
                             children: List.generate(versesList.length, (index) {
-                              int actualVerseNum = (basmalahText != null) ? (index + 2) : (index + 1);
-                              if (widget.surahId == 1 || widget.surahId == 9) {
-                                actualVerseNum = index + 1;
-                              }
-
+                              // تم تصحيح الترقيم التلقائي هنا لتبدأ السورة من الآية رقم 1 بشكل سليم دائماً
+                              final int actualVerseNum = index + 1;
                               final String rawVerseText = versesList[index];
 
                               return WidgetSpan(
