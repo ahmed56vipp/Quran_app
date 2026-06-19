@@ -60,7 +60,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     });
   }
 
-  // الدالة المسؤولة عن عرض الجزء - تم التأكد من خلوها تماماً من علامة ۝
+  // دالة الفهرس لتبويب الأجزاء بالأرقام العادية وبدون أي علامات (مثل: الجزء 1-2-3)
   String _getJuzForSurah(int surahId) {
     if (juzData.isEmpty) return '';
     List<int> parts = [];
@@ -78,15 +78,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
     }
     
     if (parts.isEmpty) return '';
-    if (parts.length == 1) return "الجزء ${toArabicNumerals(parts.first)}";
-    return "الأجزاء: ${parts.map((p) => toArabicNumerals(p)).join(' | ')}";
+    return "الجزء ${parts.join('-')}";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // تم تكبير خط عنوان التطبيق الرئيسي
         title: const Text('فهرس القرآن الكريم', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'ahmed', color: Colors.white)),
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
@@ -106,7 +104,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 icon: const Icon(Icons.bookmark, color: Colors.white),
-                // تم تكبير خط زر العودة لآخر قراءة
                 label: Text('العودة إلى آخر موضع قراءة: $_lastSurahName', style: const TextStyle(fontFamily: 'ahmed', fontSize: 17)),
                 onPressed: () async {
                   await Navigator.push(
@@ -158,7 +155,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                             title: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // تم تكبير خط اسم السورة
                                 Text(
                                   sName,
                                   style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'ahmed'),
@@ -172,7 +168,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: Colors.green.withOpacity(0.3)),
                                     ),
-                                    // تم تكبير خط الجزء المبين بجانب السورة بدون أي علامات أو زخارف
                                     child: Text(
                                       sJuz,
                                       style: TextStyle(fontSize: 14, color: Colors.green[800], fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
@@ -180,9 +175,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                   ),
                               ],
                             ),
-                            // تم تكبير خط تفاصيل السورة (نوعها وعدد الآيات)
+                            // عرض عدد الآيات في الفهرس الخارجي بالأرقام العادية (مثال: عدد آيات السورة: 286)
                             subtitle: Text(
-                              "$sType | آياتها: ${toArabicNumerals(vCount)}",
+                              "$sType | عدد آيات السورة: $vCount",
                               style: TextStyle(color: Colors.grey[600], fontSize: 15, fontFamily: 'ahmed'),
                               textAlign: TextAlign.right,
                             ),
@@ -195,9 +190,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                 errorBuilder: (context, error, stackTrace) {
                                   return CircleAvatar(
                                     backgroundColor: Colors.green[50],
-                                    // تم تكبير خط الدائرة البديلة لرقم السورة في حال غياب الأيقونة
                                     child: Text(
-                                      toArabicNumerals(sId),
+                                      toArabicNumerals(sId), // رقم السورة المتسلسل في الدائرة يبقى بالرسم العربي القديم لجمالية القائمة
                                       style: TextStyle(fontSize: 14, color: Colors.green[800], fontWeight: FontWeight.bold, fontFamily: 'ahmed'),
                                     ),
                                   );
