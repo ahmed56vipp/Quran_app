@@ -617,9 +617,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         return false;
                       },
                       child: SingleChildScrollView(
+                        key: const Key('surah_scroll'), // تم نقله هنا بنجاح لإصلاح الخطأ
                         controller: _scrollController,
                         padding: EdgeInsets.only(
-                          key: const Key('surah_scroll'),
                           left: _showSidebar ? 80 : 20, // إضافة مساحة إضافية حتى لا يغطي الشريط الجانبي على النص الكريّم
                           right: 20, 
                           top: _isFullScreen ? 40 : 24, 
