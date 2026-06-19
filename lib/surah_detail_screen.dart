@@ -26,6 +26,9 @@ class SurahDetailScreen extends StatefulWidget {
 }
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
+  // مفتاح التحكم في السكافولد لفتح الـ endDrawer بأمان
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
   double _fontSize = 24.0;
   final ScrollController _scrollController = ScrollController();
   late Future<Map<String, dynamic>> _surahDataFuture;
@@ -464,17 +467,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // إجبار واجهة الـ AppBar والـ Drawer على دعم اتجاه اليمين إلى اليسار (RTL) ليتطابق مع الصورة تماماً
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        key: _scaffoldKey, // ربط الـ Key هنا لفتح الـ endDrawer بأمان وثبات
         appBar: _isFullScreen ? null : AppBar(
           centerTitle: false, 
-          backgroundColor: const Color(0xFF2E7D32), // لون أخضر غامق مطابق للصورة الثانية
+          backgroundColor: const Color(0xFF2E7D32), 
           foregroundColor: Colors.white,
           toolbarHeight: 90, 
           elevation: 2,
-          // تفاصيل السورة مصفوفة بالكامل على اليمين كما هو مطلوب
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -505,16 +507,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               const SizedBox(height: 4),
               Text(
                 "آياتها: ${toArabicNumerals(widget.versesCount)}",
-                style: const TextStyle(fontSize: 14, fontFamily: 'ahmed', color: Colors.whiteB3),
+                style: const TextStyle(fontSize: 14, fontFamily: 'ahmed', color: Colors.white70),
               ),
             ],
           ),
-          // جميع الإضافات مجمعة في الجهة اليسرى (التبويب الأيسر داخل الـ AppBar)
           actions: [
             IconButton(
               icon: const Icon(Icons.text_fields, size: 24, color: Colors.white),
               tooltip: 'إعدادات الخط',
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
+              // استخدام الـ key هنا يمنع أي توقف فجائي للتطبيق
+              onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
             IconButton(
               icon: const Icon(Icons.find_in_page, size: 24, color: Colors.white),
@@ -618,7 +620,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           controller: _scrollController,
                           padding: EdgeInsets.only(
                             left: 20,
-                            right: _showSidebar ? 85 : 20, // إضافة مساحة حرة لجهة الشريط الجانبي الأيمن/الأيسر حسب الرغبة
+                            right: _showSidebar ? 85 : 20, 
                             top: _isFullScreen ? 45 : 24, 
                             bottom: 50
                           ),
@@ -683,27 +685,24 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     },
                   ),
 
-            // كبسولة القراءة الآلية الجانبية بتصميمها الأخضر الدائري المتناسق تماماً مع الصورة الثانية
             if (_showSidebar)
               Positioned(
-                left: 15, // مثبتة على اليسار العائم تماماً فوق النص كالصورة المعروضة
+                left: 15, 
                 top: MediaQuery.of(context).size.height * 0.20,
                 child: Material(
                   elevation: 8,
                   borderRadius: BorderRadius.circular(35),
-                  color: const Color(0xFF2E7D32), // نفس اللون الأخضر الرسمي للتطبيق
+                  color: const Color(0xFF2E7D32), 
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // زر تشغيل وإيقاف القراءة الآلية التلقائية
                         IconButton(
                           icon: Icon(_isAutoScrolling ? Icons.pause_circle : Icons.play_circle, size: 36, color: Colors.white),
                           onPressed: _toggleAutoScroll,
                         ),
                         const SizedBox(height: 14),
-                        // زر زيادة سرعة القراءة والتمرير
                         IconButton(
                           icon: const Icon(Icons.fast_forward, size: 24, color: Colors.white),
                           onPressed: () {
@@ -713,7 +712,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             });
                           },
                         ),
-                        // رقم مؤشر السرعة باللون الأصفر/الذهبي المميز مثل (12x)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Text(
@@ -721,7 +719,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
-                        // زر تقليل سرعة القراءة والتمرير
                         IconButton(
                           icon: const Icon(Icons.fast_rewind, size: 24, color: Colors.white),
                           onPressed: () {
@@ -733,7 +730,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         ),
                         const SizedBox(height: 10),
                         const Divider(color: Colors.white30, height: 15, thickness: 1),
-                        // زر الإغلاق السريع للكبسولة الجانبية
                         IconButton(
                           icon: const Icon(Icons.close, size: 22, color: Colors.white70),
                           onPressed: () {
@@ -749,7 +745,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 ),
               ),
 
-            // زر الخروج السريع من وضع ملء الشاشة لإعادة شريط التطبيق العلوي
             if (_isFullScreen)
               Positioned(
                 left: 20,
