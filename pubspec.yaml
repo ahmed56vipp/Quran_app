@@ -24,9 +24,17 @@ flutter:
     - assets/icon/
 
   fonts:
-    - family: ahmed
+    - family: surah
       fonts:
-        - asset: assets/fonts/ahmed.ttf
+        - asset: assets/fonts/surah_nam.ttf
+
+    - family: bsm
+      fonts:
+        - asset: assets/fonts/bms.ttf
+
+    - family: nss
+      fonts:
+        - asset: assets/fonts/sura_nss.otf
 
 dev_dependencies:
   flutter_test:
