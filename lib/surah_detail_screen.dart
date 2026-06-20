@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // ==========================================
-// 📥 لوحة التحكم وتخصيص الخطوط الجديدة بالتسميات المطلوبة
+// 📥 لوحة التحكم وتخصيص الخطوط الجديدة المطابقة للملف الفعلي
 // ==========================================
 const String kSurahNameFont = 'surah';  // خط اسم السورة والفهرس في الأعلى
 const String kBasmalahFont = 'bsm';     // خط البسملة الكريمة
-const String kSurahTextFont = 'nss';     // خط نص السورة (الآيات الشريفة)
-const String kNumbersFont = '6615';     // خط الأرقام المخصص 6615
+const String kSurahTextFont = 'nss';    // خط نص السورة (الآيات الشريفة)
+const String kNumbersFont = 'quran_num'; // خط ترقيم الآيات الجديد الذكي (123456.ttf)
 
-// --- دالة مساعدة لتحويل الأرقام إلى صيغتها العربية للمصحف ---
+// --- دالة مساعدة لتحويل الأرقام إلى صيغتها العربية للمصحف (لو احتجتها في أماكن أخرى) ---
 String _toArabicNumbers(String input) {
   const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
   const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -260,7 +260,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🛠️ استخدام خط kSurahNameFont لاسم السورة في الـ AppBar
               Text(widget.surahName, style: const TextStyle(fontFamily: kSurahNameFont, fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFFD700))),
               const SizedBox(height: 2),
               Text("جزء: ${_getDynamicJuzNumber()} | آياتها: ${widget.versesCount} (${widget.surahType})", style: TextStyle(fontFamily: kSurahNameFont, fontSize: 13, color: Colors.white.withOpacity(0.70))),
@@ -349,7 +348,6 @@ class _BuildBasmalahHeader extends StatelessWidget {
       child: Text(
         versesMap?['verse_0'] ?? versesMap?['0'] ?? "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
         textAlign: TextAlign.center,
-        // 🛠️ استخدام خط kBasmalahFont للبسملة الكريمة بشكل مستقل
         style: TextStyle(fontFamily: kBasmalahFont, fontSize: 26, fontWeight: FontWeight.bold, color: textColor),
       ),
     );
@@ -383,6 +381,7 @@ class MushafTextView extends StatelessWidget {
       String verseText = versesMap['verse_$i'] ?? versesMap['$i'] ?? '';
       if (verseText.isEmpty) continue;
 
+      // تنظيف النص تماماً من أي رموز ترميز قديمة أو مكسورة تسبب المربعات
       verseText = verseText
           .replaceAll('●', '')
           .replaceAll('•', '')
@@ -401,7 +400,7 @@ class MushafTextView extends StatelessWidget {
         ),
       );
 
-      // 🛠️ استخدام خط kSurahTextFont لنص الآيات المباركة
+      // عينات النص القرآني الشريف بخط nss
       spans.add(
         TextSpan(
           text: "$verseText ",
@@ -414,17 +413,17 @@ class MushafTextView extends StatelessWidget {
         ),
       );
 
-      String arabicNum = _toArabicNumbers(i.toString());
+      // 🛠️ التعديل الجوهري: استخدام الأرقام الإنجليزية مباشرة بدون رمز "۝" اليدوي
+      // لأن خط نون (123456.ttf) مصمم ليحول أي رقم إنجليزي إلى رمز نهاية آية وبداخله الرقم تلقائياً
+      String englishNum = i.toString();
       
-      // 🛠️ استخدام خط kNumbersFont لعرض رمز نهاية الآية ۝ ومعه الرقم الخاص بها
       spans.add(
         TextSpan(
-          text: " ۝$arabicNum ", 
+          text: " $englishNum ", 
           style: TextStyle(
             fontFamily: kNumbersFont,
-            fontSize: fontSize * 0.9,
+            fontSize: fontSize * 1.05, // جعل الحجم متناسقاً جداً مع حجم الخط العام للآية
             color: const Color(0xFF2E7D32),
-            fontWeight: FontWeight.bold,
           ),
         ),
       );
