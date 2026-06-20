@@ -36,6 +36,11 @@ flutter:
       fonts:
         - asset: assets/fonts/sura_nss.otf
 
+    # 🔢 خط ترقيم الآيات الجديد (خط نون)
+    - family: quran_num
+      fonts:
+        - asset: assets/fonts/123456.ttf
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
