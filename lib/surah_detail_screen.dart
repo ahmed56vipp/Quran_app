@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // ==========================================
-// 📥 لوحة التحكم وتخصيص الخطوط للتطبيق
+// 📥 لوحة التحكم وتخصيص الخطوط الجديدة بالتسميات المطلوبة
 // ==========================================
-const String kSurahTextFont = 'ahmed';    // خط نص الآيات الكريمة والبسملة
-const String kIndexFont = 'ahmed';        // خط أسماء السور، الفهرس، وعناوين الواجهات
-const String kNumbersFont = '6615';       // خط أرقام الآيات وعلامات الترقيم المخصص لديك
+const String kSurahNameFont = 'surah';  // خط اسم السورة والفهرس في الأعلى
+const String kBasmalahFont = 'bsm';     // خط البسملة الكريمة
+const String kSurahTextFont = 'nss';     // خط نص السورة (الآيات الشريفة)
+const String kNumbersFont = '6615';     // خط الأرقام المخصص 6615
 
 // --- دالة مساعدة لتحويل الأرقام إلى صيغتها العربية للمصحف ---
 String _toArabicNumbers(String input) {
@@ -259,9 +260,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(widget.surahName, style: const TextStyle(fontFamily: kIndexFont, fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFFD700))),
+              // 🛠️ استخدام خط kSurahNameFont لاسم السورة في الـ AppBar
+              Text(widget.surahName, style: const TextStyle(fontFamily: kSurahNameFont, fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFFD700))),
               const SizedBox(height: 2),
-              Text("جزء: ${_getDynamicJuzNumber()} | آياتها: ${widget.versesCount} (${widget.surahType})", style: TextStyle(fontFamily: kIndexFont, fontSize: 13, color: Colors.white.withOpacity(0.70))),
+              Text("جزء: ${_getDynamicJuzNumber()} | آياتها: ${widget.versesCount} (${widget.surahType})", style: TextStyle(fontFamily: kSurahNameFont, fontSize: 13, color: Colors.white.withOpacity(0.70))),
             ],
           ),
           actions: [
@@ -316,6 +318,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 }
 
+// ==========================================
+// 2. ويدجت صندوق البسملة المخصص
+// ==========================================
 class _BuildBasmalahHeader extends StatelessWidget {
   final Map<String, dynamic>? versesMap;
   final Color cardColor;
@@ -344,14 +349,15 @@ class _BuildBasmalahHeader extends StatelessWidget {
       child: Text(
         versesMap?['verse_0'] ?? versesMap?['0'] ?? "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
         textAlign: TextAlign.center,
-        style: TextStyle(fontFamily: kSurahTextFont, fontSize: 26, fontWeight: FontWeight.bold, color: textColor),
+        // 🛠️ استخدام خط kBasmalahFont للبسملة الكريمة بشكل مستقل
+        style: TextStyle(fontFamily: kBasmalahFont, fontSize: 26, fontWeight: FontWeight.bold, color: textColor),
       ),
     );
   }
 }
 
 // ==========================================
-// 3. ويدجت عرض السورة المتدفقة (تم تعديل دمج علامة الحصر هنا)
+// 3. ويدجت عرض السورة المتدفقة والمخصصة الخطوط
 // ==========================================
 class MushafTextView extends StatelessWidget {
   final int versesCount;
@@ -395,6 +401,7 @@ class MushafTextView extends StatelessWidget {
         ),
       );
 
+      // 🛠️ استخدام خط kSurahTextFont لنص الآيات المباركة
       spans.add(
         TextSpan(
           text: "$verseText ",
@@ -409,12 +416,12 @@ class MushafTextView extends StatelessWidget {
 
       String arabicNum = _toArabicNumbers(i.toString());
       
-      // 💡 [تعديل جوهري]: قمنا بإضافة الرمز " ۝ " مباشرة قبل الرقم ليقوم خط المصحف بتركيبه تلقائياً كإطار مزخرف
+      // 🛠️ استخدام خط kNumbersFont لعرض رمز نهاية الآية ۝ ومعه الرقم الخاص بها
       spans.add(
         TextSpan(
           text: " ۝$arabicNum ", 
           style: TextStyle(
-            fontFamily: kNumbersFont, // يمكنك جعل هذا kSurahTextFont إذا كانت الدوائر مدمجة في خط الآيات الرئيسي
+            fontFamily: kNumbersFont,
             fontSize: fontSize * 0.9,
             color: const Color(0xFF2E7D32),
             fontWeight: FontWeight.bold,
@@ -431,7 +438,7 @@ class MushafTextView extends StatelessWidget {
 }
 
 // ==========================================
-// 4. لوحة الإضافات الشفافة (Unified Settings)
+// 4. لوحة الإضافات الشفافة والمصلحة (Unified Settings)
 // ==========================================
 class UnifiedSettingsBottomSheet extends StatefulWidget {
   final int versesCount;
@@ -509,10 +516,10 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
               children: [
                 Center(child: Container(width: 50, height: 5, decoration: BoxDecoration(color: textCol.withOpacity(0.2), borderRadius: BorderRadius.circular(10)))),
                 const SizedBox(height: 15),
-                Center(child: Text("اضافات القرآن", style: TextStyle(fontFamily: kIndexFont, fontSize: 18, fontWeight: FontWeight.bold, color: textCol))),
+                Center(child: Text("اضافات القرآن", style: TextStyle(fontFamily: kSurahNameFont, fontSize: 18, fontWeight: FontWeight.bold, color: textCol))),
                 const Divider(height: 25),
                 
-                Text("انتقال سريع لآية:", style: TextStyle(fontFamily: kIndexFont, fontWeight: FontWeight.bold, color: textCol, fontSize: 14)),
+                Text("انتقال سريع لآية:", style: TextStyle(fontFamily: kSurahNameFont, fontWeight: FontWeight.bold, color: textCol, fontSize: 14)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -520,10 +527,10 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                       child: TextField(
                         controller: _inputController,
                         keyboardType: TextInputType.number,
-                        style: TextStyle(color: textCol, fontFamily: kIndexFont),
+                        style: TextStyle(color: textCol, fontFamily: kSurahNameFont),
                         decoration: InputDecoration(
                           hintText: "من 1 إلى ${widget.versesCount}",
-                          hintStyle: TextStyle(color: textCol.withOpacity(0.5), fontSize: 13, fontFamily: kIndexFont),
+                          hintStyle: TextStyle(color: textCol.withOpacity(0.5), fontSize: 13, fontFamily: kSurahNameFont),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -539,7 +546,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                           widget.onJumpToVerse(target);
                         }
                       },
-                      child: const Text("ذهاب", style: TextStyle(fontFamily: kIndexFont, color: Colors.white)),
+                      child: const Text("ذهاب", style: TextStyle(fontFamily: kSurahNameFont, color: Colors.white)),
                     )
                   ],
                 ),
@@ -548,7 +555,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("الوضع الليلي", style: TextStyle(fontFamily: kIndexFont, color: textCol)),
+                    Text("الوضع الليلي", style: TextStyle(fontFamily: kSurahNameFont, color: textCol)),
                     Switch(
                       value: _localNightMode,
                       activeColor: const Color(0xFF2E7D32),
@@ -562,7 +569,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("وضع حماية العين (الدافئ)", style: TextStyle(fontFamily: kIndexFont, color: textCol)),
+                    Text("وضع حماية العين (الدافئ)", style: TextStyle(fontFamily: kSurahNameFont, color: textCol)),
                     Switch(
                       value: _localEyeProtection,
                       activeColor: const Color(0xFF2E7D32),
@@ -577,11 +584,11 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("حجم خط الآيات الكريمة:", style: TextStyle(fontFamily: kIndexFont, color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text("حجم خط الآيات الكريمة:", style: TextStyle(fontFamily: kSurahNameFont, color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
                     Row(
                       children: [
                         IconButton(icon: Icon(Icons.remove_circle_outline, color: textCol), onPressed: () { if (_localFontSize > 18) { setState(() => _localFontSize -= 2); widget.onFontSizeChanged(_localFontSize); } }),
-                        Text("${_localFontSize.toInt()}", style: TextStyle(fontFamily: kIndexFont, color: textCol, fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text("${_localFontSize.toInt()}", style: TextStyle(fontFamily: kSurahNameFont, color: textCol, fontSize: 16, fontWeight: FontWeight.bold)),
                         IconButton(icon: Icon(Icons.add_circle_outline, color: textCol), onPressed: () { if (_localFontSize < 42) { setState(() => _localFontSize += 2); widget.onFontSizeChanged(_localFontSize); } }),
                       ],
                     )
@@ -591,7 +598,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("تشغيل التمرير التلقائي للأعلى:", style: TextStyle(fontFamily: kIndexFont, color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text("تشغيل التمرير التلقائي للأعلى:", style: TextStyle(fontFamily: kSurahNameFont, color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
                     Switch(
                       value: _localAutoScrolling,
                       activeColor: const Color(0xFF2E7D32),
@@ -605,7 +612,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 if (_localAutoScrolling) ...[
                   Row(
                     children: [
-                      Text("سرعة التدفق:", style: TextStyle(fontFamily: kIndexFont, color: textCol, fontSize: 12)),
+                      Text("سرعة التدفق:", style: TextStyle(fontFamily: kSurahNameFont, color: textCol, fontSize: 12)),
                       Expanded(
                         child: Slider(
                           value: _localScrollSpeed,
