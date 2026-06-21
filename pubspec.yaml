@@ -34,7 +34,7 @@ flutter:
 
     - family: nss
       fonts:
-        - asset: assets/fonts/nss.ttf # خط نص الآيات الكريمة العثماني
+        - asset: assets/fonts/sura_nss.otf # 🛠️ تم تصحيح الاسم والامتداد هنا
 
     - family: quran_num
       fonts:
