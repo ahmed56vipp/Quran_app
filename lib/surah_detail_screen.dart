@@ -85,7 +85,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       try {
         surahTextResponse = await rootBundle.loadString('assets/surah/${widget.surahId}.json');
       } catch (_) {
-        surahTextResponse = await rootBundle.loadString('assets/surah/surah_${widget.surId}.json');
+        // 🛠️ تم التصحيح هنا من widget.surId إلى widget.surahId ليتوافق مع الـ Getter المعرّف
+        surahTextResponse = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
       }
 
       final dynamic parsedText = json.decode(surahTextResponse);
@@ -221,7 +222,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       cardColor = const Color(0xFFEFE5CD);
     }
 
-    // تجهيز رقم الجزء بصيغة خانتين (مثل 01، 02) ليتوافق مع دليل خط الأجزاء الإنجليزي
     String cleanJuzNum = _getDynamicJuzNumber().padLeft(2, '0');
 
     return Directionality(
@@ -234,7 +234,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           elevation: 2,
           title: Row(
             children: [
-              // 1. رقم السورة بخط fhrs ليعطي مخطوطة اسم السورة مباشرة من الفهرس
               Text(
                 widget.surahId.toString(), 
                 style: const TextStyle(
@@ -244,7 +243,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 )
               ),
               const SizedBox(width: 20),
-              // 2. رقم الجزء الإنجليزي المبطن بخط jzu12 ليعطي مخطوطة الجزء الزخرفية تلقائياً
               Text(
                 cleanJuzNum, 
                 style: const TextStyle(
@@ -293,7 +291,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   padding: const EdgeInsets.all(18.0),
                   child: Column(
                     children: [
-                      // عدم عرض البسملة في سورة التوبة (رقم 9)
                       if (widget.surahId != 9)
                         _BuildBasmalahHeader(cardColor: cardColor, textColor: textColor, verseKey: _verseKeys[0]),
                       const SizedBox(height: 10),
@@ -313,9 +310,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 }
 
-// ==========================================
-// 🏛️ ويدجت صندوق البسملة الفاخر بالرقم 60
-// ==========================================
 class _BuildBasmalahHeader extends StatelessWidget {
   final Color cardColor;
   final Color textColor;
@@ -340,7 +334,7 @@ class _BuildBasmalahHeader extends StatelessWidget {
         color: cardColor,
       ),
       child: Text(
-        "60", // ممرر كـ نص إنجليزي ليفهم خط bsm60 رسم اللوحة الزخرفية الكاملة للبسملة
+        "60", 
         textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: kBasmalahFont, 
@@ -352,9 +346,6 @@ class _BuildBasmalahHeader extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 📖 ويدجت عرض نص المصحف الشريف والترقيم الذكي
-// ==========================================
 class MushafTextView extends StatelessWidget {
   final int versesCount;
   final Map<String, dynamic> versesMap;
@@ -379,16 +370,13 @@ class MushafTextView extends StatelessWidget {
       String verseText = versesMap['$i'] ?? '';
       if (verseText.isEmpty) continue;
 
-      // تنظيف أي علامات ترقيم قديمة مدمجة بالخطأ
       final RegExp trailingTarget = RegExp(r'[\u06DD۝٠-٩0-9\s]+$');
       verseText = verseText.replaceAll(trailingTarget, '').trim();
 
-      // إنشاء نقطة مرجعية (Key) لكل آية لتسهيل الانتقال السريع والتتبع
       spans.add(
         WidgetSpan(child: SizedBox(key: verseKeys[i], width: 0, height: 0)),
       );
 
-      // 1. إضافة متن الآية بخط nss العثماني المعدل
       spans.add(
         TextSpan(
           text: "$verseText ",
@@ -401,7 +389,6 @@ class MushafTextView extends StatelessWidget {
         ),
       );
 
-      // 2. إضافة رقم الآية بصيغة نص إنجليزي ليقوم خط quran_num برسم الدائرة والترقيم داخلها تلقائياً
       spans.add(
         TextSpan(
           text: " $i ", 
@@ -421,9 +408,6 @@ class MushafTextView extends StatelessWidget {
   }
 }
 
-// ==========================================
-// ⚙️ لوحة التحكم والإعدادات الشفافة والمصلحة
-// ==========================================
 class UnifiedSettingsBottomSheet extends StatefulWidget {
   final int versesCount;
   final double currentFontSize;
