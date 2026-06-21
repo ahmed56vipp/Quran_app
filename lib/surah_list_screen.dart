@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'surah_detail_screen.dart'; 
 
-// 📥 تعريف خط المخطوطات القرآني المعتمد لأسماء السور
+// أسماء الخطوط كما هي معرفة في ملف pubspec.yaml الخاص بك
 const String kSurahNameFont = 'nam';
+const String kJuzFont = 'jzu12'; 
 
 class SurahListScreen extends StatelessWidget {
   const SurahListScreen({super.key});
@@ -121,8 +122,29 @@ class SurahListScreen extends StatelessWidget {
     {"id": 111, "name": "المسد", "type": "مكية", "verses": 5, "juz": "الجزء 30", "isMeccan": true},
     {"id": 112, "name": "الإخلاص", "type": "مكية", "verses": 4, "juz": "الجزء 30", "isMeccan": true},
     {"id": 113, "name": "الفلق", "type": "مكية", "verses": 5, "juz": "الجزء 30", "isMeccan": true},
-    {"id": 114, "name": "الناس", "type": "مكية", "verses": 6, "juz": "الجزء 30", "isMeccan": true},
+    {"id": 114, "name": "الناس", "type": "مكية", "verses": 6, "juz": "الجزء 30", "isMeccan": true}
   ];
+
+  // دالة تفصل الأرقام الإنجليزية وترسلها لخط jzu12 ليرسم مخطوطات الأجزاء الفاخرة
+  Widget _buildJuzDesign(String juzText) {
+    String numbersOnly = juzText.replaceAll('الجزء ', '').trim();
+    List<String> individualParts = numbersOnly.split('-'); 
+
+    return Wrap(
+      spacing: 6, 
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: individualParts.map((part) {
+        return Text(
+          part, 
+          style: const TextStyle(
+            fontFamily: kJuzFont,
+            fontSize: 22, 
+            color: Color(0xFF2E7D32),
+          ),
+        );
+      }).toList(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -153,23 +175,36 @@ class SurahListScreen extends StatelessWidget {
                     style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
                   ),
                 ),
-                // 🛠️ تم التعديل الجوهري هنا: تطبيق خط nam المخطوط المباشر على اسم السورة بالمنتصف
                 title: Text(
                   "سورة ${surah['name']}", 
                   style: const TextStyle(
-                    fontFamily: kSurahNameFont, // خط nam المخصص
-                    fontSize: 25,              // حجم مثالي لعرض تفاصيل الخط المزخرف
-                    color: Color(0xFF1A1A1A),  // لون نقي يتوافق مع الخلفية البيضاء للبطاقة
+                    fontFamily: kSurahNameFont,
+                    fontSize: 25,
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
                 subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 6.0),
-                  child: Text(
-                    "${surah['type']} • آياتها: ${surah['verses']} • ${surah['juz']}",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        surah['isMeccan'] ? 'assets/icon/mk.png' : 'assets/icon/md.png',
+                        height: 24,
+                        width: 24,
+                        errorBuilder: (context, error, stackTrace) => Text(
+                          surah['type'],
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "• آياتها: ${surah['verses']} • ",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+                      _buildJuzDesign(surah['juz']),
+                    ],
                   ),
                 ),
-                // السهم الأيسر عاد نقياً ومنظماً بدون التداخلات الجانبية القديمة
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green),
                 onTap: () {
                   Navigator.push(
