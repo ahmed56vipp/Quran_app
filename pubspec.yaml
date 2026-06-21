@@ -24,22 +24,25 @@ flutter:
     - assets/icon/
 
   fonts:
-    - family: surah
+    - family: fhrs
       fonts:
-        - asset: assets/fonts/surah_nam.ttf
+        - asset: assets/fonts/fhrs.ttf # خط أسماء السور والفهرس الجديد
 
-    - family: bsm
+    - family: bsm60
       fonts:
-        - asset: assets/fonts/bms.ttf
+        - asset: assets/fonts/bsmla60.ttf # خط البسملة المطور (رقم 60)
 
     - family: nss
       fonts:
-        - asset: assets/fonts/sura_nss.otf
+        - asset: assets/fonts/nss.ttf # خط نص الآيات الكريمة العثماني
 
-    # 🔢 خط ترقيم الآيات الجديد (خط نون)
     - family: quran_num
       fonts:
-        - asset: assets/fonts/123456.ttf
+        - asset: assets/fonts/123456.ttf # خط الترقيم الدائري الذكي للآيات
+
+    - family: jzu12
+      fonts:
+        - asset: assets/fonts/jzu12.ttf # خط الأجزاء العثماني الجديد
 
 dev_dependencies:
   flutter_test:
