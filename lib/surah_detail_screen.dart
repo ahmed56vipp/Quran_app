@@ -48,6 +48,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _isAutoScrolling = false;  
   double _scrollSpeed = 2.0;      
   Timer? _autoScrollTimer;
+  
+  // ⚡ متغير للتحكم في سلاسة التمرير ومنع التقطيع (Throttling)
+  DateTime _lastScrollCheck = DateTime.now();
 
   @override
   void initState() {
@@ -128,6 +131,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   void _onScroll() {
     if (_verseKeys.isEmpty || !mounted) return;
+
+    // 🛠️ تحسين الأداء التلقائي: منع استهلاك المعالج أثناء التمرير السريع لإنهاء اللاج والتقطيع تماماً
+    final now = DateTime.now();
+    if (now.difference(_lastScrollCheck).inMilliseconds < 90) return;
+    _lastScrollCheck = now;
+
     double appBarHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
     int detectedVerse = _currentVisibleVerse;
 
@@ -235,33 +244,40 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween, 
             children: [
-              Row(
+              // 👉 الجهة اليمنى: اسم السورة كبير جداً، وتحته مباشرة عدد آياتها بشكل رأسي منظم
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     "سورة ${widget.surahName}", 
                     style: const TextStyle(
                       fontFamily: kSurahNameFont, 
-                      fontSize: 30, 
-                      color: Color(0xFFFFD700)
+                      fontSize: 32, // حجم خط كبير وواضح
+                      color: Color(0xFFFFD700),
+                      height: 1.1
                     )
                   ),
-                  const SizedBox(width: 12), 
+                  const SizedBox(height: 2),
                   Text(
                     "آياتها: ${widget.versesCount}", 
-                    style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500) // 🌟 تم تصحيح الخطأ هنا من whiteAA إلى white70 المعتمد
+                    style: const TextStyle(
+                      fontSize: 12, 
+                      color: Colors.white70, 
+                      fontWeight: FontWeight.w500
+                    )
                   ),
                 ],
               ),
               
+              // 👈 الجهة اليسرى: الجزء نظيف وبنفس مقاس وحجم خط السورة تماماً لتناسق بصري مبهر
               Padding(
-                padding: const EdgeInsets.only(left: 8.0),
+                padding: const EdgeInsets.only(left: 4.0),
                 child: Text(
-                  cleanJuzNum, 
+                  cleanJuzNum.trim(), 
                   style: const TextStyle(
                     fontFamily: kJuzFont, 
-                    fontSize: 34, 
+                    fontSize: 32, // متطابق مع حجم خط السورة
                     color: Color(0xFFFFD700),
                   ),
                 ),
@@ -273,21 +289,24 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               icon: const Icon(Icons.tune),
               onPressed: () => showModalBottomSheet(
                 context: context,
-                isScrollControlled: true,
+                isScrollControlled: true, // تفعيل التحكم الكامل بالحجم
                 backgroundColor: Colors.transparent, 
-                builder: (context) => UnifiedSettingsBottomSheet(
-                  versesCount: widget.versesCount,
-                  currentFontSize: _currentFontSize,
-                  isNightMode: _isNightMode,
-                  isEyeProtection: _isEyeProtection,
-                  isAutoScrolling: _isAutoScrolling,
-                  scrollSpeed: _scrollSpeed,
-                  onFontSizeChanged: (size) => setState(() => _currentFontSize = size),
-                  onNightModeChanged: (val) => setState(() { _isNightMode = val; if (val) _isEyeProtection = false; }),
-                  onEyeProtectionChanged: (val) => setState(() { _isEyeProtection = val; if (val) _isNightMode = false; }),
-                  onAutoScrollToggle: _toggleAutoScroll,
-                  onSpeedChanged: (speed) => setState(() => _scrollSpeed = speed),
-                  onJumpToVerse: _jumpToVerseAction,
+                builder: (context) => Container(
+                  height: MediaQuery.of(context).size.height, // 🌟 جعل نافذة الإضافات شاشة كاملة
+                  child: UnifiedSettingsBottomSheet(
+                    versesCount: widget.versesCount,
+                    currentFontSize: _currentFontSize,
+                    isNightMode: _isNightMode,
+                    isEyeProtection: _isEyeProtection,
+                    isAutoScrolling: _isAutoScrolling,
+                    scrollSpeed: _scrollSpeed,
+                    onFontSizeChanged: (size) => setState(() => _currentFontSize = size),
+                    onNightModeChanged: (val) => setState(() { _isNightMode = val; if (val) _isEyeProtection = false; }),
+                    onEyeProtectionChanged: (val) => setState(() { _isEyeProtection = val; if (val) _isNightMode = false; }),
+                    onAutoScrollToggle: _toggleAutoScroll,
+                    onSpeedChanged: (speed) => setState(() => _scrollSpeed = speed),
+                    onJumpToVerse: _jumpToVerseAction,
+                  ),
                 ),
               ),
             ),
@@ -320,6 +339,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 }
 
+// =========================================================
+// 🎨 تصميم غلاف البسملة الجديد (أكثر جاذبية، حجم أصغر وأنيق)
+// =========================================================
 class _BuildBasmalahHeader extends StatelessWidget {
   final Color cardColor;
   final Color textColor;
@@ -336,20 +358,43 @@ class _BuildBasmalahHeader extends StatelessWidget {
     return Container(
       key: verseKey,
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      margin: const EdgeInsets.only(bottom: 22, top: 4),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5C158), width: 1.2),
-        borderRadius: BorderRadius.circular(12),
         color: cardColor,
+        borderRadius: BorderRadius.circular(16), // زوايا دائرية أكثر انسيابية
+        border: Border.all(color: const Color(0xFFE5C158), width: 1.5), // إطار ذهبي ملكي متين
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4), // تأثير ظل سفلي يعطي عمقاً جذاباً
+          ),
+        ],
+        gradient: LinearGradient( // تدرج لوني خفيف وفخم داخل الغلاف
+          colors: [
+            cardColor,
+            const Color(0xFFFFFDF0).withOpacity(0.4),
+            cardColor,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
       ),
       child: Text(
         "19", 
         textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: kBasmalahFont, 
-          fontSize: 55, 
-          color: textColor
+          fontSize: 38, // 🌟 تم تصغير الحجم ليكون فخماً ومناسباً للغلاف الجديد
+          color: textColor,
+          shadows: [
+            Shadow(
+              color: Colors.black.withOpacity(0.12),
+              offset: const Offset(1, 1),
+              blurRadius: 1,
+            )
+          ]
         ),
       ),
     );
@@ -418,6 +463,9 @@ class MushafTextView extends StatelessWidget {
   }
 }
 
+// =========================================================
+// 🎛️ شاشة الإعدادات المحدثة بالكامل لتظهر بملء الشاشة (Full Screen)
+// =========================================================
 class UnifiedSettingsBottomSheet extends StatefulWidget {
   final int versesCount;
   final double currentFontSize;
@@ -474,86 +522,91 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
   @override
   Widget build(BuildContext context) {
     Color sheetBg = _localNightMode 
-        ? const Color(0xFF1E1E1E).withOpacity(0.85) 
-        : (_localEyeProtection ? const Color(0xFFEFE5CD).withOpacity(0.88) : Colors.white.withOpacity(0.85));
+        ? const Color(0xFF1E1E1E)
+        : (_localEyeProtection ? const Color(0xFFEFE5CD) : Colors.white);
         
     Color textCol = _localNightMode ? Colors.white : (_localEyeProtection ? const Color(0xFF3E2723) : const Color(0xFF1A1A1A));
 
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            color: sheetBg,
-            padding: EdgeInsets.only(
-              top: 20, 
-              left: 20, 
-              right: 20, 
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "خيارات العرض والقراءة", 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textCol)
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
-                    children: [
-                      Icon(Icons.text_fields, color: textCol),
-                      Expanded(
-                        child: Slider(
-                          value: _localFontSize,
-                          min: 16,
-                          max: 40,
-                          activeColor: const Color(0xFF2E7D32),
-                          onChanged: (val) {
-                            setState(() => _localFontSize = val);
-                            widget.onFontSizeChanged(val);
-                          },
-                        ),
+      child: Scaffold(
+        backgroundColor: sheetBg,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF2E7D32),
+          elevation: 0,
+          title: const Text("خيارات العرض والقراءة", style: TextStyle(color: Colors.white, fontSize: 20)),
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white), // زِر إغلاق علوي ممتاز للشاشة الكاملة
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                Text(
+                  "حجم خط القراءة:", 
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textCol)
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.text_fields, color: textCol),
+                    Expanded(
+                      child: Slider(
+                        value: _localFontSize,
+                        min: 16,
+                        max: 40,
+                        activeColor: const Color(0xFF2E7D32),
+                        onChanged: (val) {
+                          setState(() => _localFontSize = val);
+                          widget.onFontSizeChanged(val);
+                        },
                       ),
-                    ],
-                  ),
-                  SwitchListTile(
-                    title: Text("الوضع الليلي", style: TextStyle(color: textCol)),
-                    value: _localNightMode,
-                    activeColor: const Color(0xFF2E7D32),
-                    onChanged: (val) {
-                      setState(() {
-                        _localNightMode = val;
-                        if (val) _localEyeProtection = false;
-                      });
-                      widget.onNightModeChanged(val);
-                    },
-                  ),
-                  SwitchListTile(
-                    title: Text("وضع حماية العين", style: TextStyle(color: textCol)),
-                    value: _localEyeProtection,
-                    activeColor: const Color(0xFF2E7D32),
-                    onChanged: (val) {
-                      setState(() {
-                        _localEyeProtection = val;
-                        if (val) _localNightMode = false;
-                      });
-                      widget.onEyeProtectionChanged(val);
-                    },
-                  ),
-                  SwitchListTile(
-                    title: Text("التمرير التلقائي للآيات", style: TextStyle(color: textCol)),
-                    value: _localAutoScrolling,
-                    activeColor: const Color(0xFF2E7D32),
-                    onChanged: (val) {
-                      setState(() => _localAutoScrolling = val);
-                      widget.onAutoScrollToggle(val);
-                    },
-                  ),
-                  if (_localAutoScrolling)
-                    Row(
+                    ),
+                  ],
+                ),
+                const Divider(),
+                SwitchListTile(
+                  title: Text("الوضع الليلي", style: TextStyle(color: textCol, fontWeight: FontWeight.w500)),
+                  value: _localNightMode,
+                  activeColor: const Color(0xFF2E7D32),
+                  onChanged: (val) {
+                    setState(() {
+                      _localNightMode = val;
+                      if (val) _localEyeProtection = false;
+                    });
+                    widget.onNightModeChanged(val);
+                  },
+                ),
+                SwitchListTile(
+                  title: Text("وضع حماية العين (الدافئ)", style: TextStyle(color: textCol, fontWeight: FontWeight.w500)),
+                  value: _localEyeProtection,
+                  activeColor: const Color(0xFF2E7D32),
+                  onChanged: (val) {
+                    setState(() {
+                      _localEyeProtection = val;
+                      if (val) _localNightMode = false;
+                    });
+                    widget.onEyeProtectionChanged(val);
+                  },
+                ),
+                const Divider(),
+                SwitchListTile(
+                  title: Text("التمرير التلقائي لصفحة المصحف", style: TextStyle(color: textCol, fontWeight: FontWeight.w500)),
+                  value: _localAutoScrolling,
+                  activeColor: const Color(0xFF2E7D32),
+                  onChanged: (val) {
+                    setState(() => _localAutoScrolling = val);
+                    widget.onAutoScrollToggle(val);
+                  },
+                ),
+                if (_localAutoScrolling)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
                       children: [
                         Text("سرعة التمرير: ", style: TextStyle(color: textCol)),
                         Expanded(
@@ -572,42 +625,52 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                         ),
                       ],
                     ),
-                  const SizedBox(height: 15),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _inputController,
-                          keyboardType: TextInputType.number,
-                          style: TextStyle(color: textCol),
-                          decoration: InputDecoration(
-                            labelText: "انتقال سريع لآية (1 - ${widget.versesCount})",
-                            labelStyle: TextStyle(color: textCol.withOpacity(0.7)),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: textCol.withOpacity(0.3))
-                            ),
-                            focusedBorder: const OutlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFF2E7D32))
-                            ),
+                  ),
+                const Divider(),
+                const SizedBox(height: 15),
+                Text(
+                  "الانتقال السريع لآية معينة:", 
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textCol)
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _inputController,
+                        keyboardType: TextInputType.number,
+                        style: TextStyle(color: textCol),
+                        decoration: InputDecoration(
+                          labelText: "أدخل رقم الآية (1 - ${widget.versesCount})",
+                          labelStyle: TextStyle(color: textCol.withOpacity(0.7)),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: textCol.withOpacity(0.4))
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF2E7D32), width: 2)
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
-                        onPressed: () {
-                          int? verseNum = int.tryParse(_inputController.text);
-                          if (verseNum != null && verseNum >= 1 && verseNum <= widget.versesCount) {
-                            Navigator.pop(context);
-                            widget.onJumpToVerse(verseNum);
-                          }
-                        },
-                        child: const Text("اذهب", style: TextStyle(color: Colors.white)),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                      onPressed: () {
+                        int? verseNum = int.tryParse(_inputController.text);
+                        if (verseNum != null && verseNum >= 1 && verseNum <= widget.versesCount) {
+                          Navigator.pop(context);
+                          widget.onJumpToVerse(verseNum);
+                        }
+                      },
+                      child: const Text("اذهب الآن", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
