@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'surah_detail_screen.dart'; // استيراد شاشة تفاصيل السورة
+import 'surah_detail_screen.dart'; 
 
 class SurahListScreen extends StatelessWidget {
   const SurahListScreen({super.key});
 
-  // الفهرس الكامل لجميع سور القرآن الكريم الـ 114
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "juz": "الجزء 1", "isMeccan": true},
     {"id": 2, "name": "البقرة", "type": "مدنية", "verses": 286, "juz": "الجزء 1-2-3", "isMeccan": false},
@@ -101,7 +100,6 @@ class SurahListScreen extends StatelessWidget {
     {"id": 93, "name": "الضحى", "type": "مكية", "verses": 11, "juz": "الجزء 30", "isMeccan": true},
     {"id": 94, "name": "الشرح", "type": "مكية", "verses": 8, "juz": "الجزء 30", "isMeccan": true},
     {"id": 95, "name": "التين", "type": "مكية", "verses": 8, "juz": "الجزء 30", "isMeccan": true},
-    // 🛠️ تم إكمال بقية السور الناقصة للفهرس هنا:
     {"id": 96, "name": "العلق", "type": "مكية", "verses": 19, "juz": "الجزء 30", "isMeccan": true},
     {"id": 97, "name": "القدر", "type": "مكية", "verses": 5, "juz": "الجزء 30", "isMeccan": true},
     {"id": 98, "name": "البينة", "type": "مدنية", "verses": 8, "juz": "الجزء 30", "isMeccan": false},
@@ -145,7 +143,6 @@ class SurahListScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                // عرض رقم السورة بتصميم جميل كأيقونة جانبية
                 leading: CircleAvatar(
                   backgroundColor: const Color(0xFFE8F5E9),
                   child: Text(
@@ -153,19 +150,20 @@ class SurahListScreen extends StatelessWidget {
                     style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
                   ),
                 ),
-                // 🛠️ تم الحل هنا: تطبيق خط أسماء السور المخصص (fhrs) عن طريق تمرير رقم السورة نصياً
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // النص بالخط العادي الافتراضي للنظام
                     Text(
-                      surah['name'], 
+                      "سورة ${surah['name']}", 
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
+                    // 🛠️ تم التعديل هنا: استخدام عائلة الخط 'nam' كما هو معرّف في pubspec.yaml
                     Text(
-                      surah['id'].toString(), // الخط يقوم برسم الرسم العثماني للاسم تلقائياً عند تمرير الرقم
+                      "سورة ${surah['name']}", 
                       style: const TextStyle(
-                        fontFamily: 'fhrs', 
-                        fontSize: 28, 
+                        fontFamily: 'nam', 
+                        fontSize: 22, 
                         color: Color(0xFF2E7D32),
                       ),
                     ),
@@ -180,7 +178,6 @@ class SurahListScreen extends StatelessWidget {
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green),
                 onTap: () {
-                  // الانتقال إلى شاشة التفاصيل وتمرير البيانات المطلوبة كاملة
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -189,7 +186,7 @@ class SurahListScreen extends StatelessWidget {
                         surahName: surah['name'],
                         versesCount: surah['verses'],
                         surahType: surah['type'],
-                        juzData: const [], // يمكنك تمرير ملف الـ Juz إذا أردت مستقبلاً
+                        juzData: const [], 
                       ),
                     ),
                   );
