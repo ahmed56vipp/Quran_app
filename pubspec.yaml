@@ -24,7 +24,7 @@ flutter:
     - assets/icon/
 
   fonts:
-    - family: fhrs
+    - family: nam
       fonts:
         - asset: assets/fonts/surah_nam.ttf # خط أسماء السور والفهرس الجديد
 
