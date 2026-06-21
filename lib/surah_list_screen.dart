@@ -128,7 +128,7 @@ class SurahListScreen extends StatelessWidget {
                   height: 45,
                   fit: BoxFit.contain,
                 ),
-                // المنتصف: اسم السورة بخط fhrs كما حددت تماماً
+                // المنتصف: اسم السورة بخط fhrs
                 title: Text(
                   surah['name'],
                   style: const TextStyle(
@@ -138,13 +138,16 @@ class SurahListScreen extends StatelessWidget {
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
+                // 🛠️ تم التصحيح هنا بنقل الـ style ليكون داخل الـ Text بشكل صحيح تماماً
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
+                  child: Text(
+                    "${surah['type']} | عدد آيات السورة: ${surah['verses']}",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
                   ),
-                  child: Text("${surah['type']} | عدد آيات السورة: ${surah['verses']}"),
                 ),
                 // اليسار: السهم الرمادي وكبسولة الجزء الخضراء
                 leading: Row(
