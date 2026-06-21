@@ -7,11 +7,10 @@ import 'package:flutter/services.dart';
 // =========================================================
 // 📥 إعدادات الخطوط والمخطوطات الإسلامية المعتمدة في الـ YAML
 // =========================================================
-const String kSurahNameFont = 'fhrs';      // خط أسماء السور (يعمل برقم السورة بالإنجليزية)
+const String kSurahNameFont = 'fhrs';      // خط أسماء السور (يعمل بالنص الكامل مثل: سورة البقرة)
 const String kBasmalahFont = 'bsm60';      // خط البسملة المطور (يعرض الزخرفة عند تمرير "60")
 const String kSurahTextFont = 'nss';       // خط نص الآيات الكريم (sura_nss.otf)
 const String kNumbersFont = 'quran_num';   // خط ترقيم الآيات الدائري (123456.ttf)
-const String kJuzFont = 'jzu12';           // خط أجزاء القرآن الكريم (jzu12.ttf)
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -221,7 +220,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       cardColor = const Color(0xFFEFE5CD);
     }
 
-    // 🛠️ تم الحل هنا: إزالة .padLeft(2, '0') لمنع ظهور شعار المطور للأجزاء 1 إلى 9
     String cleanJuzNum = _getDynamicJuzNumber();
 
     return Directionality(
@@ -234,38 +232,37 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           elevation: 2,
           title: Row(
             children: [
-              // خط أسماء السور يعرض المخطوطة بناءً على الرقم الممرر له
+              // 🛠️ تم التعديل: نمرر النص الكامل "سورة البقرة" ليقوم خط fhrs برسمها بشكل صحيح بدلاً من الرقم
               Text(
-                widget.surahId.toString(), 
+                "سورة ${widget.surahName}", 
                 style: const TextStyle(
                   fontFamily: kSurahNameFont, 
-                  fontSize: 32, 
+                  fontSize: 24, 
                   color: Color(0xFFFFD700)
                 )
               ),
-              const SizedBox(width: 12),
-              // 🛠️ تم الحل هنا: إضافة اسم السورة نصياً ليتجنب مشكلة الاختفاء تماماً داخل السورة
-              Text(
-                widget.surahName,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              const Spacer(),
+              // 🛠️ تم حل مشكلة اسم المطور: استبدال الخط التالف ببطاقة وتصميم احترافي يعرض رقم الجزء بشكل نقي وجميل
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFFD700), width: 1),
+                ),
+                child: Text(
+                  "الجزء $cleanJuzNum", 
+                  style: const TextStyle(
+                    fontSize: 14, 
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white
+                  )
                 ),
               ),
-              const SizedBox(width: 20),
-              Text(
-                cleanJuzNum, 
-                style: const TextStyle(
-                  fontFamily: kJuzFont, 
-                  fontSize: 28, 
-                  color: Colors.white
-                )
-              ),
-              const Spacer(),
+              const SizedBox(width: 10),
               Text(
                 "آياتها: ${widget.versesCount}", 
-                style: const TextStyle(fontSize: 13, color: Colors.white70)
+                style: const TextStyle(fontSize: 12, color: Colors.white70)
               ),
             ],
           ),
