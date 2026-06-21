@@ -7,10 +7,11 @@ import 'package:flutter/services.dart';
 // =========================================================
 // 📥 إعدادات الخطوط والمخطوطات الإسلامية المعتمدة في الـ YAML
 // =========================================================
-const String kSurahNameFont = 'nam';       // 🛠️ تم التعديل من fhrs إلى nam ليطابق الـ pubspec.yaml تماماً
-const String kBasmalahFont = 'bsm60';      // خط البسملة المطور (يعرض الزخرفة عند تمرير "60")
-const String kSurahTextFont = 'nss';       // خط نص الآيات الكريم (sura_nss.otf)
-const String kNumbersFont = 'quran_num';   // خط ترقيم الآيات الدائري (123456.ttf)
+const String kSurahNameFont = 'nam';       
+const String kBasmalahFont = 'bsm60';      
+const String kSurahTextFont = 'nss';       
+const String kNumbersFont = 'quran_num';   
+const String kJuzFont = 'jzu12'; // 🌟 إضافة خط الغريب المخصص للأجزاء بناءً على لقطة الشاشة
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -232,7 +233,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           elevation: 2,
           title: Row(
             children: [
-              // 🛠️ خط المخطوطات المخصصة يعمل الآن بـ kSurahNameFont الجديد (nam)
               Text(
                 "سورة ${widget.surahName}", 
                 style: const TextStyle(
@@ -242,24 +242,33 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 )
               ),
               const Spacer(),
-              // عرض بطاقة الجزء بدون شعار المطور
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFFFD700), width: 1),
-                ),
-                child: Text(
-                  "الجزء $cleanJuzNum", 
-                  style: const TextStyle(
-                    fontSize: 14, 
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white
-                  )
-                ),
+              
+              // 🌟 تعديل كامل هنا لعرض مخطوطة الجزء بخط jzu12 والزخارف التزيينية طبقاً للصورة
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // زخرفة تزيينية جانبية (شكل رقم 33)
+                  const Text(
+                    "33 ", 
+                    style: TextStyle(
+                      fontFamily: kJuzFont,
+                      fontSize: 24,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                  // هنا نمرر الرقم الإنجليزي الصافي والخط يحوله تلقائياً إلى "الجزء العاشر" إلخ
+                  Text(
+                    cleanJuzNum, 
+                    style: const TextStyle(
+                      fontFamily: kJuzFont, 
+                      fontSize: 32, // حجم مناسب لعرض المخطوطة بدقة عالية
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
+              
+              const Spacer(),
               Text(
                 "آياتها: ${widget.versesCount}", 
                 style: const TextStyle(fontSize: 12, color: Colors.white70)
@@ -477,6 +486,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
         
     Color textCol = _localNightMode ? Colors.white : (_localEyeProtection ? const Color(0xFF3E2723) : const Color(0xFF1A1A1A));
 
+    // 🛠️ تم إعادة بناء الكود بالكامل وبشكل سليم هنا لحل المشكلة البرمجية السابقة لمنع أي أخطاء
     return Directionality(
       textDirection: TextDirection.rtl,
       child: ClipRRect(
@@ -485,128 +495,127 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             color: sheetBg,
-            padding: EdgeInsets.only(top: 20, left: 20, right: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: textCol.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
-                const SizedBox(height: 15),
-                Center(child: const Text("إعدادات المصحف الشريف", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green))),
-                const Divider(height: 20),
-                
-                Text("الانتقال السريع إلى آية:", style: TextStyle(fontWeight: FontWeight.bold, color: textCol, fontSize: 13)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _inputController,
-                        keyboardType: TextInputType.number,
-                        style: TextStyle(color: textCol),
-                        decoration: InputDecoration(
-                          hintText: "أدخل رقم الآية من 1 إلى ${widget.versesCount}",
-                          hintStyle: TextStyle(color: textCol.withOpacity(0.5), fontSize: 12),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
-                      onPressed: () {
-                        final int? target = int.tryParse(_inputController.text);
-                        if (target != null && target > 0 && target <= widget.versesCount) {
-                          Navigator.pop(context);
-                          widget.onJumpToVerse(target);
-                        }
-                      },
-                      child: const Text("ذهاب", style: TextStyle(color: Colors.white)),
-                    )
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("الوضع الليلي", style: TextStyle(color: textCol)),
-                    Switch(
-                      value: _localNightMode,
-                      activeColor: const Color(0xFF2E7D32),
-                      onChanged: (val) {
-                        setState(() { _localNightMode = val; if (val) _localEyeProtection = false; });
-                        widget.onNightModeChanged(val);
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("وضع حماية العين (الدافئ)", style: TextStyle(color: textCol)),
-                    Switch(
-                      value: _localEyeProtection,
-                      activeColor: const Color(0xFF2E7D32),
-                      onChanged: (val) {
-                        setState(() { _localEyeProtection = val; if (val) _localNightMode = false; });
-                        widget.onEyeProtectionChanged(val);
-                      },
-                    ),
-                  ],
-                ),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("حجم خط القراءة:", style: TextStyle(color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
-                    Row(
-                      children: [
-                        IconButton(icon: Icon(Icons.remove_circle_outline, color: textCol), onPressed: () { if (_localFontSize > 18) { setState(() => _localFontSize -= 2); widget.onFontSizeChanged(_localFontSize); } }),
-                        Text("${_localFontSize.toInt()}", style: TextStyle(color: textCol, fontSize: 16, fontWeight: FontWeight.bold)),
-                        IconButton(icon: Icon(Icons.add_circle_outline, color: textCol), onPressed: () { if (_localFontSize < 40) { setState(() => _localFontSize += 2); widget.onFontSizeChanged(_localFontSize); } }),
-                      ],
-                    )
-                  ],
-                ),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("التمرير التلقائي للصفحة:", style: TextStyle(color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
-                    Switch(
-                      value: _localAutoScrolling,
-                      activeColor: const Color(0xFF2E7D32),
-                      onChanged: (value) {
-                        setState(() => _localAutoScrolling = value);
-                        widget.onAutoScrollToggle(value);
-                      },
-                    ),
-                  ],
-                ),
-                if (_localAutoScrolling) ...[
+            padding: EdgeInsets.only(
+              top: 20, 
+              left: 20, 
+              right: 20, 
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "خيارات العرض والقراءة", 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textCol)
+                  ),
+                  const SizedBox(height: 15),
                   Row(
                     children: [
-                      Text("سرعة التمرير:", style: TextStyle(color: textCol, fontSize: 12)),
+                      Icon(Icons.text_fields, color: textCol),
                       Expanded(
                         child: Slider(
-                          value: _localScrollSpeed,
-                          min: 0.5,
-                          max: 5.0,
-                          divisions: 9,
+                          value: _localFontSize,
+                          min: 16,
+                          max: 40,
                           activeColor: const Color(0xFF2E7D32),
-                          onChanged: (value) {
-                            setState(() => _localScrollSpeed = value);
-                            widget.onSpeedChanged(value);
-                            widget.onAutoScrollToggle(true);
+                          onChanged: (val) {
+                            setState(() => _localFontSize = val);
+                            widget.onFontSizeChanged(val);
                           },
                         ),
                       ),
                     ],
                   ),
+                  SwitchListTile(
+                    title: Text("الوضع الليلي", style: TextStyle(color: textCol)),
+                    value: _localNightMode,
+                    activeColor: const Color(0xFF2E7D32),
+                    onChanged: (val) {
+                      setState(() {
+                        _localNightMode = val;
+                        if (val) _localEyeProtection = false;
+                      });
+                      widget.onNightModeChanged(val);
+                    },
+                  ),
+                  SwitchListTile(
+                    title: Text("وضع حماية العين", style: TextStyle(color: textCol)),
+                    value: _localEyeProtection,
+                    activeColor: const Color(0xFF2E7D32),
+                    onChanged: (val) {
+                      setState(() {
+                        _localEyeProtection = val;
+                        if (val) _localNightMode = false;
+                      });
+                      widget.onEyeProtectionChanged(val);
+                    },
+                  ),
+                  SwitchListTile(
+                    title: Text("التمرير التلقائي للآيات", style: TextStyle(color: textCol)),
+                    value: _localAutoScrolling,
+                    activeColor: const Color(0xFF2E7D32),
+                    onChanged: (val) {
+                      setState(() => _localAutoScrolling = val);
+                      widget.onAutoScrollToggle(val);
+                    },
+                  ),
+                  if (_localAutoScrolling)
+                    Row(
+                      children: [
+                        Text("سرعة التمرير: ", style: TextStyle(color: textCol)),
+                        Expanded(
+                          child: Slider(
+                            value: _localScrollSpeed,
+                            min: 1,
+                            max: 10,
+                            activeColor: const Color(0xFF2E7D32),
+                            onChanged: (val) {
+                              setState(() => _localScrollSpeed = val);
+                              widget.onSpeedChanged(val);
+                              widget.onAutoScrollToggle(false);
+                              widget.onAutoScrollToggle(true);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _inputController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(color: textCol),
+                          decoration: InputDecoration(
+                            labelText: "انتقال سريع لآية (1 - ${widget.versesCount})",
+                            labelStyle: TextStyle(color: textCol.withOpacity(0.7)),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: textCol.withOpacity(0.3))
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF2E7D32))
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+                        onPressed: () {
+                          int? verseNum = int.tryParse(_inputController.text);
+                          if (verseNum != null && verseNum >= 1 && verseNum <= widget.versesCount) {
+                            Navigator.pop(context);
+                            widget.onJumpToVerse(verseNum);
+                          }
+                        },
+                        child: const Text("اذهب", style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
                 ],
-              ],
+              ),
             ),
           ),
         ),
