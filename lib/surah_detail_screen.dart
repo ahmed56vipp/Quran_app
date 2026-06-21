@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 // =========================================================
 // 📥 إعدادات الخطوط والمخطوطات الإسلامية المعتمدة في الـ YAML
 // =========================================================
-const String kSurahNameFont = 'fhrs';      // خط أسماء السور (يعمل بالنص الكامل مثل: سورة البقرة)
+const String kSurahNameFont = 'nam';       // 🛠️ تم التعديل من fhrs إلى nam ليطابق الـ pubspec.yaml تماماً
 const String kBasmalahFont = 'bsm60';      // خط البسملة المطور (يعرض الزخرفة عند تمرير "60")
 const String kSurahTextFont = 'nss';       // خط نص الآيات الكريم (sura_nss.otf)
 const String kNumbersFont = 'quran_num';   // خط ترقيم الآيات الدائري (123456.ttf)
@@ -232,7 +232,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           elevation: 2,
           title: Row(
             children: [
-              // 🛠️ تم التعديل: نمرر النص الكامل "سورة البقرة" ليقوم خط fhrs برسمها بشكل صحيح بدلاً من الرقم
+              // 🛠️ خط المخطوطات المخصصة يعمل الآن بـ kSurahNameFont الجديد (nam)
               Text(
                 "سورة ${widget.surahName}", 
                 style: const TextStyle(
@@ -242,7 +242,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 )
               ),
               const Spacer(),
-              // 🛠️ تم حل مشكلة اسم المطور: استبدال الخط التالف ببطاقة وتصميم احترافي يعرض رقم الجزء بشكل نقي وجميل
+              // عرض بطاقة الجزء بدون شعار المطور
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
