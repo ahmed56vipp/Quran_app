@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'surah_detail_screen.dart'; 
 
+// 📥 تعريف خط المخطوطات القرآني المعتمد لأسماء السور
+const String kSurahNameFont = 'nam';
+
 class SurahListScreen extends StatelessWidget {
   const SurahListScreen({super.key});
 
@@ -150,26 +153,14 @@ class SurahListScreen extends StatelessWidget {
                     style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
                   ),
                 ),
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // النص العادي يظهر اسم السورة مجرداً بنظام الجهاز الافتراضي
-                    Text(
-                      "${surah['name']}", 
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    
-                    // 🛠️ التعديل الجوهري هنا:
-                    // قمنا بتمرير رقم السورة id بدلاً من النص العربي، ليقوم الخط nam بعرض المخطوطة المزخرفة المقابلة للرقم بشكل صحيح.
-                    Text(
-                      "${surah['id']}", 
-                      style: const TextStyle(
-                        fontFamily: 'nam', 
-                        fontSize: 26, 
-                        color: Color(0xFF2E7D32),
-                      ),
-                    ),
-                  ],
+                // 🛠️ تم التعديل الجوهري هنا: تطبيق خط nam المخطوط المباشر على اسم السورة بالمنتصف
+                title: Text(
+                  "سورة ${surah['name']}", 
+                  style: const TextStyle(
+                    fontFamily: kSurahNameFont, // خط nam المخصص
+                    fontSize: 25,              // حجم مثالي لعرض تفاصيل الخط المزخرف
+                    color: Color(0xFF1A1A1A),  // لون نقي يتوافق مع الخلفية البيضاء للبطاقة
+                  ),
                 ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 6.0),
@@ -178,6 +169,7 @@ class SurahListScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.grey[600], fontSize: 13),
                   ),
                 ),
+                // السهم الأيسر عاد نقياً ومنظماً بدون التداخلات الجانبية القديمة
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green),
                 onTap: () {
                   Navigator.push(
