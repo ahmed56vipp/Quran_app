@@ -26,7 +26,7 @@ flutter:
   fonts:
     - family: fhrs
       fonts:
-        - asset: assets/fonts/fhrs.ttf # خط أسماء السور والفهرس الجديد
+        - asset: assets/fonts/surah_nam.ttf # خط أسماء السور والفهرس الجديد
 
     - family: bsm60
       fonts:
