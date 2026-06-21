@@ -231,11 +231,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           backgroundColor: const Color(0xFF2E7D32),
           foregroundColor: Colors.white,
           elevation: 2,
-          toolbarHeight: 75, // 🌟 تكبير التبويب الأخضر قليلاً ليعطي فخامة ومساحة مريحة
+          toolbarHeight: 75, 
           title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // لتوزيع العناصر (يمين ويسار) بشكل تلقائي ومتناسق
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
             children: [
-              // 👉 الجهة اليمنى: اسم السورة كبير وبجانبها عدد الآيات مباشرة
               Row(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -244,23 +243,22 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     "سورة ${widget.surahName}", 
                     style: const TextStyle(
                       fontFamily: kSurahNameFont, 
-                      fontSize: 30, // 🌟 تكبير اسم السورة بناءً على طلبك
+                      fontSize: 30, 
                       color: Color(0xFFFFD700)
                     )
                   ),
-                  const SizedBox(width: 12), // مسافة بسيطة لتكون بجانبها مباشرة
+                  const SizedBox(width: 12), 
                   Text(
                     "آياتها: ${widget.versesCount}", 
-                    style: const TextStyle(fontSize: 13, color: Colors.whiteAA, fontWeight: FontWeight.w500)
+                    style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500) // 🌟 تم تصحيح الخطأ هنا من whiteAA إلى white70 المعتمد
                   ),
                 ],
               ),
               
-              // 👈 الجهة اليسرى: عرض مخطوطة الجزء الصافية بدون تكرار كلمة جزء
               Padding(
                 padding: const EdgeInsets.only(left: 8.0),
                 child: Text(
-                  cleanJuzNum, // الخط jzu12 يتكفل بكتابة "الجزء الأول" تلقائياً بمجرد تمرير الرقم صافي
+                  cleanJuzNum, 
                   style: const TextStyle(
                     fontFamily: kJuzFont, 
                     fontSize: 34, 
@@ -346,7 +344,7 @@ class _BuildBasmalahHeader extends StatelessWidget {
         color: cardColor,
       ),
       child: Text(
-        "19", // 🌟 تم استبدال الرقم 60 بالرقم 19 بناءً على طلبك لتظهر الرسمة الصحيحة للبسملة
+        "19", 
         textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: kBasmalahFont, 
