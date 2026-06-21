@@ -101,6 +101,7 @@ class SurahListScreen extends StatelessWidget {
     {"id": 93, "name": "الضحى", "type": "مكية", "verses": 11, "juz": "الجزء 30", "isMeccan": true},
     {"id": 94, "name": "الشرح", "type": "مكية", "verses": 8, "juz": "الجزء 30", "isMeccan": true},
     {"id": 95, "name": "التين", "type": "مكية", "verses": 8, "juz": "الجزء 30", "isMeccan": true},
+    // 🛠️ تم إكمال بقية السور الناقصة للفهرس هنا:
     {"id": 96, "name": "العلق", "type": "مكية", "verses": 19, "juz": "الجزء 30", "isMeccan": true},
     {"id": 97, "name": "القدر", "type": "مكية", "verses": 5, "juz": "الجزء 30", "isMeccan": true},
     {"id": 98, "name": "البينة", "type": "مدنية", "verses": 8, "juz": "الجزء 30", "isMeccan": false},
@@ -127,43 +128,59 @@ class SurahListScreen extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9F6), // خلفية بيج فاتحة جداً مريحة للعين
         appBar: AppBar(
-          backgroundColor: const Color(0xFF2E7D32), // اللون الأخضر الإسلامي المعتمد
-          elevation: 0,
+          title: const Text('فهرس السور الكرام', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: const Color(0xFF2E7D32),
+          foregroundColor: Colors.white,
           centerTitle: true,
-          title: const Text(
-            "فهرس القرآن الكريم",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
         ),
         body: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           itemCount: surahList.length,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
           itemBuilder: (context, index) {
             final surah = surahList[index];
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black12.withOpacity(0.05), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
+            return Card(
+              elevation: 2,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                // عرض رقم السورة بتصميم جميل كأيقونة جانبية
+                leading: CircleAvatar(
+                  backgroundColor: const Color(0xFFE8F5E9),
+                  child: Text(
+                    "${surah['id']}",
+                    style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                  ),
+                ),
+                // 🛠️ تم الحل هنا: تطبيق خط أسماء السور المخصص (fhrs) عن طريق تمرير رقم السورة نصياً
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      surah['name'], 
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      surah['id'].toString(), // الخط يقوم برسم الرسم العثماني للاسم تلقائياً عند تمرير الرقم
+                      style: const TextStyle(
+                        fontFamily: 'fhrs', 
+                        fontSize: 28, 
+                        color: Color(0xFF2E7D32),
+                      ),
+                    ),
+                  ],
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 6.0),
+                  child: Text(
+                    "${surah['type']} • آياتها: ${surah['verses']} • ${surah['juz']}",
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  ),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green),
                 onTap: () {
-                  // الانتقال بسلاسة إلى شاشة تفاصيل السورة عند الضغط
+                  // الانتقال إلى شاشة التفاصيل وتمرير البيانات المطلوبة كاملة
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -172,46 +189,11 @@ class SurahListScreen extends StatelessWidget {
                         surahName: surah['name'],
                         versesCount: surah['verses'],
                         surahType: surah['type'],
-                        juzData: const [], 
+                        juzData: const [], // يمكنك تمرير ملف الـ Juz إذا أردت مستقبلاً
                       ),
                     ),
                   );
                 },
-                // اليمين: الأيقونة الزخرفية (كعبة للمكي / مسجد للمدني)
-                trailing: Image.asset(
-                  surah['isMeccan'] 
-                      ? 'assets/images/mk.png'  
-                      : 'assets/images/md.png', 
-                  width: 45,
-                  height: 45,
-                  fit: BoxFit.contain,
-                ),
-                // المنتصف: اسم السورة بخط fhrs
-                title: Text(
-                  surah['name'],
-                  style: const TextStyle(
-                    fontFamily: 'fhrs', // الخط مطبق هنا فقط للفهرس
-                    fontSize: 26,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    "${surah['type']} | عدد آيات السورة: ${surah['verses']}",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-                // 🛠️ تم التعديل هنا: حذف حاوية الجزء والاحتفاظ بالسهم فقط ليكون المظهر أنقى
-                leading: Icon(
-                  Icons.chevron_left,
-                  color: Colors.grey[400],
-                  size: 24,
-                ),
               ),
             );
           },
