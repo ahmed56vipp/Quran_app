@@ -180,8 +180,8 @@ class SurahListScreen extends StatelessWidget {
                 // اليمين: الأيقونة الزخرفية (كعبة للمكي / مسجد للمدني)
                 trailing: Image.asset(
                   surah['isMeccan'] 
-                      ? 'assets/images/kaaba.png'  
-                      : 'assets/images/mosque.png', 
+                      ? 'assets/images/mk.png'  
+                      : 'assets/images/md.png', 
                   width: 45,
                   height: 45,
                   fit: BoxFit.contain,
