@@ -153,14 +153,14 @@ class SurahListScreen extends StatelessWidget {
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // النص بالخط العادي الافتراضي للنظام
+                    // 🛠️ تم التعديل: عرض الاسم مباشرة بدون كلمة "سورة"
                     Text(
-                      "سورة ${surah['name']}", 
+                      "${surah['name']}", 
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    // 🛠️ تم التعديل هنا: استخدام عائلة الخط 'nam' كما هو معرّف في pubspec.yaml
+                    // 🛠️ تم التعديل: عرض الاسم مباشرة بالخط المخصص nam بدون كلمة "سورة"
                     Text(
-                      "سورة ${surah['name']}", 
+                      "${surah['name']}", 
                       style: const TextStyle(
                         fontFamily: 'nam', 
                         fontSize: 22, 
