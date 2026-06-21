@@ -153,17 +153,19 @@ class SurahListScreen extends StatelessWidget {
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // 🛠️ تم التعديل: عرض الاسم مباشرة بدون كلمة "سورة"
+                    // النص العادي يظهر اسم السورة مجرداً بنظام الجهاز الافتراضي
                     Text(
                       "${surah['name']}", 
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    // 🛠️ تم التعديل: عرض الاسم مباشرة بالخط المخصص nam بدون كلمة "سورة"
+                    
+                    // 🛠️ التعديل الجوهري هنا:
+                    // قمنا بتمرير رقم السورة id بدلاً من النص العربي، ليقوم الخط nam بعرض المخطوطة المزخرفة المقابلة للرقم بشكل صحيح.
                     Text(
-                      "${surah['name']}", 
+                      "${surah['id']}", 
                       style: const TextStyle(
                         fontFamily: 'nam', 
-                        fontSize: 22, 
+                        fontSize: 26, 
                         color: Color(0xFF2E7D32),
                       ),
                     ),
