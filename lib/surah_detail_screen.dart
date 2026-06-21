@@ -4,28 +4,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// ==========================================
-// 📥 لوحة التحكم وتخصيص الخطوط الجديدة والمحدثة بالكامل
-// ==========================================
-const String kSurahNameFont = 'fhrs';    // خط الفهرس وأسماء السور الجديد fhrs.ttf
-const String kBasmalahFont = 'bsm60';    // خط البسملة الجديد bsmla60.ttf ويعمل بالرقم 60
-const String kSurahTextFont = 'nss';     // خط نص السورة (الآيات الشريفة)
-const String kNumbersFont = 'quran_num'; // خط ترقيم الآيات الذكي (123456.ttf)
-const String kJuzFont = 'jzu12';         // خط أجزاء القرآن الجديد jzu12.ttf ويعمل بالأرقام مباشرة
+// =========================================================
+// 📥 إعدادات الخطوط والمخطوطات الإسلامية المعتمدة في الـ YAML
+// =========================================================
+const String kSurahNameFont = 'fhrs';      // خط أسماء السور (يعمل برقم السورة بالإنجليزية)
+const String kBasmalahFont = 'bsm60';      // خط البسملة المطور (يعرض الزخرفة عند تمرير "60")
+const String kSurahTextFont = 'nss';       // خط نص الآيات الكريم (sura_nss.otf)
+const String kNumbersFont = 'quran_num';   // خط ترقيم الآيات الدائري (123456.ttf)
+const String kJuzFont = 'jzu12';           // خط أجزاء القرآن الكريم (jzu12.ttf)
 
-// --- دالة مساعدة لتحويل الأرقام إلى صيغتها العربية للمصحف ---
-String _toArabicNumbers(String input) {
-  const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-  const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  for (int i = 0; i < english.length; i++) {
-    input = input.replaceAll(english[i], arabic[i]);
-  }
-  return input;
-}
-
-// ==========================================
-// 1. الشاشة الرئيسية وإدارة الحالة (Controller)
-// ==========================================
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
   final String surahName;
@@ -98,7 +85,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       try {
         surahTextResponse = await rootBundle.loadString('assets/surah/${widget.surahId}.json');
       } catch (_) {
-        surahTextResponse = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
+        surahTextResponse = await rootBundle.loadString('assets/surah/surah_${widget.surId}.json');
       }
 
       final dynamic parsedText = json.decode(surahTextResponse);
@@ -111,17 +98,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
         targetMap.forEach((key, value) {
           String cleanKey = key.toString();
-          if (!cleanKey.startsWith('verse_') && cleanKey != '0') {
-            localVersesMap['verse_$cleanKey'] = _cleanRawText(value.toString());
-          } else {
-            localVersesMap[cleanKey] = _cleanRawText(value.toString());
-          }
           localVersesMap[cleanKey.replaceAll('verse_', '')] = _cleanRawText(value.toString());
         });
       } else if (parsedText is List) {
         for (int i = 0; i < parsedText.length; i++) {
           int indexKey = parsedText.length == widget.versesCount ? i + 1 : i;
-          localVersesMap['verse_$indexKey'] = _cleanRawText(parsedText[i].toString());
           localVersesMap['$indexKey'] = _cleanRawText(parsedText[i].toString());
         }
       }
@@ -131,9 +112,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       });
     } catch (e) {
       debugPrint("خطأ في جلب البيانات: $e");
-      setState(() {
-        _versesMap = {'verse_0': '60'};
-      });
     }
   }
 
@@ -198,10 +176,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     final targetContext = _verseKeys[targetVerse].currentContext;
     if (targetContext != null) {
       Scrollable.ensureVisible(targetContext, duration: const Duration(seconds: 1), curve: Curves.easeInOut);
-    } else {
-      double maxScroll = _scrollController.position.maxScrollExtent;
-      double estimatedOffset = (targetVerse / widget.versesCount) * maxScroll;
-      _scrollController.animateTo(estimatedOffset, duration: const Duration(seconds: 1), curve: Curves.easeInOut);
     }
   }
 
@@ -221,16 +195,14 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   String _getFallbackJuz() {
     if (widget.juzData.isEmpty) return '1';
-    List<int> parts = [];
     for (var juz in widget.juzData) {
       int startSurah = int.tryParse(juz['start']['index'].toString()) ?? 0;
       int endSurah = int.tryParse(juz['end']['index'].toString()) ?? 0;
-      int juzIndex = int.tryParse(juz['index'].toString()) ?? 0;
       if (widget.surahId >= startSurah && widget.surahId <= endSurah) {
-        if (!parts.contains(juzIndex)) parts.add(juzIndex);
+        return juz['index'].toString();
       }
     }
-    return parts.isEmpty ? '1' : parts.first.toString();
+    return '1';
   }
 
   @override
@@ -249,6 +221,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       cardColor = const Color(0xFFEFE5CD);
     }
 
+    // تجهيز رقم الجزء بصيغة خانتين (مثل 01، 02) ليتوافق مع دليل خط الأجزاء الإنجليزي
+    String cleanJuzNum = _getDynamicJuzNumber().padLeft(2, '0');
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -259,29 +234,28 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           elevation: 2,
           title: Row(
             children: [
-              // 🛠️ اسم السورة بالفهرس المصلح عبر خط fhrs المخصص برقم السورة
+              // 1. رقم السورة بخط fhrs ليعطي مخطوطة اسم السورة مباشرة من الفهرس
               Text(
                 widget.surahId.toString(), 
                 style: const TextStyle(
                   fontFamily: kSurahNameFont, 
-                  fontSize: 28, 
+                  fontSize: 32, 
                   color: Color(0xFFFFD700)
                 )
               ),
-              const SizedBox(width: 15),
-              // 🛠️ خط الأجزاء الجديد jzu12 المخصص يعرض اللوحة الزخرفية للجزء تلقائياً برقم الجزء الإنجليزي
+              const SizedBox(width: 20),
+              // 2. رقم الجزء الإنجليزي المبطن بخط jzu12 ليعطي مخطوطة الجزء الزخرفية تلقائياً
               Text(
-                _getDynamicJuzNumber(), 
+                cleanJuzNum, 
                 style: const TextStyle(
                   fontFamily: kJuzFont, 
-                  fontSize: 26, 
+                  fontSize: 28, 
                   color: Colors.white
                 )
               ),
-              const SizedBox(width: 10),
-              // عدد الآيات بخط النظام العادي منعاً لتداخل الخطوط الزخرفية
+              const Spacer(),
               Text(
-                "| آياتها: ${widget.versesCount}", 
+                "آياتها: ${widget.versesCount}", 
                 style: const TextStyle(fontSize: 13, color: Colors.white70)
               ),
             ],
@@ -293,7 +267,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent, 
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                 builder: (context) => UnifiedSettingsBottomSheet(
                   versesCount: widget.versesCount,
                   currentFontSize: _currentFontSize,
@@ -320,7 +293,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   padding: const EdgeInsets.all(18.0),
                   child: Column(
                     children: [
-                      _BuildBasmalahHeader(cardColor: cardColor, textColor: textColor, verseKey: _verseKeys[0]),
+                      // عدم عرض البسملة في سورة التوبة (رقم 9)
+                      if (widget.surahId != 9)
+                        _BuildBasmalahHeader(cardColor: cardColor, textColor: textColor, verseKey: _verseKeys[0]),
                       const SizedBox(height: 10),
                       MushafTextView(
                         versesCount: widget.versesCount,
@@ -339,7 +314,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 }
 
 // ==========================================
-// 2. ويدجت صندوق البسملة المخصص
+// 🏛️ ويدجت صندوق البسملة الفاخر بالرقم 60
 // ==========================================
 class _BuildBasmalahHeader extends StatelessWidget {
   final Color cardColor;
@@ -358,19 +333,18 @@ class _BuildBasmalahHeader extends StatelessWidget {
       key: verseKey,
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5C158), width: 1.5),
+        border: Border.all(color: const Color(0xFFE5C158), width: 1.2),
         borderRadius: BorderRadius.circular(12),
         color: cardColor,
       ),
       child: Text(
-        "60", // 🛠️ تم التثبيت على الرقم 60 ليعرض البسملة الفاخرة بناءً على دليل خطك bsmla60.ttf
+        "60", // ممرر كـ نص إنجليزي ليفهم خط bsm60 رسم اللوحة الزخرفية الكاملة للبسملة
         textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: kBasmalahFont, 
-          fontSize: 65, 
-          fontWeight: FontWeight.bold, 
+          fontSize: 55, 
           color: textColor
         ),
       ),
@@ -379,7 +353,7 @@ class _BuildBasmalahHeader extends StatelessWidget {
 }
 
 // ==========================================
-// 3. ويدجت عرض السورة المتدفقة والمخصصة الخطوط
+// 📖 ويدجت عرض نص المصحف الشريف والترقيم الذكي
 // ==========================================
 class MushafTextView extends StatelessWidget {
   final int versesCount;
@@ -402,28 +376,19 @@ class MushafTextView extends StatelessWidget {
     List<InlineSpan> spans = [];
 
     for (int i = 1; i <= versesCount; i++) {
-      String verseText = versesMap['verse_$i'] ?? versesMap['$i'] ?? '';
+      String verseText = versesMap['$i'] ?? '';
       if (verseText.isEmpty) continue;
 
-      verseText = verseText
-          .replaceAll('●', '')
-          .replaceAll('•', '')
-          .replaceAll('\u06DF', '') 
-          .replaceAll('\u06E0', '') 
-          .replaceAll('۝', '')
-          .replaceAll('\u06DD', '')
-          .trim();
-
+      // تنظيف أي علامات ترقيم قديمة مدمجة بالخطأ
       final RegExp trailingTarget = RegExp(r'[\u06DD۝٠-٩0-9\s]+$');
       verseText = verseText.replaceAll(trailingTarget, '').trim();
 
+      // إنشاء نقطة مرجعية (Key) لكل آية لتسهيل الانتقال السريع والتتبع
       spans.add(
-        WidgetSpan(
-          child: SizedBox(key: verseKeys[i], width: 0, height: 0),
-        ),
+        WidgetSpan(child: SizedBox(key: verseKeys[i], width: 0, height: 0)),
       );
 
-      // متن الآية بخط nss العثماني
+      // 1. إضافة متن الآية بخط nss العثماني المعدل
       spans.add(
         TextSpan(
           text: "$verseText ",
@@ -431,20 +396,18 @@ class MushafTextView extends StatelessWidget {
             fontFamily: kSurahTextFont,
             fontSize: fontSize,
             color: textColor,
-            height: 2.1,
+            height: 2.2,
           ),
         ),
       );
 
-      // رقم الآية الإنجليزي ليتكفل خط ترقيم الآيات العثماني برسم الحلقة والترقيم تلقائياً
-      String englishNum = i.toString();
-      
+      // 2. إضافة رقم الآية بصيغة نص إنجليزي ليقوم خط quran_num برسم الدائرة والترقيم داخلها تلقائياً
       spans.add(
         TextSpan(
-          text: " $englishNum ", 
+          text: " $i ", 
           style: TextStyle(
             fontFamily: kNumbersFont,
-            fontSize: fontSize * 1.1,
+            fontSize: fontSize * 1.05,
             color: const Color(0xFF2E7D32),
           ),
         ),
@@ -459,7 +422,7 @@ class MushafTextView extends StatelessWidget {
 }
 
 // ==========================================
-// 4. لوحة الإضافات الشفافة والمصلحة (Unified Settings)
+// ⚙️ لوحة التحكم والإعدادات الشفافة والمصلحة
 // ==========================================
 class UnifiedSettingsBottomSheet extends StatefulWidget {
   final int versesCount;
@@ -517,8 +480,8 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
   @override
   Widget build(BuildContext context) {
     Color sheetBg = _localNightMode 
-        ? const Color(0xFF1E1E1E).withOpacity(0.82) 
-        : (_localEyeProtection ? const Color(0xFFEFE5CD).withOpacity(0.85) : Colors.white.withOpacity(0.82));
+        ? const Color(0xFF1E1E1E).withOpacity(0.85) 
+        : (_localEyeProtection ? const Color(0xFFEFE5CD).withOpacity(0.88) : Colors.white.withOpacity(0.85));
         
     Color textCol = _localNightMode ? Colors.white : (_localEyeProtection ? const Color(0xFF3E2723) : const Color(0xFF1A1A1A));
 
@@ -527,7 +490,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             color: sheetBg,
             padding: EdgeInsets.only(top: 20, left: 20, right: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
@@ -535,12 +498,12 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Container(width: 50, height: 5, decoration: BoxDecoration(color: textCol.withOpacity(0.2), borderRadius: BorderRadius.circular(10)))),
+                Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: textCol.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
                 const SizedBox(height: 15),
-                Center(child: Text("اضافات القرآن", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green))),
-                const Divider(height: 25),
+                Center(child: Text("إعدادات المصحف الشريف", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green))),
+                const Divider(height: 20),
                 
-                Text("انتقال سريع لآية:", style: TextStyle(fontWeight: FontWeight.bold, color: textCol, fontSize: 14)),
+                Text("الانتقال السريع إلى آية:", style: TextStyle(fontWeight: FontWeight.bold, color: textCol, fontSize: 13)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -550,8 +513,8 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                         keyboardType: TextInputType.number,
                         style: TextStyle(color: textCol),
                         decoration: InputDecoration(
-                          hintText: "من 1 إلى ${widget.versesCount}",
-                          hintStyle: TextStyle(color: textCol.withOpacity(0.5), fontSize: 13),
+                          hintText: "أدخل رقم الآية من 1 إلى ${widget.versesCount}",
+                          hintStyle: TextStyle(color: textCol.withOpacity(0.5), fontSize: 12),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -571,7 +534,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                     )
                   ],
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 10),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -605,12 +568,12 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("حجم خط الآيات الكريمة:", style: TextStyle(color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text("حجم خط القراءة:", style: TextStyle(color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
                     Row(
                       children: [
                         IconButton(icon: Icon(Icons.remove_circle_outline, color: textCol), onPressed: () { if (_localFontSize > 18) { setState(() => _localFontSize -= 2); widget.onFontSizeChanged(_localFontSize); } }),
                         Text("${_localFontSize.toInt()}", style: TextStyle(color: textCol, fontSize: 16, fontWeight: FontWeight.bold)),
-                        IconButton(icon: Icon(Icons.add_circle_outline, color: textCol), onPressed: () { if (_localFontSize < 42) { setState(() => _localFontSize += 2); widget.onFontSizeChanged(_localFontSize); } }),
+                        IconButton(icon: Icon(Icons.add_circle_outline, color: textCol), onPressed: () { if (_localFontSize < 40) { setState(() => _localFontSize += 2); widget.onFontSizeChanged(_localFontSize); } }),
                       ],
                     )
                   ],
@@ -619,7 +582,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("تشغيل التمرير التلقائي للأعلى:", style: TextStyle(color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text("التمرير التلقائي للصفحة:", style: TextStyle(color: textCol, fontSize: 14, fontWeight: FontWeight.bold)),
                     Switch(
                       value: _localAutoScrolling,
                       activeColor: const Color(0xFF2E7D32),
@@ -633,7 +596,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
                 if (_localAutoScrolling) ...[
                   Row(
                     children: [
-                      Text("سرعة التدفق:", style: TextStyle(color: textCol, fontSize: 12)),
+                      Text("سرعة التمرير:", style: TextStyle(color: textCol, fontSize: 12)),
                       Expanded(
                         child: Slider(
                           value: _localScrollSpeed,
