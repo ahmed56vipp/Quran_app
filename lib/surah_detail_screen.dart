@@ -85,7 +85,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       try {
         surahTextResponse = await rootBundle.loadString('assets/surah/${widget.surahId}.json');
       } catch (_) {
-        // 🛠️ تم التصحيح هنا من widget.surId إلى widget.surahId ليتوافق مع الـ Getter المعرّف
         surahTextResponse = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
       }
 
@@ -222,7 +221,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       cardColor = const Color(0xFFEFE5CD);
     }
 
-    String cleanJuzNum = _getDynamicJuzNumber().padLeft(2, '0');
+    // 🛠️ تم الحل هنا: إزالة .padLeft(2, '0') لمنع ظهور شعار المطور للأجزاء 1 إلى 9
+    String cleanJuzNum = _getDynamicJuzNumber();
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -234,6 +234,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           elevation: 2,
           title: Row(
             children: [
+              // خط أسماء السور يعرض المخطوطة بناءً على الرقم الممرر له
               Text(
                 widget.surahId.toString(), 
                 style: const TextStyle(
@@ -241,6 +242,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   fontSize: 32, 
                   color: Color(0xFFFFD700)
                 )
+              ),
+              const SizedBox(width: 12),
+              // 🛠️ تم الحل هنا: إضافة اسم السورة نصياً ليتجنب مشكلة الاختفاء تماماً داخل السورة
+              Text(
+                widget.surahName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 20),
               Text(
@@ -484,7 +495,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
               children: [
                 Center(child: Container(width: 40, height: 5, decoration: BoxDecoration(color: textCol.withOpacity(0.3), borderRadius: BorderRadius.circular(10)))),
                 const SizedBox(height: 15),
-                Center(child: Text("إعدادات المصحف الشريف", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green))),
+                Center(child: const Text("إعدادات المصحف الشريف", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green))),
                 const Divider(height: 20),
                 
                 Text("الانتقال السريع إلى آية:", style: TextStyle(fontWeight: FontWeight.bold, color: textCol, fontSize: 13)),
