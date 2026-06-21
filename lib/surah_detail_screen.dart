@@ -11,7 +11,7 @@ const String kSurahNameFont = 'nam';
 const String kBasmalahFont = 'bsm60';      
 const String kSurahTextFont = 'nss';       
 const String kNumbersFont = 'quran_num';   
-const String kJuzFont = 'jzu12'; // 🌟 إضافة خط الغريب المخصص للأجزاء بناءً على لقطة الشاشة
+const String kJuzFont = 'jzu12'; 
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -231,47 +231,42 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           backgroundColor: const Color(0xFF2E7D32),
           foregroundColor: Colors.white,
           elevation: 2,
+          toolbarHeight: 75, // 🌟 تكبير التبويب الأخضر قليلاً ليعطي فخامة ومساحة مريحة
           title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, // لتوزيع العناصر (يمين ويسار) بشكل تلقائي ومتناسق
             children: [
-              Text(
-                "سورة ${widget.surahName}", 
-                style: const TextStyle(
-                  fontFamily: kSurahNameFont, 
-                  fontSize: 24, 
-                  color: Color(0xFFFFD700)
-                )
-              ),
-              const Spacer(),
-              
-              // 🌟 تعديل كامل هنا لعرض مخطوطة الجزء بخط jzu12 والزخارف التزيينية طبقاً للصورة
+              // 👉 الجهة اليمنى: اسم السورة كبير وبجانبها عدد الآيات مباشرة
               Row(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // زخرفة تزيينية جانبية (شكل رقم 33)
-                  const Text(
-                    "33 ", 
-                    style: TextStyle(
-                      fontFamily: kJuzFont,
-                      fontSize: 24,
-                      color: Color(0xFFFFD700),
-                    ),
-                  ),
-                  // هنا نمرر الرقم الإنجليزي الصافي والخط يحوله تلقائياً إلى "الجزء العاشر" إلخ
                   Text(
-                    cleanJuzNum, 
+                    "سورة ${widget.surahName}", 
                     style: const TextStyle(
-                      fontFamily: kJuzFont, 
-                      fontSize: 32, // حجم مناسب لعرض المخطوطة بدقة عالية
-                      color: Color(0xFFFFD700),
-                    ),
+                      fontFamily: kSurahNameFont, 
+                      fontSize: 30, // 🌟 تكبير اسم السورة بناءً على طلبك
+                      color: Color(0xFFFFD700)
+                    )
+                  ),
+                  const SizedBox(width: 12), // مسافة بسيطة لتكون بجانبها مباشرة
+                  Text(
+                    "آياتها: ${widget.versesCount}", 
+                    style: const TextStyle(fontSize: 13, color: Colors.whiteAA, fontWeight: FontWeight.w500)
                   ),
                 ],
               ),
               
-              const Spacer(),
-              Text(
-                "آياتها: ${widget.versesCount}", 
-                style: const TextStyle(fontSize: 12, color: Colors.white70)
+              // 👈 الجهة اليسرى: عرض مخطوطة الجزء الصافية بدون تكرار كلمة جزء
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Text(
+                  cleanJuzNum, // الخط jzu12 يتكفل بكتابة "الجزء الأول" تلقائياً بمجرد تمرير الرقم صافي
+                  style: const TextStyle(
+                    fontFamily: kJuzFont, 
+                    fontSize: 34, 
+                    color: Color(0xFFFFD700),
+                  ),
+                ),
               ),
             ],
           ),
@@ -351,7 +346,7 @@ class _BuildBasmalahHeader extends StatelessWidget {
         color: cardColor,
       ),
       child: Text(
-        "60", 
+        "19", // 🌟 تم استبدال الرقم 60 بالرقم 19 بناءً على طلبك لتظهر الرسمة الصحيحة للبسملة
         textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: kBasmalahFont, 
@@ -486,7 +481,6 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
         
     Color textCol = _localNightMode ? Colors.white : (_localEyeProtection ? const Color(0xFF3E2723) : const Color(0xFF1A1A1A));
 
-    // 🛠️ تم إعادة بناء الكود بالكامل وبشكل سليم هنا لحل المشكلة البرمجية السابقة لمنع أي أخطاء
     return Directionality(
       textDirection: TextDirection.rtl,
       child: ClipRRect(
