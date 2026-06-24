@@ -255,8 +255,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$twoDigitMinutes:$twoDigitSeconds";
+    String loveSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$loveSeconds";
   }
 
   Color _getBackgroundColor() {
@@ -571,3 +571,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 }
+
+```
+
