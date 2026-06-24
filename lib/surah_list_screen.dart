@@ -141,7 +141,6 @@ class SurahListScreen extends StatelessWidget {
               ),
             ],
           ),
-          // تدرج لوني فخم جداً للشريط العلوي ليتوافق مع هوية التطبيق الإسلامية
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -161,7 +160,6 @@ class SurahListScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           itemBuilder: (context, index) {
             final surah = surahList[index];
-            // تحويل الأرقام الترتيبية وأعداد الآيات ديناميكياً للعربية الفصحى
             final String arabicId = toArabicNumerals(surah['id'] as int);
             final String arabicVerses = toArabicNumerals(surah['verses'] as int);
 
@@ -170,7 +168,7 @@ class SurahListScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 6),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE0E0E0).withOpacity(0.6), width: 1),
+                side: BorderSide(color: const Color(0xFFE0E0E0).withOpacity(0.6), width: 1), // 🛠️ تم إصلاح الخطأ هنا
               ),
               child: Container(
                 decoration: BoxDecoration(
@@ -213,7 +211,6 @@ class SurahListScreen extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // أيقونة نوع السورة (مكية/مدنية) معالجة بطريقة عصرية
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
