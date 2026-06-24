@@ -9,7 +9,7 @@ class SurahListScreen extends StatelessWidget {
 
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
-    {"id": 2, "name": "البقرة", "type": "مدنية", "verses": 286, "isMeccan": false, "juz": 1}, // يبدأ من 1 ويمتد عبر أجزاء أخرى، نمرر بداية السورة
+    {"id": 2, "name": "البقرة", "type": "مدنية", "verses": 286, "isMeccan": false, "juz": 1},
     {"id": 3, "name": "آل عمران", "type": "مدنية", "verses": 200, "isMeccan": false, "juz": 3},
     {"id": 4, "name": "النساء", "type": "مدنية", "verses": 176, "isMeccan": false, "juz": 4},
     {"id": 5, "name": "المائدة", "type": "مدنية", "verses": 120, "isMeccan": false, "juz": 6},
@@ -254,7 +254,6 @@ class SurahListScreen extends StatelessWidget {
                   ),
                   trailing: const Icon(Icons.chevron_left, size: 22, color: Color(0xFF2E7D32)),
                   onTap: () {
-                    // 🟢 الآن يتم تمرير الجزء الصحيح ديناميكياً لكل سورة بناءً على البيانات المُحدثة
                     Navigator.push(
                       context,
                       MaterialPageRoute(
