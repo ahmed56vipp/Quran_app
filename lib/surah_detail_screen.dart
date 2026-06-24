@@ -451,7 +451,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                   ),
                   
-                  // شريط التحكم السفلي الآمن كلياً من مشاكل تعريف الألوان الثابتة
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
@@ -500,4 +499,54 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                     setState(() {
                                       activeVerseIndex = activeVerseIndex! + 1;
                                       _updateJuzForVerse(activeVerseIndex!);
-
+                                    });
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 4),
+                              isDownloading
+                                  ? const SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: Padding(
+                                        padding: EdgeInsets.all(4.0),
+                                        child: CircularProgressIndicator(color: Color(0xFF2E7D32), strokeWidth: 3),
+                                      ),
+                                    )
+                                  : (!isAudioDownloaded
+                                      ? IconButton(
+                                          icon: const Icon(Icons.cloud_download_outlined, color: Colors.orange, size: 32),
+                                          onPressed: () => _downloadAudio(),
+                                          tooltip: 'تحميل السورة للاستماع بدون إنترنت',
+                                        )
+                                      : FloatingActionButton(
+                                          mini: true,
+                                          elevation: 2,
+                                          backgroundColor: const Color(0xFF2E7D32),
+                                          onPressed: () => _toggleAudio(),
+                                          child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 26),
+                                        )),
+                              const SizedBox(width: 4),
+                              IconButton(
+                                icon: const Icon(Icons.skip_previous, color: Color(0xFF2E7D32), size: 30),
+                                onPressed: () {
+                                  if (activeVerseIndex != null && activeVerseIndex! > 0) {
+                                    setState(() {
+                                      activeVerseIndex = activeVerseIndex! - 1;
+                                      _updateJuzForVerse(activeVerseIndex!);
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
