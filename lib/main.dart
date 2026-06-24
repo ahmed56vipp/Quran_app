@@ -20,7 +20,12 @@ class QuranApp extends StatelessWidget {
         );
       },
       theme: ThemeData(
-        primarySwatch: Colors.green,
+        useMaterial3: true, // تفعيل سمات Material 3 الحديثة تلقائياً
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2E7D32),
+          primary: const Color(0xFF2E7D32),
+          background: const Color(0xFFFDFBF7),
+        ),
         scaffoldBackgroundColor: const Color(0xFFFDFBF7),
       ),
       home: const SurahListScreen(),
