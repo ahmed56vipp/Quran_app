@@ -20,7 +20,7 @@ class QuranApp extends StatelessWidget {
         );
       },
       theme: ThemeData(
-        useMaterial3: true, // تفعيل سمات Material 3 الحديثة تلقائياً
+        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2E7D32),
           primary: const Color(0xFF2E7D32),
