@@ -231,7 +231,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           
           if (widget.surahId != 1 && widget.surahId != 9 && i == 0) {
             final RegExp basmalahRegExp = RegExp(
-              r'^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
+              r'^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
               caseSensitive: false,
             );
             text = text.replaceFirst(basmalahRegExp, "").trim();
@@ -569,4 +569,4 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       ),
     );
   }
-}
+      }
