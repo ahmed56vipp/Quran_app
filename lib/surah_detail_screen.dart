@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart'; // ✅ إضافة حزمة الصوت
 
 // =========================================================
 // 📥 إعدادات الخطوط والمخطوطات الإسلامية المعتمدة في الـ YAML
@@ -49,8 +50,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   double _scrollSpeed = 2.0;      
   Timer? _autoScrollTimer;
   
-  // ⚡ متغير للتحكم في سلاسة التمرير ومنع التقطيع (Throttling)
   DateTime _lastScrollCheck = DateTime.now();
+
+  // ✅ متغيرات مشغل الصوت الجديد
+  late AudioPlayer _audioPlayer;
+  bool _isAudioLoading = false;
 
   @override
   void initState() {
@@ -58,6 +62,27 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     _verseKeys.addAll(List.generate(widget.versesCount + 1, (index) => GlobalKey()));
     _loadSurahVerses();
     _scrollController.addListener(_onScroll);
+    
+    // ✅ تهيئة مشغل الصوت
+    _audioPlayer = AudioPlayer();
+    _initAudio();
+  }
+
+  // ✅ دالة تجهيز رابط الصوت الخاص بالسورة تلقائياً
+  Future<void> _initAudio() async {
+    setState(() => _isAudioLoading = true);
+    try {
+      // تحويل رقم السورة إلى صيغة 3 خانات (مثال: سورة 1 تصبح 001)
+      String formattedSurahId = widget.surahId.toString().padLeft(3, '0');
+      // رابط التلاوة (بصوت الشيخ مشاري العفاسي كمثال)
+      String audioUrl = "https://server8.mp3quran.net/afs/$formattedSurahId.mp3";
+      
+      await _audioPlayer.setUrl(audioUrl);
+    } catch (e) {
+      debugPrint("خطأ في تحميل الصوت: $e");
+    } finally {
+      if (mounted) setState(() => _isAudioLoading = false);
+    }
   }
 
   @override
@@ -65,6 +90,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _autoScrollTimer?.cancel();
+    _audioPlayer.dispose(); // ✅ إغلاق مشغل الصوت لحفظ الذاكرة
     super.dispose();
   }
 
@@ -132,7 +158,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   void _onScroll() {
     if (_verseKeys.isEmpty || !mounted) return;
 
-    // 🛠️ تحسين الأداء التلقائي: منع استهلاك المعالج أثناء التمرير السريع لإنهاء اللاج والتقطيع تماماً
     final now = DateTime.now();
     if (now.difference(_lastScrollCheck).inMilliseconds < 90) return;
     _lastScrollCheck = now;
@@ -244,7 +269,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween, 
             children: [
-              // 👉 الجهة اليمنى: اسم السورة كبير جداً، وتحته مباشرة عدد آياتها بشكل رأسي منظم
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -253,7 +277,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     "سورة ${widget.surahName}", 
                     style: const TextStyle(
                       fontFamily: kSurahNameFont, 
-                      fontSize: 32, // حجم خط كبير وواضح
+                      fontSize: 32, 
                       color: Color(0xFFFFD700),
                       height: 1.1
                     )
@@ -269,15 +293,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ),
                 ],
               ),
-              
-              // 👈 الجهة اليسرى: الجزء نظيف وبنفس مقاس وحجم خط السورة تماماً لتناسق بصري مبهر
               Padding(
                 padding: const EdgeInsets.only(left: 4.0),
                 child: Text(
                   cleanJuzNum.trim(), 
                   style: const TextStyle(
                     fontFamily: kJuzFont, 
-                    fontSize: 32, // متطابق مع حجم خط السورة
+                    fontSize: 32, 
                     color: Color(0xFFFFD700),
                   ),
                 ),
@@ -289,10 +311,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               icon: const Icon(Icons.tune),
               onPressed: () => showModalBottomSheet(
                 context: context,
-                isScrollControlled: true, // تفعيل التحكم الكامل بالحجم
+                isScrollControlled: true, 
                 backgroundColor: Colors.transparent, 
-                builder: (context) => Container(
-                  height: MediaQuery.of(context).size.height, // 🌟 جعل نافذة الإضافات شاشة كاملة
+                builder: (context) => SizedBox(
+                  height: MediaQuery.of(context).size.height, 
                   child: UnifiedSettingsBottomSheet(
                     versesCount: widget.versesCount,
                     currentFontSize: _currentFontSize,
@@ -312,12 +334,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ),
           ],
         ),
+        
+        // ✅ إضافة شريط التحكم الصوتي في الأسفل بشكل ثابت واحترافي
+        bottomNavigationBar: _buildAudioBottomBar(cardColor, textColor),
+
         body: SafeArea(
           child: _versesMap == null
               ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
               : SingleChildScrollView(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(18.0),
+                  padding: const EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 90.0), // زيادة الحشو السفلي لتفادي تغطية النص بشريط الصوت
                   child: Column(
                     children: [
                       if (widget.surahId != 9)
@@ -337,10 +363,90 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       ),
     );
   }
+
+  // ✅ تصميم شريط الصوت السفلي
+  Widget _buildAudioBottomBar(Color cardColor, Color textColor) {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        color: cardColor,
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, -3))
+        ],
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.music_note, color: Color(0xFF2E7D32)),
+              const SizedBox(width: 8),
+              Text(
+                "تلاوة سورة ${widget.surahName}",
+                style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ],
+          ),
+          _isAudioLoading
+              ? const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF2E7D32)),
+                )
+              : StreamBuilder<PlayerState>(
+                  stream: _audioPlayer.playerStateStream,
+                  builder: (context, snapshot) {
+                    final playerState = snapshot.data;
+                    final playing = playerState?.playing;
+                    final processingState = playerState?.processingState;
+
+                    if (processingState == ProcessingState.loading ||
+                        processingState == ProcessingState.buffering) {
+                      return const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF2E7D32)),
+                      );
+                    } else if (playing != true) {
+                      return CircleAvatar(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        child: IconButton(
+                          icon: const Icon(Icons.play_arrow, color: Colors.white),
+                          onPressed: _audioPlayer.play,
+                        ),
+                      );
+                    } else if (processingState != ProcessingState.completed) {
+                      return CircleAvatar(
+                        backgroundColor: Colors.amber[700],
+                        child: IconButton(
+                          icon: const Icon(Icons.pause, color: Colors.white),
+                          onPressed: _audioPlayer.pause,
+                        ),
+                      );
+                    } else {
+                      return CircleAvatar(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        child: IconButton(
+                          icon: const Icon(Icons.replay, color: Colors.white),
+                          onPressed: () => _audioPlayer.seek(Duration.zero),
+                        ),
+                      );
+                    }
+                  },
+                ),
+        ],
+      ),
+    );
+  }
 }
 
 // =========================================================
-// 🎨 تصميم غلاف البسملة الجديد (أكثر جاذبية، حجم أصغر وأنيق)
+// 🎨 تصميم غلاف البسملة الجديد
 // =========================================================
 class _BuildBasmalahHeader extends StatelessWidget {
   final Color cardColor;
@@ -362,16 +468,16 @@ class _BuildBasmalahHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(16), // زوايا دائرية أكثر انسيابية
-        border: Border.all(color: const Color(0xFFE5C158), width: 1.5), // إطار ذهبي ملكي متين
+        borderRadius: BorderRadius.circular(16), 
+        border: Border.all(color: const Color(0xFFE5C158), width: 1.5), 
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
-            offset: const Offset(0, 4), // تأثير ظل سفلي يعطي عمقاً جذاباً
+            offset: const Offset(0, 4), 
           ),
         ],
-        gradient: LinearGradient( // تدرج لوني خفيف وفخم داخل الغلاف
+        gradient: LinearGradient( 
           colors: [
             cardColor,
             const Color(0xFFFFFDF0).withOpacity(0.4),
@@ -386,7 +492,7 @@ class _BuildBasmalahHeader extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(
           fontFamily: kBasmalahFont, 
-          fontSize: 38, // 🌟 تم تصغير الحجم ليكون فخماً ومناسباً للغلاف الجديد
+          fontSize: 38, 
           color: textColor,
           shadows: [
             Shadow(
@@ -464,7 +570,7 @@ class MushafTextView extends StatelessWidget {
 }
 
 // =========================================================
-// 🎛️ شاشة الإعدادات المحدثة بالكامل لتظهر بملء الشاشة (Full Screen)
+// 🎛️ شاشة الإعدادات المحدثة
 // =========================================================
 class UnifiedSettingsBottomSheet extends StatefulWidget {
   final int versesCount;
@@ -536,7 +642,7 @@ class _UnifiedSettingsBottomSheetState extends State<UnifiedSettingsBottomSheet>
           elevation: 0,
           title: const Text("خيارات العرض والقراءة", style: TextStyle(color: Colors.white, fontSize: 20)),
           leading: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white), // زِر إغلاق علوي ممتاز للشاشة الكاملة
+            icon: const Icon(Icons.close, color: Colors.white), 
             onPressed: () => Navigator.pop(context),
           ),
         ),
