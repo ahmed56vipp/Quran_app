@@ -38,7 +38,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   Timer? _scrollTimer;
   bool _isAutoScrolling = false;
-  double _scrollSpeed = 0.1; // يبدأ من 0.1 بناءً على طلبك
+  double _scrollSpeed = 0.1; 
 
   // إدارة الصوتيات
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -63,7 +63,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     {"name": "أحمد بن علي العجمي", "server": "https://server11.mp3quran.net/ajm/"},
     {"name": "أبو بكر الشاطري", "server": "https://server11.mp3quran.net/shatri/"},
   ];
-  int selectedReciterIndex = 3; // سعد الغامدي افتراضياً
+  int selectedReciterIndex = 3; 
 
   @override
   void initState() {
@@ -71,7 +71,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     currentJuz = widget.initialJuz;
     _loadData();
 
-    // الاستماع لتغيرات الصوت والوقت العدادي
     _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
@@ -102,7 +101,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  // دالة تشغيل وإيقاف التمرير الآلي للمصحف
   void _toggleAutoScroll() {
     setState(() {
       _isAutoScrolling = !_isAutoScrolling;
@@ -272,7 +270,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return const Color(0xFF2C3E50);
   }
 
-  // نافذة الإعدادات الشاملة (حجم الخط، الأوضاع، التمرير الآلي)
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -351,7 +348,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // تبويب التحكم في الصوتيات (المستقل والخارجي تماماً لحماية وضع القراءة)
   void _showAudioPlayerDialog() {
     showModalBottomSheet(
       context: context,
@@ -376,7 +372,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                     const SizedBox(height: 15),
                     
-                    // اختيار القارئ المفضل
                     DropdownButtonFormField<int>(
                       value: selectedReciterIndex,
                       dropdownColor: _themeMode == 2 ? const Color(0xFF222222) : Colors.white,
@@ -397,7 +392,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // العداد الصوتي والتايمر الذكي للملف والمقطع
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -419,7 +413,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                    // أزرار التحكم الصوتي المباشرة والكاملة
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -491,7 +484,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ),
                   Text(
                     "آياتها: ${widget.versesCount}", 
-                    style: const TextStyle(fontSize: 12, color: Colors.white70), // خط عادي لعدد الآيات
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ],
               ),
@@ -509,7 +502,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.headset, color: Colors.white),
-                    onPressed: _showAudioPlayerDialog, // يفتح تبويب الاستماع الخارجي
+                    onPressed: _showAudioPlayerDialog,
                   ),
                 ],
               ),
@@ -543,7 +536,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ),
                       const SizedBox(height: 20),
                     ],
-                    // نص المصحف مصفوف كلياً وموزع ليماثل الأسلوب الورقي التام
                     RichText(
                       textAlign: TextAlign.justify,
                       textDirection: TextDirection.rtl,
@@ -579,4 +571,3 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 }
-
