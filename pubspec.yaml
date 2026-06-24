@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.2.3
+  audioplayers: ^6.0.0 # 👈 تم إضافة مكتبة الصوت هنا
 
 flutter:
   uses-material-design: true
@@ -22,27 +23,28 @@ flutter:
     - assets/translation/en/
     - assets/translation/id/
     - assets/icon/
+    - assets/audio/ # 👈 تم إضافة مجلد الصوتيات هنا للاستخدام المحلي إن لزم
 
   fonts:
     - family: nam
       fonts:
-        - asset: assets/fonts/surah_nam.ttf # خط أسماء السور والفهرس الجديد
+        - asset: assets/fonts/surah_nam.ttf 
 
     - family: bsm60
       fonts:
-        - asset: assets/fonts/bsmla60.ttf # خط البسملة المطور (رقم 60)
+        - asset: assets/fonts/bsmla60.ttf 
 
     - family: nss
       fonts:
-        - asset: assets/fonts/sura_nss.otf # 🛠️ تم تصحيح الاسم والامتداد هنا
+        - asset: assets/fonts/sura_nss.otf 
 
     - family: quran_num
       fonts:
-        - asset: assets/fonts/123456.ttf # خط الترقيم الدائري الذكي للآيات
+        - asset: assets/fonts/123456.ttf 
 
     - family: jzu12
       fonts:
-        - asset: assets/fonts/jzu12.ttf # خط الأجزاء العثماني الجديد
+        - asset: assets/fonts/jzu12.ttf 
 
 dev_dependencies:
   flutter_test:
