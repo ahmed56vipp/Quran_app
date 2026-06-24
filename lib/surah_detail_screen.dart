@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'utils.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:dio/dio.dart';
+import 'utils.dart'; // تأكد من وجود الملف أو دالة toArabicNumerals إذا كنت تستخدمها في أماكن أخرى
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -31,18 +33,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool isLoading = true;
   int currentJuz = 1;
   
+  // إدارة الصوتيات
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final Dio _dio = Dio();
   bool isPlaying = false;
   int? activeVerseIndex; 
 
   double _fontSize = 24.0;
   int _themeMode = 0; // 0: فاتح، 1: دافئ، 2: ليلي
 
-  // إدارة تحميل الصوتيات
   bool isDownloading = false;
   double downloadProgress = 0.0;
   bool isAudioDownloaded = false;
 
-  // قائمة القراء مع روابط الخوادم الصوتية الخاصة بهم (كمثال للتحميل)
   final List<Map<String, String>> reciters = [
     {"name": "عبد الباسط عبد الصمد", "server": "https://server7.mp3quran.net/basit/"},
     {"name": "مشاري راشد العفاسي", "server": "https://server8.mp3quran.net/afs/"},
@@ -51,16 +54,33 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     {"name": "أحمد بن علي العجمي", "server": "https://server11.mp3quran.net/ajm/"},
     {"name": "أبو بكر الشاطري", "server": "https://server11.mp3quran.net/shatri/"},
   ];
-  int selectedReciterIndex = 1; // العفاسي افتراضياً
+  int selectedReciterIndex = 3; // تعديل افتراضي إلى سعد الغامدي بناءً على واجهتك في الصورة
 
   @override
   void initState() {
     super.initState();
     currentJuz = widget.initialJuz;
     _loadData();
+
+    // الاستماع لحالة انتهاء تشغيل الصوت لتحديث واجهة المستخدم
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          isPlaying = false;
+          activeVerseIndex = null;
+        });
+      }
+    });
   }
 
-  // التحقق من وجود الملف الصوتي محلياً في جهاز المستخدم
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    _dio.close();
+    super.dispose();
+  }
+
+  // التحقق من وجود ملف الصوت محلياً
   Future<void> _checkAudioFile() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
@@ -74,7 +94,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     } catch (_) {}
   }
 
-  // دالة تحميل وتخزين الصوتيات في الجهاز لأول مرة
+  // دالة التحميل الحقيقية باستخدام مكتبة Dio
   Future<void> _downloadAudio() async {
     setState(() {
       isDownloading = true;
@@ -86,28 +106,26 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       final String folderName = reciters[selectedReciterIndex]['name']!;
       final String fileName = "${widget.surahId.toString().padLeft(3, '0')}.mp3";
       
-      // إنشاء المجلد إذا لم يكن موجوداً
       final saveDir = Directory('${directory.path}/audio/$folderName');
       if (!saveDir.existsSync()) {
         saveDir.createSync(recursive: true);
       }
 
-      final file = File('${saveDir.path}/$fileName');
-      
-      // رابط الملف الصوتي من السيرفر
+      final String savePath = '${saveDir.path}/$fileName';
       final String audioUrl = "${reciters[selectedReciterIndex]['server']}${widget.surahId.toString().padLeft(3, '0')}.mp3";
 
-      // هنا يمكنك استخدام دالة التحميل الخاصة بـ HttpClient المدمج أو حزمة Dio
-      // كمثال محاكاة للتحميل السريع والآمن:
-      for (int i = 1; i <= 10; i++) {
-        await Future.delayed(const Duration(milliseconds: 200));
-        setState(() {
-          downloadProgress = i / 10;
-        });
-      }
-
-      // بعد اكتمال الكتابة بنجاح
-      await file.writeAsString("audio_data_placeholder"); 
+      // التحميل الفعلي من السيرفر وعرض نسبة التقدم للمستخدم
+      await _dio.download(
+        audioUrl,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            setState(() {
+              downloadProgress = received / total;
+            });
+          }
+        },
+      );
 
       setState(() {
         isDownloading = false;
@@ -115,15 +133,61 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("تم تحميل سورة ${widget.surahName} بصوت الشيخ ${reciters[selectedReciterIndex]['name']} بنجاح!"), backgroundColor: Colors.green),
+        SnackBar(
+          content: Text("تم تحميل سورة ${widget.surahName} بصوت الشيخ ${reciters[selectedReciterIndex]['name']} بنجاح!"), 
+          backgroundColor: const Color(0xFF2E7D32)
+        ),
       );
     } catch (e) {
       setState(() {
         isDownloading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("فشل التحميل، يرجى التحقق من الاتصال بالشبكة"), backgroundColor: Colors.red),
+        const SnackBar(content: Text("فشل التحميل، يرجى التحقق من اتصال الإنترنت"), backgroundColor: Colors.red),
       );
+    }
+  }
+
+  // تشغيل أو إيقاف الصوت فعلياً
+  Future<void> _toggleAudio() async {
+    if (isPlaying) {
+      await _audioPlayer.pause();
+      setState(() {
+        isPlaying = false;
+      });
+    } else {
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final String folderName = reciters[selectedReciterIndex]['name']!;
+        final String fileName = "${widget.surahId.toString().padLeft(3, '0')}.mp3";
+        final String localPath = '${directory.path}/audio/$folderName/$fileName';
+
+        if (File(localPath).existsSync()) {
+          await _audioPlayer.setFilePath(localPath);
+          await _audioPlayer.play();
+          setState(() {
+            isPlaying = true;
+            if (activeVerseIndex == null) {
+              activeVerseIndex = 0;
+            }
+          });
+        } else {
+          // في حال عدم توفر الملف محلياً، يتم تشغيله مباشرة عبر الإنترنت (ستريمنج)
+          final String audioUrl = "${reciters[selectedReciterIndex]['server']}${widget.surahId.toString().padLeft(3, '0')}.mp3";
+          await _audioPlayer.setUrl(audioUrl);
+          await _audioPlayer.play();
+          setState(() {
+            isPlaying = true;
+            if (activeVerseIndex == null) {
+              activeVerseIndex = 0;
+            }
+          });
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("خطأ أثناء محاولة تشغيل الملف الصوتي"), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -142,12 +206,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         if (verseMap.containsKey('verse_$i')) {
           String text = verseMap['verse_$i'].toString().trim();
           
+          // حل مشكلة تكرار البسملة عبر التعبيرات النمطية الذكية المتوافقة مع أي تشكيل
           if (widget.surahId != 1 && widget.surahId != 9 && i == 0) {
-            final cleanText = text.replaceFirst("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "").trim();
-            if (cleanText.isNotEmpty) {
-              loadedVerses.add(cleanText);
-              continue;
-            }
+            final RegExp basmalahRegExp = RegExp(
+              r'^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
+              caseSensitive: false,
+            );
+            text = text.replaceFirst(basmalahRegExp, "").trim();
           }
           loadedVerses.add(text);
         }
@@ -311,8 +376,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     style: const TextStyle(fontFamily: 'nam', fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    "آياتها: ${toArabicNumerals(widget.versesCount)}",
-                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                    "آياتها: ${widget.versesCount}", // إرسال الرقم المباشر ليعمل عليه خط الأرقام المخصص بسلاسة
+                    style: const TextStyle(fontFamily: 'quran_num', fontSize: 14, color: Colors.white70),
                   ),
                 ],
               ),
@@ -320,8 +385,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "الجزء ${toArabicNumerals(currentJuz)}",
-                    style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600),
+                    "الجزء $currentJuz", // إسناد الرقم مباشرة ليعمل خط jzu12 بشكل سليم
+                    style: const TextStyle(fontFamily: 'jzu12', fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 10),
                   IconButton(
@@ -357,7 +422,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           if (widget.surahId != 1 && widget.surahId != 9) ...[
                             const Center(
                               child: Text(
-                                "19",
+                                "1", // الرقم "1" يرمز لشكل البسملة الكاملة والمزخرفة بداخل خط bsm60 المخصص للبسملات
                                 style: TextStyle(fontFamily: 'bsm60', fontSize: 55, color: Color(0xFF2E7D32)),
                                 textAlign: TextAlign.center,
                               ),
@@ -377,15 +442,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       text: "${verses[index]} ",
                                       style: TextStyle(
                                         fontSize: _fontSize,
-                                        fontFamily: 'nss', // خط ترميز ومتن الآيات المخصص
+                                        fontFamily: 'nss', 
                                         color: isCurrentActive ? const Color(0xFF2E7D32) : _getTextColor(),
                                         fontWeight: isCurrentActive ? FontWeight.bold : FontWeight.normal,
                                         backgroundColor: isCurrentActive ? const Color(0xFFE8F5E9).withOpacity(0.7) : Colors.transparent,
                                       ),
                                     ),
                                     TextSpan(
-                                      text: " ﴿${toArabicNumerals(index + 1)}﴾ ",
-                                      style: const TextStyle(fontFamily: 'quran_num', fontSize: 20, color: Color(0xFFC19A6B)),
+                                      text: " ${index + 1} ", // إرسال قيم الأرقام مباشرة متناسقة مع تشفير خط quran_num دون تدخل دوال خارجية
+                                      style: const TextStyle(fontFamily: 'quran_num', fontSize: 22, color: Color(0xFFC19A6B)),
                                     ),
                                   ],
                                 );
@@ -396,80 +461,95 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ),
                     ),
                   ),
-                  // شريط التحكم السفلي المطور بالتحميل والحفظ
+                  
+                  // تحسين واجهة شريط التحكم السفلي للصوتيات ليكون أكثر احترافية ومرونة
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
-                      color: _themeMode == 2 ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5),
-                      border: const Border(top: BorderSide(color: Colors.black12)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.person_pin, color: _themeMode == 2 ? Colors.white70 : Colors.black54, size: 28),
-                          onPressed: _showRecitersBottomSheet,
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.skip_next, color: Color(0xFF2E7D32), size: 28),
-                              onPressed: () {
-                                if (activeVerseIndex != null && activeVerseIndex! < verses.length - 1) {
-                                  setState(() {
-                                    activeVerseIndex = activeVerseIndex! + 1;
-                                    _updateJuzForVerse(activeVerseIndex!);
-                                  });
-                                }
-                              },
-                            ),
-                            
-                            // زر ذكي: يعرض حالة التحميل، أو التحميل لأول مرة، أو التشغيل المباشر في حال وجوده بالهاتف
-                            isDownloading
-                                ? SizedBox(width: 36, height: 36, child: CircularProgressIndicator(value: downloadProgress, color: const Color(0xFF2E7D32), strokeWidth: 3))
-                                : !isAudioDownloaded
-                                    ? IconButton(
-                                        icon: const Icon(Icons.cloud_download, color: Colors.orange, size: 30),
-                                        onPressed: _downloadAudio,
-                                        tooltip: 'تحميل السورة للاستماع بدون إنترنت',
-                                      )
-                                    : FloatingActionButton(
-                                        mini: true,
-                                        backgroundColor: const Color(0xFF2E7D32),
-                                        child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
-                                        onPressed: () {
-                                          setState(() {
-                                            isPlaying = !isPlaying;
-                                            if (isPlaying && activeVerseIndex == null) {
-                                              activeVerseIndex = 0;
-                                              _updateJuzForVerse(0);
-                                            }
-                                          });
-                                        },
-                                      ),
-
-                            IconButton(
-                              icon: const Icon(Icons.skip_previous, color: Color(0xFF2E7D32), size: 28),
-                              onPressed: () {
-                                if (activeVerseIndex != null && activeVerseIndex! > 0) {
-                                  setState(() {
-                                    activeVerseIndex = activeVerseIndex! - 1;
-                                    _updateJuzForVerse(activeVerseIndex!);
-                                  });
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                        Expanded(
-                          child: Text(
-                            "القارئ: ${reciters[selectedReciterIndex]['name']}",
-                            textAlign: TextAlign.left,
-                            style: TextStyle(fontSize: 12, color: _themeMode == 2 ? Colors.white70 : Colors.black54, fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
+                      color: _themeMode == 2 ? const Color(0xFF1A1A1A) : const Color(0xFFF9F9F9),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))
                       ],
+                      border: Border(top: BorderSide(color: _themeMode == 2 ? Colors.white10 : Colors.black12)),
+                    ),
+                    child: SafeArea(
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.account_circle_outlined, color: _themeMode == 2 ? Colors.white70 : Colors.black54, size: 28),
+                            onPressed: _showRecitersBottomSheet,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "القارئ:",
+                                  style: TextStyle(fontSize: 10, color: _themeMode == 2 ? Colors.white38 : Colors.black38),
+                                ),
+                                Text(
+                                  reciters[selectedReciterIndex]['name']!,
+                                  style: TextStyle(fontSize: 13, color: _themeMode == 2 ? Colors.whiteDimm : Colors.black87, fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.skip_next, color: Color(0xFF2E7D32), size: 30),
+                                onPressed: () {
+                                  if (activeVerseIndex != null && activeVerseIndex! < verses.length - 1) {
+                                    setState(() {
+                                      activeVerseIndex = activeVerseIndex! + 1;
+                                      _updateJuzForVerse(activeVerseIndex!);
+                                    });
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 4),
+                              isDownloading
+                                  ? SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(4.0),
+                                        child: CircularProgressIndicator(value: downloadProgress, color: const Color(0xFF2E7D32), strokeWidth: 3),
+                                      ),
+                                    )
+                                  : !isAudioDownloaded
+                                      ? IconButton(
+                                          icon: const Icon(Icons.cloud_download_outlined, color: Colors.orange, size: 32),
+                                          onPressed: _downloadAudio,
+                                          tooltip: 'تحميل السورة للاستماع بدون إنترنت',
+                                        )
+                                      : FloatingActionButton(
+                                          mini: true,
+                                          elevation: 2,
+                                          backgroundColor: const Color(0xFF2E7D32),
+                                          onPressed: _toggleAudio,
+                                          child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 26),
+                                        ),
+                              const SizedBox(width: 4),
+                              IconButton(
+                                icon: const Icon(Icons.skip_previous, color: Color(0xFF2E7D32), size: 30),
+                                onPressed: () {
+                                  if (activeVerseIndex != null && activeVerseIndex! > 0) {
+                                    setState(() {
+                                      activeVerseIndex = activeVerseIndex! - 1;
+                                      _updateJuzForVerse(activeVerseIndex!);
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -479,3 +559,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 }
 
+// تمديد خفيف للألوان للتعامل مع نصوص الأوضاع الداكنة بسلاسة
+extension on Color {
+  static const Color whiteDimm = Colors.white90;
+}
