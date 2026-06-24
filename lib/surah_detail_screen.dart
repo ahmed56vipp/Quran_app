@@ -196,7 +196,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         if (verseMap.containsKey('verse_$i')) {
           String text = verseMap['verse_$i'].toString().trim();
           
-          // قص البسملة من أول آية بشكل مرن يتوافق مع أي تشكيل وحركات في الـ JSON
           if (widget.surahId != 1 && widget.surahId != 9 && i == 0) {
             final RegExp basmalahRegExp = RegExp(
               r'^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
@@ -452,7 +451,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                   ),
                   
-                  // شريط التحكم السفلي المحسن والمعدل للألوان بالكامل
+                  // شريط التحكم السفلي الآمن كلياً من مشاكل تعريف الألوان الثابتة
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
@@ -460,13 +459,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       boxShadow: [
                         BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))
                       ],
-                      border: Border(top: BorderSide(color: _themeMode == 2 ? Colors.white10 : Colors.black12)),
+                      border: Border(top: BorderSide(color: _themeMode == 2 ? const Color(0x1AFFFFFF) : const Color(0x1F000000))),
                     ),
                     child: SafeArea(
                       child: Row(
                         children: [
                           IconButton(
-                            icon: Icon(Icons.account_circle_outlined, color: _themeMode == 2 ? Colors.white70 : Colors.black54, size: 28),
+                            icon: Icon(Icons.account_circle_outlined, color: _themeMode == 2 ? const Color(0xB3FFFFFF) : const Color(0x8A000000), size: 28),
                             onPressed: _showRecitersBottomSheet,
                           ),
                           const SizedBox(width: 8),
@@ -477,11 +476,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               children: [
                                 Text(
                                   "القارئ:",
-                                  style: TextStyle(fontSize: 10, color: _themeMode == 2 ? Colors.white38 : Colors.black38),
+                                  style: TextStyle(fontSize: 10, color: _themeMode == 2 ? const Color(0x61FFFFFF) : const Color(0x61000000)),
                                 ),
                                 Text(
                                   reciters[selectedReciterIndex]['name']!,
-                                  style: TextStyle(fontSize: 13, color: _themeMode == 2 ? Colors.white90 : Colors.black87, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 13, 
+                                    color: _themeMode == 2 ? const Color(0xE6FFFFFF) : const Color(0xDD000000), 
+                                    fontWeight: FontWeight.bold
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
@@ -497,54 +500,4 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                     setState(() {
                                       activeVerseIndex = activeVerseIndex! + 1;
                                       _updateJuzForVerse(activeVerseIndex!);
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(width: 4),
-                              isDownloading
-                                  ? SizedBox(
-                                      width: 40,
-                                      height: 40,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: CircularProgressIndicator(value: downloadProgress, color: const Color(0xFF2E7D32), strokeWidth: 3),
-                                      ),
-                                    )
-                                  : !isAudioDownloaded
-                                      ? IconButton(
-                                          icon: const Icon(Icons.cloud_download_outlined, color: Colors.orange, size: 32),
-                                          onPressed: _downloadAudio,
-                                          tooltip: 'تحميل السورة للاستماع بدون إنترنت',
-                                        )
-                                      : FloatingActionButton(
-                                          mini: true,
-                                          elevation: 2,
-                                          backgroundColor: const Color(0xFF2E7D32),
-                                          onPressed: _toggleAudio,
-                                          child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 26),
-                                        ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                icon: const Icon(Icons.skip_previous, color: Color(0xFF2E7D32), size: 30),
-                                onPressed: () {
-                                  if (activeVerseIndex != null && activeVerseIndex! > 0) {
-                                    setState(() {
-                                      activeVerseIndex = activeVerseIndex! - 1;
-                                      _updateJuzForVerse(activeVerseIndex!);
-                                    });
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-}
+
