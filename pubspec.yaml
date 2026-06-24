@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.2.3
-  audioplayers: ^6.0.0 # 👈 تم إضافة مكتبة الصوت هنا
+  just_audio: ^0.9.43 # 👈 تم استبدال المكتبة هنا لتتوافق مع كود مشروعك الحالي
 
 flutter:
   uses-material-design: true
@@ -23,7 +23,7 @@ flutter:
     - assets/translation/en/
     - assets/translation/id/
     - assets/icon/
-    - assets/audio/ # 👈 تم إضافة مجلد الصوتيات هنا للاستخدام المحلي إن لزم
+    - assets/audio/
 
   fonts:
     - family: nam
