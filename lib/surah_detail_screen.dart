@@ -6,9 +6,9 @@ class SurahDetailScreen extends StatefulWidget {
   final String surahName;
   final int versesCount;
   final String surahType;
-  final List<dynamic> juzData;
+  final List<dynamic> juzData; // نفترض أن العنصر الأول يحتوي على رقم الجزء الحقيقي كمثال
   
-  // استقبال المتغيرات الحقيقية من شاشة خيارات العرض والقراءة لديك لربط السلايدر والأزرار
+  // استقبال قيم التحكم من شاشة الإعدادات والعرض
   final double initialFontSize;
   final bool isDarkMode;
   final bool isSepiaMode;
@@ -31,11 +31,10 @@ class SurahDetailScreen extends StatefulWidget {
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
   late AudioPlayer _audioPlayer;
-  int _currentVerseIndex = -1; // -1 لكي لا يتم تظليل أي آية عند فتح الشاشة إلا عند بدء التشغيل
+  int _currentVerseIndex = -1; 
   bool _isPlaying = false;
   final ScrollController _scrollController = ScrollController();
 
-  // قائمة القراء الإضافية المتاحة للتغيير
   final List<Map<String, String>> _reciters = [
     {"name": "مشاري راشد العفاسي", "subfolder": "Alafasy_128kbps"},
     {"name": "عبد الباسط (مرتل)", "subfolder": "Abdul_Basit_Murattal_192kbps"},
@@ -43,36 +42,31 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     {"name": "محمد صديق المنشاوي", "subfolder": "Minshawi_Murattal_128kbps"},
   ];
   late Map<String, String> _selectedReciter;
-
-  // قائمة نصوص الآيات الفعلية القادمة من بيانات تطبيقك الحقيقية
   late List<String> _versesTextList;
 
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _selectedReciter = _reciters[0]; // العفاسي كقارئ افتراضي
+    _selectedReciter = _reciters[0];
 
-    // 🟢 تأكد من ربط هذه القائمة بنصوص الآيات الحقيقية الممررة لتطبيقك
-    // قمت بعمل مصفوفة توليد نصي ذكي بناءً على عدد الآيات لكي يعمل التطبيق فوراً بدون كراش
+    // 🟢 تأكد من ربط هذه المصفوفة بنصوص السور الحقيقية المستخرجة من قاعدة بياناتك
     _versesTextList = List.generate(
       widget.versesCount,
-      (index) => "إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ" 
+      (index) => "إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ"
     );
 
     _initAudioSource();
 
-    // 🟢 الاستماع لتدفق الصوت وتحديث تظليل الآية الحالية المقروءة تلقائياً
     _audioPlayer.currentIndexStream.listen((index) {
       if (index != null) {
         setState(() {
           _currentVerseIndex = index;
         });
-        _scrollToVerse(index); // تحريك المصحف تلقائياً لكي تظل الآية أمام عين القارئ
+        _scrollToVerse(index);
       }
     });
 
-    // مراقبة حالة زر التشغيل والإيقاف
     _audioPlayer.playerStateStream.listen((state) {
       setState(() {
         _isPlaying = state.playing;
@@ -80,7 +74,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     });
   }
 
-  // إنشاء قائمة تشغيل السورة آية تلو الأخرى (ConcatenatingAudioSource) لتوفير القراءة الآلية المتتابعة
   Future<void> _initAudioSource() async {
     List<AudioSource> audioSources = [];
     String formattedSurah = widget.surahId.toString().padLeft(3, '0');
@@ -94,11 +87,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     try {
       await _audioPlayer.setAudioSource(ConcatenatingAudioSource(children: audioSources));
     } catch (e) {
-      debugPrint("خطأ في تحميل سيرفر الصوت: $e");
+      debugPrint("Audio Source Error: $e");
     }
   }
 
-  // دالة تغيير القارئ الفورية مع الحفاظ على موضع الآية الحالية المقروءة دون إعادة السورة من البداية
   void _changeReciter(Map<String, String> reciter) async {
     setState(() {
       _selectedReciter = reciter;
@@ -109,28 +101,34 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (_isPlaying) _audioPlayer.play();
   }
 
-  // دالة تحريك وتمرير الصفحة تلقائياً لتتبع موقع القراءة بدون خروج النص عن الشاشة
   void _scrollToVerse(int index) {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        index * 45.0, // حسابه متناسقة مع ارتفاع السطر المتصل
-        duration: const Duration(milliseconds: 600),
+        index * 42.0,
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
     }
   }
 
-  // استخراج ألوان الخلفية والنصوص ديناميكياً لتطابق لوحة خيارات العرض الخاصة بك (عادي / سيبيا / ليلي)
   Color _getBackgroundColor() {
-    if (widget.isDarkMode) return const Color(0xFF121212); // الوضع الليلي
-    if (widget.isSepiaMode) return const Color(0xFFF4ECD8); // وضع حماية العين الدافئ
-    return Colors.white; // الوضع العادي الفاتح
+    if (widget.isDarkMode) return const Color(0xFF121212);
+    if (widget.isSepiaMode) return const Color(0xFFF4ECD8);
+    return Colors.white;
   }
 
   Color _getTextColor(bool isCurrentActive) {
-    if (isCurrentActive) return const Color(0xFF2E7D32); // لون التتبع الأخضر الفخم عند القراءة
+    if (isCurrentActive) return const Color(0xFF2E7D32); // التظليل الأخضر التتبعي عند التلاوة
     if (widget.isDarkMode) return const Color(0xFFE0E0E0);
     return const Color(0xFF2C3E50);
+  }
+
+  String _getJuzNumberString() {
+    // استخراج رقم الجزء الحقيقي ديناميكياً من بياناتك (إذا كان متاحاً في السورة)، أو نضع افتراضي كمثال
+    if (widget.juzData.isNotEmpty && widget.juzData[0] != null) {
+      return widget.juzData[0].toString(); 
+    }
+    return "30"; // مثال افتراضي إذا لم يتوفر الجزء
   }
 
   @override
@@ -140,7 +138,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  // قائمة اختيار القراء الإضافيين المنبثقة من الأسفل (Bottom Sheet) متوافقة مع الوضع الليلي
   void _showRecitersBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -153,12 +150,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "اختر القارئ للمتابعة",
-                style: TextStyle(
-                  fontSize: 18, 
-                  fontWeight: FontWeight.bold, 
-                  color: widget.isDarkMode ? Colors.white : const Color(0xFF1B5E20)
-                ),
+                "اختر القارئ",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : const Color(0xFF2E7D32)),
               ),
               const Divider(),
               Flexible(
@@ -169,13 +162,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     final reciter = _reciters[index];
                     final isSelected = reciter['name'] == _selectedReciter['name'];
                     return ListTile(
-                      title: Text(
-                        reciter['name']!, 
-                        style: TextStyle(
-                          color: widget.isDarkMode ? Colors.white70 : Colors.black87, 
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
-                        )
-                      ),
+                      title: Text(reciter['name']!, style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                       trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF2E7D32)) : null,
                       onTap: () {
                         Navigator.pop(context);
@@ -199,106 +186,113 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       child: Scaffold(
         backgroundColor: _getBackgroundColor(),
         appBar: AppBar(
-          title: Column(
-            children: [
-              Text("سُورَة ${widget.surahName}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              Text("آياتها: ${widget.versesCount}", style: const TextStyle(fontSize: 12, color: Colors.white70)),
-            ],
-          ),
           backgroundColor: const Color(0xFF2E7D32),
           foregroundColor: Colors.white,
           centerTitle: true,
           elevation: 0,
+          // عرض اسم السورة ورقم الجزء بخطوطهم التزيينية المخصصة والمحددة في صورتك
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. الجزء الحالي بخط jzu12 ويعمل بالأرقام من 1 إلى 30
+              Text(
+                _getJuzNumberString(),
+                style: const TextStyle(
+                  fontFamily: 'jzu12',
+                  fontSize: 26,
+                  color: Color(0xFFFFD700), // اللون الأصفر الذهبي للخطوط العلوية
+                ),
+              ),
+              const SizedBox(width: 25),
+              // 2. اسم السورة بخط nam المخصص لأسماء السور داخل المصحف
+              Text(
+                widget.surahName,
+                style: const TextStyle(
+                  fontFamily: 'nam',
+                  fontSize: 28,
+                  color: Color(0xFFFFD700),
+                ),
+              ),
+            ],
+          ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
           actions: [
-            // أيقونة خيارات العرض والقراءة الأصلية الخاصة بك في أعلى اليسار كما في تصميمك
             IconButton(
               icon: const Icon(Icons.tune),
               onPressed: () {
-                // هنا تفتح شاشة أو BottomSheet "خيارات العرض والقراءة" الخاصة بك مباشرة
+                // فتح شاشة الخيارات الخاصة بك
               },
             ),
           ],
         ),
         body: Column(
           children: [
-            // عرض النص القرآني المتصل كصفحة مصحف متكاملة (تم إلغاء التفكيك العمودي تماماً)
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // 1. إطار البسملة المنعزل والأصلي الفخم المحاط بالخط الذهبي (لا يعرض في سورة التوبة)
+                    // 3. إطار البسملة المنعزل: تم استبدال النص بالرقم "19" ليعمل بخط bsm60 المخصص
                     if (widget.surahId != 9)
                       Container(
                         width: double.infinity,
                         margin: const EdgeInsets.only(bottom: 25),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 25),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
                           color: widget.isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFFFFDF6),
                           borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5), width: 1.5),
+                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.4), width: 1.2),
                         ),
                         child: Text(
-                          "بسم الله الرحمن الرحيم",
+                          "19", // الرقم المفتاح لطباعة رسم البسملة الفاخر بخطك bsmla60.ttf
                           style: TextStyle(
-                            fontFamily: 'bsm60', // خط البسملة المنعزل الأصلي الخاص بك
-                            fontSize: 26,
+                            fontFamily: 'bsm60',
+                            fontSize: 32,
                             color: widget.isDarkMode ? Colors.white : const Color(0xFF2C3E50),
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ),
 
-                    // 2. النص القرآني المتصل المنساب مع دمج أرقام الآيات الذكية والتظليل عند الاستماع
+                    // 4. عرض متن السورة متصل ومستمر بالكامل
                     RichText(
                       textAlign: TextAlign.justify,
                       textDirection: TextDirection.rtl,
                       text: TextSpan(
                         children: List.generate(widget.versesCount, (index) {
                           final isCurrentActive = index == _currentVerseIndex;
+                          final verseDisplayNum = index + 1; // الأرقام الإنجليزية الصريحة المطلوبة للخط
+
                           return TextSpan(
                             children: [
-                              // نص الآية الكريمة بالخط العثماني المخصص
+                              // نص الآية القرآني بخط nss الأصلي لنصوص السورة الداخلي
                               TextSpan(
                                 text: "${_versesTextList[index]} ",
                                 style: TextStyle(
-                                  fontFamily: 'uthmani', // الخط العثماني لتطبيقك
-                                  fontSize: widget.initialFontSize, // يتغير ديناميكياً مع سلايدر حجم الخط لديك
-                                  height: 2.1,
+                                  fontFamily: 'nss', // خط نصوص السور من الـ pubspec الخاص بك
+                                  fontSize: widget.initialFontSize,
+                                  height: 2.2,
                                   color: _getTextColor(isCurrentActive),
                                   fontWeight: isCurrentActive ? FontWeight.bold : FontWeight.normal,
                                   backgroundColor: isCurrentActive 
-                                      ? const Color(0xFF2E7D32).withOpacity(0.15) // تظليل خلفية نص الآية الحالية فقط أثناء القراءة الصوتية
+                                      ? const Color(0xFF2E7D32).withOpacity(0.12)
                                       : Colors.transparent,
                                 ),
                               ),
-                              // رمز ترقيم الآية المنعزل الذكي والمدمج بنعومة داخل النص المتصل
-                              WidgetSpan(
-                                alignment: PlaceholderAlignment.middle,
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: const Color(0xFF2E7D32).withOpacity(0.4), width: 1),
-                                    color: isCurrentActive ? const Color(0xFF2E7D32) : Colors.transparent,
-                                  ),
-                                  child: Text(
-                                    "${index + 1}",
-                                    style: TextStyle(
-                                      fontFamily: 'quran_num', // خط الترقيم المنعزل لأرقام الآيات
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: isCurrentActive 
-                                          ? Colors.white 
-                                          : (widget.isDarkMode ? Colors.white70 : Colors.black87),
-                                    ),
-                                  ),
+                              // 5. رمز ترقيم الآيات المخصص المعتمد على عائلة quran_num والأرقام الإنجليزية
+                              TextSpan(
+                                text: " $verseDisplayNum ",
+                                style: TextStyle(
+                                  fontFamily: 'quran_num', // يعتمد على خط 123456.ttf لطباعة الأقواس التزيينية تلقائياً
+                                  fontSize: widget.initialFontSize * 0.8,
+                                  color: isCurrentActive 
+                                      ? const Color(0xFF2E7D32) 
+                                      : (widget.isDarkMode ? Colors.white70 : const Color(0xFF2E7D32).withOpacity(0.7)),
                                 ),
                               ),
                             ],
@@ -311,20 +305,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               ),
             ),
 
-            // 3. شريط التحكم السفلي المنسق والأصلي الخاص بتصميمك دون أي تشويه أو تدمير لهيكل التطبيق
+            // شريط التحكم السفلي الأصلي للتطبيق
             Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
               decoration: BoxDecoration(
                 color: widget.isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))
+                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, -4))
                 ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // الزر الأخضر الدائري للتشغيل والإيقاف المؤقت على اليمين كما في صورتك تماماً
                   CircleAvatar(
                     radius: 25,
                     backgroundColor: const Color(0xFF2E7D32),
@@ -339,8 +332,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       },
                     ),
                   ),
-                  
-                  // عنوان التلاوة الحالي في منتصف شريط التحكم السفلي
                   Text(
                     "تلاوة سورة ${widget.surahName}",
                     style: TextStyle(
@@ -349,8 +340,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       color: widget.isDarkMode ? Colors.white70 : Colors.black87,
                     ),
                   ),
-                  
-                  // زر استدعاء قائمة أصوات القراء الإضافية والتحكم في الصوت على اليسار
                   IconButton(
                     icon: const Icon(Icons.audiotrack, color: Color(0xFF2E7D32), size: 26),
                     onPressed: _showRecitersBottomSheet,
