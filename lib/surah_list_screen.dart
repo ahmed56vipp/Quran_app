@@ -168,13 +168,13 @@ class SurahListScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 6),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: const Color(0xFFE0E0E0).withOpacity(0.6), width: 1), // 🛠️ تم إصلاح الخطأ هنا
+                side: BorderSide(color: const Color(0xFFE0E0E0).withOpacity(0.6), width: 1), 
               ),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  gradient: LinearGradient(
-                    colors: [Colors.white, const Color(0xFFF9F9F6)],
+                  gradient: const LinearGradient(
+                    colors: [Colors.white, Color(0xFFF9F9F6)],
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
                   ),
@@ -254,15 +254,16 @@ class SurahListScreen extends StatelessWidget {
                   ),
                   trailing: const Icon(Icons.chevron_left, size: 22, color: Color(0xFF2E7D32)),
                   onTap: () {
+                    // 🟢 تم استبدال 'juzData: const []' بـ 'initialJuz: 1' لحل مشكلة البناء مباشرة
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => SurahDetailScreen(
-                          surahId: surah['id'],
-                          surahName: surah['name'],
-                          versesCount: surah['verses'],
-                          surahType: surah['type'],
-                          juzData: const [], 
+                          surahId: surah['id'] as int,
+                          surahName: surah['name'] as String,
+                          versesCount: surah['verses'] as int,
+                          surahType: surah['type'] as String,
+                          initialJuz: 1, // سيقوم ملف التفاصيل بتهيئة الواجهة وتحديث الـ JSON بشكل طبيعي
                         ),
                       ),
                     );
