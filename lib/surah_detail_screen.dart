@@ -34,13 +34,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool isLoading = true;
   int currentJuz = 1;
   
-  // التحكم في الشاشة والتمرير الآلي
   final ScrollController _scrollController = ScrollController();
   Timer? _scrollTimer;
   bool _isAutoScrolling = false;
   double _scrollSpeed = 0.1; 
 
-  // إدارة الصوتيات
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Dio _dio = Dio();
   bool isPlaying = false;
@@ -49,7 +47,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Duration _position = Duration.zero;
 
   double _fontSize = 24.0;
-  int _themeMode = 0; // 0: فاتح، 1: دافئ، 2: ليلي
+  int _themeMode = 0; 
 
   bool isDownloading = false;
   double downloadProgress = 0.0;
@@ -464,8 +462,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textDirectionRTL = TextDirection.rtl;
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: textDirectionRTL,
       child: Scaffold(
         backgroundColor: _getBackgroundColor(),
         appBar: AppBar(
