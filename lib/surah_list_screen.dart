@@ -276,7 +276,7 @@ class SurahListScreen extends StatelessWidget {
   }
 }
 
-// 🟢 دالة تحويل الأرقام إلى أرقام عربية (مشرقية) المفقودة والتي تم إضافتها لإصلاح البناء
+// دالة تحويل الأرقام إلى أرقام عربية (مشرقية)
 String toArabicNumerals(int number) {
   const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
   const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
@@ -288,7 +288,7 @@ String toArabicNumerals(int number) {
   return input;
 }
 
-// 🟢 دالة تحديد لون نص السورة (مكية/مدنية) المفقودة والتي تم إضافتها لإصلاح البناء
+// دالة تحديد لون نص السورة (مكية/مدنية)
 Color surConditionColor(bool isMeccan) {
   return isMeccan ? const Color(0xFFE65100) : const Color(0xFF01579B);
 }
