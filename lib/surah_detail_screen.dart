@@ -462,7 +462,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
