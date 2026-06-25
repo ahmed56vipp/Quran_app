@@ -569,4 +569,5 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       ),
     );
   }
-      }
+}
+
