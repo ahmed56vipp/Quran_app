@@ -459,7 +459,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           },
         );
       },
-    );
+    ); 
   }
 
   @override
