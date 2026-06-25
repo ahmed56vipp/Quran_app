@@ -462,9 +462,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textDirectionRTL = TextDirection.rtl;
     return Directionality(
-      textDirection: textDirectionRTL,
+      textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: _getBackgroundColor(),
         appBar: AppBar(
