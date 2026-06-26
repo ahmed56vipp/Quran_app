@@ -227,7 +227,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         if (verseMap.containsKey('verse_$i')) {
           String text = verseMap['verse_$i'].toString().trim();
           
-          if (widget.surahId != 1 && widget.surahId != 9 && i == 0) {
+          // تصفية وحذف البسملة النصية الزائدة من الآية الأولى في جميع السور ما عدا الفاتحة (surahId != 1)
+          if (widget.surahId != 1 && i == 0) {
             final RegExp basmalahRegExp = RegExp(
               r'^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
               caseSensitive: false,
@@ -533,7 +534,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: Column(
                   children: [
-                    if (widget.surahId != 1 && widget.surahId != 9) ...[
+                    // عرض مخطوطة البسملة الكبيرة لجميع السور عدا الفاتحة
+                    if (widget.surahId != 1) ...[
                       const Center(
                         child: Text(
                           "19", 
