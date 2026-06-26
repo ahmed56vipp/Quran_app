@@ -453,7 +453,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                   ],
                 ),
-              );
+              ),
+            );
           },
         );
       },
@@ -567,4 +568,4 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       ),
     );
   }
-      }
+}
