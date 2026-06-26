@@ -197,16 +197,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         final String localPath = '${directory.path}/audio/$folderName/$fileName';
 
         if (File(localPath).existsSync()) {
-          await _audioPlayer.setFilePath(localPath);
+          await _audioPlayer.setAudioSource(AudioSource.file(localPath));
         } else {
           final String audioUrl = "${reciters[selectedReciterIndex]['server']}${widget.surahId.toString().padLeft(3, '0')}.mp3";
-          await _audioPlayer.setUrl(audioUrl);
+          await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(audioUrl)));
         }
         await _audioPlayer.play();
         if (activeVerseIndex == null) activeVerseIndex = 0;
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("خطأ في تشغيل الصوت"), backgroundColor: Colors.red),
+          const SnackBar(content: Text("خطأ في تشغيل الصوت، جرب قارئاً آخر"), backgroundColor: Colors.red),
         );
       }
     }
@@ -472,28 +472,37 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "سُورَةُ ${widget.surahId == 2 ? 'البَقَرَةِ' : widget.surahName}",
-                    style: const TextStyle(fontFamily: 'nam', fontSize: 24, color: Color(0xFFFFFFD700), fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "آياتها: ${widget.versesCount}", 
-                    style: const TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFFFFD700).withOpacity(0.4), width: 1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.surahId == 2 ? 'البَقَرَةِ' : widget.surahName,
+                      style: const TextStyle(fontFamily: 'nam', fontSize: 24, color: Color(0xFFFFFFD700), fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "آياتها: ${widget.versesCount}", 
+                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
+                  ],
+                ),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     "$currentJuz", 
-                    style: const TextStyle(fontFamily: 'jzu12', fontSize: 22, color: Color(0xFFFFFFD700), fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontFamily: 'jzu12', fontSize: 24, color: Color(0xFFFFFFD700), fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 15),
+                  const SizedBox(width: 10),
                   IconButton(
                     icon: const Icon(Icons.tune, color: Colors.white),
                     onPressed: _showSettingsBottomSheet,
@@ -521,45 +530,49 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
             : SingleChildScrollView(
                 controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: Column(
                   children: [
                     if (widget.surahId != 1 && widget.surahId != 9) ...[
                       const Center(
                         child: Text(
-                          "1", 
-                          style: TextStyle(fontFamily: 'bsm60', fontSize: 55, color: Color(0xFF2E7D32)),
+                          "19", 
+                          style: TextStyle(fontFamily: 'bsm60', fontSize: 85, color: Color(0xFF2E7D32)),
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                     ],
-                    RichText(
-                      textAlign: TextAlign.justify,
-                      textDirection: TextDirection.rtl,
-                      text: TextSpan(
-                        children: List.generate(verses.length, (index) {
-                          final bool isCurrentActive = isPlaying && activeVerseIndex == index;
+                    SizedBox(
+                      width: double.infinity,
+                      child: RichText(
+                        textAlign: TextAlign.justify,
+                        textDirection: TextDirection.rtl,
+                        text: TextSpan(
+                          children: List.generate(verses.length, (index) {
+                            final bool isCurrentActive = isPlaying && activeVerseIndex == index;
 
-                          return TextSpan(
-                            children: [
-                              TextSpan(
-                                text: "${verses[index]} ",
-                                style: TextStyle(
-                                  fontSize: _fontSize,
-                                  fontFamily: 'nss', 
-                                  color: isCurrentActive ? const Color(0xFF2E7D32) : _getTextColor(),
-                                  fontWeight: isCurrentActive ? FontWeight.bold : FontWeight.normal,
-                                  backgroundColor: isCurrentActive ? const Color(0xFFE8F5E9).withOpacity(0.5) : Colors.transparent,
+                            return TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: "${verses[index]} ",
+                                  style: TextStyle(
+                                    fontSize: _fontSize,
+                                    fontFamily: 'nss', 
+                                    height: 1.9,
+                                    color: isCurrentActive ? const Color(0xFF2E7D32) : _getTextColor(),
+                                    fontWeight: isCurrentActive ? FontWeight.bold : FontWeight.normal,
+                                    backgroundColor: isCurrentActive ? const Color(0xFFE8F5E9).withOpacity(0.6) : Colors.transparent,
+                                  ),
                                 ),
-                              ),
-                              TextSpan(
-                                text: " ${index + 1} ", 
-                                style: const TextStyle(fontFamily: 'quran_num', fontSize: 22, color: Color(0xFFC19A6B)),
-                              ),
-                            ],
-                          );
-                        }),
+                                TextSpan(
+                                  text: " ${index + 1} ", 
+                                  style: const TextStyle(fontFamily: 'quran_num', fontSize: 22, color: Color(0xFFC19A6B)),
+                                ),
+                              ],
+                            );
+                          }),
+                        ),
                       ),
                     ),
                   ],
