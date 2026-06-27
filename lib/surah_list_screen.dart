@@ -3,8 +3,15 @@ import 'surah_detail_screen.dart';
 
 const String kSurahNameFont = 'nam';
 
-class SurahListScreen extends StatelessWidget {
+class SurahListScreen extends StatefulWidget {
   const SurahListScreen({super.key});
+
+  @override
+  State<SurahListScreen> createState() => _SurahListScreenState();
+}
+
+class _SurahListScreenState extends State<SurahListScreen> {
+  int _currentIndex = 0; // التحكم في التبويب الحالي
 
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
@@ -123,20 +130,201 @@ class SurahListScreen extends StatelessWidget {
     {"id": 114, "name": "الناس", "type": "مكية", "verses": 6, "isMeccan": true, "juz": 30}
   ];
 
+  // التبويب الأول: قائمة السور للقراءة (الكود الأصلي الخاص بك)
+  Widget _buildSurahListTab() {
+    return ListView.builder(
+      itemCount: surahList.length,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      itemBuilder: (context, index) {
+        final surah = surahList[index];
+        final String arabicId = toArabicNumerals(surah['id'] as int);
+        final String arabicVerses = toArabicNumerals(surah['verses'] as int);
+
+        return Card(
+          elevation: 1.5,
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: const Color(0xFFE0E0E0).withOpacity(0.6), width: 1), 
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: const LinearGradient(
+                colors: [Colors.white, Color(0xFFF9F9F6)],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8F5E9),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  arabicId,
+                  style: const TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              title: Text(
+                "سورة ${surah['name']}", 
+                style: const TextStyle(
+                  fontFamily: kSurahNameFont,
+                  fontSize: 26,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: surah['isMeccan'] ? const Color(0xFFFFF3E0) : const Color(0xFFE1F5FE),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          Image.asset(
+                            surah['isMeccan'] ? 'assets/icon/mk.png' : 'assets/icon/md.png',
+                            height: 16,
+                            width: 16,
+                            errorBuilder: (context, error, stackTrace) => Text(
+                              surah['type'],
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: surConditionColor(surah['isMeccan']),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            surah['type'],
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: surConditionColor(surah['isMeccan']),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "• آياتها: $arabicVerses",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          trailing: const Icon(Icons.chevron_left, size: 22, color: Color(0xFF2E7D32)),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SurahDetailScreen(
+                  surahId: surah['id'] as int,
+                  surahName: surah['name'] as String,
+                  versesCount: surah['verses'] as int,
+                  surahType: surah['type'] as String,
+                  initialJuz: surah['juz'] as int, 
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // التبويب الثاني: تبويب خيار الصوتيات والتلاوات المستقل تماماً
+  Widget _buildAudioTab() {
+    return ListView.builder(
+      itemCount: surahList.length,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      itemBuilder: (context, index) {
+        final surah = surahList[index];
+        final String arabicId = toArabicNumerals(surah['id'] as int);
+
+        return Card(
+          elevation: 1,
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: CircleAvatar(
+              backgroundColor: const Color(0xFF2E7D32).withOpacity(0.1),
+              child: Text(
+                arabicId,
+                style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+              ),
+            ),
+            title: Text(
+              "تلاوة سورة ${surah['name']}",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+            ),
+            subtitle: Text(
+              "استماع وتحميل بصوت القارئ",
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+            // أيقونة تشغيل مخصصة للصوتيات
+            trailing: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF2E7D32),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(Icons.play_arrow, color: Colors.white, size: 20),
+              ),
+            ),
+            onTap: () {
+              // هنا سيتم دمج منطق تشغيل مكتبة just_audio والمشغل الصوتي لاحقاً
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("جاري تشغيل صوت سورة ${surah['name']}"),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Row(
+          title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.brightness_7_outlined, color: Color(0xFFFFD700), size: 22),
-              SizedBox(width: 10),
+              Icon(
+                _currentIndex == 0 ? Icons.brightness_7_outlined : Icons.headset, 
+                color: const Color(0xFFFFD700), 
+                size: 22,
+              ),
+              const SizedBox(width: 10),
               Text(
-                'القرآن الكريم',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, letterSpacing: 0.5),
+                _currentIndex == 0 ? 'القرآن الكريم' : 'الصوتيات والتلاوات',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, letterSpacing: 0.5),
               ),
             ],
           ),
@@ -154,122 +342,29 @@ class SurahListScreen extends StatelessWidget {
           elevation: 4,
           shadowColor: Colors.black38,
         ),
-        body: ListView.builder(
-          itemCount: surahList.length,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          itemBuilder: (context, index) {
-            final surah = surahList[index];
-            final String arabicId = toArabicNumerals(surah['id'] as int);
-            final String arabicVerses = toArabicNumerals(surah['verses'] as int);
-
-            return Card(
-              elevation: 1.5,
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: const Color(0xFFE0E0E0).withOpacity(0.6), width: 1), 
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    colors: [Colors.white, Color(0xFFF9F9F6)],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE8F5E9),
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      arabicId,
-                      style: const TextStyle(
-                        color: Color(0xFF2E7D32),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    "سورة ${surah['name']}", 
-                    style: const TextStyle(
-                      fontFamily: kSurahNameFont,
-                      fontSize: 26,
-                      color: Color(0xFF2C3E50),
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: surah['isMeccan'] ? const Color(0xFFFFF3E0) : const Color(0xFFE1F5FE),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            children: [
-                              Image.asset(
-                                surah['isMeccan'] ? 'assets/icon/mk.png' : 'assets/icon/md.png',
-                                height: 16,
-                                width: 16,
-                                errorBuilder: (context, error, stackTrace) => Text(
-                                  surah['type'],
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: surConditionColor(surah['isMeccan']),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                surah['type'],
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: surConditionColor(surah['isMeccan']),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          "• آياتها: $arabicVerses",
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                  trailing: const Icon(Icons.chevron_left, size: 22, color: Color(0xFF2E7D32)),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SurahDetailScreen(
-                          surahId: surah['id'] as int,
-                          surahName: surah['name'] as String,
-                          versesCount: surah['verses'] as int,
-                          surahType: surah['type'] as String,
-                          initialJuz: surah['juz'] as int, 
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            );
+        // عرض التبويب المختار بناءً على الأندكس الحالي
+        body: _currentIndex == 0 ? _buildSurahListTab() : _buildAudioTab(),
+        
+        // شريط التنقل السفلي المضاف لتوزيع الصوتيات والقراءة بشكل خارجي وممتاز
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          selectedItemColor: const Color(0xFF1B5E20),
+          unselectedItemColor: Colors.grey,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
           },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.menu_book),
+              label: 'المصحف للقراءة',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.headset),
+              label: 'الصوتيات والاستماع',
+            ),
+          ],
         ),
       ),
     );
