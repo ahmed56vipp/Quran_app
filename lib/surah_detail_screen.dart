@@ -89,23 +89,25 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         if (verseMap.containsKey('verse_$i')) {
           String text = verseMap['verse_$i'].toString().trim();
           
-          // تصفية وحذف البسملة النصية الافتراضية من الآية الأولى لجميع السور عدا الفاتحة
-          if (widget.surahId != 1 && i == 0) {
-            // تعبير نمطي مرن يتجاهل التشكيل والحركات تماماً لضمان حذف نص البسملة بشكل صحيح
+          // تصفية وحذف البسملة النصية تماماً لجميع السور عدا الفاتحة
+          if (widget.surahId != 1) {
+            // تعبير نمطي مرن يتجاهل التشكيل والحركات تماماً لضمان حذف نص البسملة بشكل صحيح ومضمون
             final RegExp basmalahRegExp = RegExp(
-              r'^بِ_?سْ_?مِ_?\s+اللَّ_?هِ_?\s+الرَّ_?حْ_?مَٰ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*',
+              r'^بِ_?سْ_?مِ_?\s+اللَّ_?هِ_?\s+الرَّ_?حْ_?مَٰ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
               caseSensitive: false,
             );
             
-            // محاولة أولى بالحركات البديلة ومحاولة ثانية للنص الخام المقارن
-            if (text.contains("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ")) {
-              text = text.replaceFirst("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", "").trim();
-            } else if (text.contains("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ")) {
-              text = text.replaceFirst("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "").trim();
-            } else {
-              text = text.replaceFirst(basmalahRegExp, "").trim();
+            // تنظيف النص من البسملة بكافة أشكال التشكيل المتوقعة
+            text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", "").trim();
+            text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "").trim();
+            text = text.replaceFirst(basmalahRegExp, "").trim();
+            
+            // إذا كان العنصر هو البسملة منفردة (مثل verse_0 في بعض السور) وأصبح فارغاً بعد الحذف، نتخطاه تماماً
+            if (text.isEmpty) {
+              continue;
             }
           }
+          
           loadedVerses.add(text);
         }
       }
