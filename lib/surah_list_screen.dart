@@ -16,7 +16,7 @@ class SurahListScreen extends StatefulWidget {
 }
 
 class _SurahListScreenState extends State<SurahListScreen> {
-  int _currentIndex = 0; // 0 تعني أن التطبيق سيفتح تلقائياً على الفهرس
+  int _currentIndex = 0; // التطبيق يفتح تلقائياً على الفهرس
   
   // إعدادات مشغل الصوتيات
   late AudioPlayer _audioPlayer;
@@ -27,7 +27,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   // إعدادات التطبيق الافتراضية
   String _currentLanguage = 'ar'; // ar, en, tr
-  String _selectedReciterId = '45'; // القارئ الافتراضي الجديد (مثال: الشيخ سعد الغامدي)
+  String _selectedReciterId = '45'; // القارئ الافتراضي
   double _globalFontSize = 24.0; // حجم الخط العام للتطبيق
 
   // قائمة القراء التي سيتم تحميلها ديناميكياً من ملف الـ JSON الجديد readers.json
@@ -184,10 +184,10 @@ class _SurahListScreenState extends State<SurahListScreen> {
     });
   }
 
-  // تحميل ملف القراء الجديد من readers.json داخل الـ assets/data/
+  // تحميل ملف القراء الجديد من الـ assets مباشرة بحسب تعديل pubspec
   Future<void> _loadRecitersData() async {
     try {
-      String jsonString = await rootBundle.loadString('assets/data/readers.json');
+      String jsonString = await rootBundle.loadString('assets/readers.json');
       final List<dynamic> data = jsonDecode(jsonString);
       setState(() {
         _recitersList = data;
