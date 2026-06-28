@@ -21,6 +21,19 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
+  // إعدادات اللغة والقراء المضافة
+  String _currentLanguage = 'ar'; // ar, en, tr
+  String _selectedReciter = 'afs'; // السيرفر الافتراضي مشاري العفاسي
+
+  // قائمة القراء المتاحين وروابط سيرفراتهم المباشرة
+  final List<Map<String, String>> recitersList = const [
+    {"id": "afs", "name": "مشاري راشد العفاسي"},
+    {"id": "shrt", "name": "سعود الشريم"},
+    {"id": "gmd", "name": "غمد الغامدي"},
+    {"id": "basit", "name": "عبد الباسط عبد الصمد"},
+    {"id": "hudhaifi", "name": "علي الحذيفي"},
+  ];
+
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
     {"id": 2, "name": "البقرة", "type": "مدنية", "verses": 286, "isMeccan": false, "juz": 1},
@@ -177,7 +190,67 @@ class _SurahListScreenState extends State<SurahListScreen> {
     super.dispose();
   }
 
-  // دالة تشغيل السورة صوتياً بصيغة روابط ثلاثية الخانات (مثل: 001.mp3)
+  // دالة جلب النص المترجم للعنوان بناءً على اللغة المختارة
+  String _getTranslatedTitle() {
+    if (_currentLanguage == 'en') {
+      return _currentIndex == 0 ? 'Holy Quran' : 'Audio & Recitations';
+    } else if (_currentLanguage == 'tr') {
+      return _currentIndex == 0 ? 'Kur\'an-ı Kerim' : 'Sesler ve Okunuşlar';
+    }
+    return _currentIndex == 0 ? 'القرآن الكريم' : 'الصوتيات والتلاوات';
+  }
+
+  // نافذة اختيار اللغة (Language Dialog)
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("اختر لغة الواجهة / Language", textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text("العربية"),
+                leading: Radio<String>(
+                  value: 'ar',
+                  groupValue: _currentLanguage,
+                  onChanged: (value) {
+                    setState(() => _currentLanguage = value!);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+              ListTile(
+                title: const Text("English"),
+                leading: Radio<String>(
+                  value: 'en',
+                  groupValue: _currentLanguage,
+                  onChanged: (value) {
+                    setState(() => _currentLanguage = value!);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+              ListTile(
+                title: const Text("Türkçe"),
+                leading: Radio<String>(
+                  value: 'tr',
+                  groupValue: _currentLanguage,
+                  onChanged: (value) {
+                    setState(() => _currentLanguage = value!);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // دالة تشغيل السورة صوتياً بناءً على سيرفر القارئ المختار
   Future<void> _playSurahAudio(int surahId) async {
     if (_currentPlayingSurahId == surahId) {
       if (_isPlaying) {
@@ -196,8 +269,15 @@ class _SurahListScreenState extends State<SurahListScreen> {
       });
 
       String formattedId = surahId.toString().padLeft(3, '0');
-      // سيرفر صوتي موثوق وبجودة عالية للقرآن الكريم كاملاً
-      String audioUrl = "https://server8.mp3quran.net/afs/$formattedId.mp3";
+      
+      // تبديل السيرفر الصوتي ديناميكياً بناءً على كود القارئ المختار
+      String serverName = "server8.mp3quran.net/afs";
+      if (_selectedReciter == 'shrt') serverName = "server7.mp3quran.net/shur";
+      if (_selectedReciter == 'gmd') serverName = "server8.mp3quran.net/gmd";
+      if (_selectedReciter == 'basit') serverName = "server7.mp3quran.net/basit_mtwstr";
+      if (_selectedReciter == 'hudhaifi') serverName = "server9.mp3quran.net/huzaifi";
+
+      String audioUrl = "https://$serverName/$formattedId.mp3";
 
       await _audioPlayer.setUrl(audioUrl);
       await _audioPlayer.play();
@@ -329,60 +409,107 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Widget _buildAudioTab() {
-    return ListView.builder(
-      itemCount: surahList.length,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      itemBuilder: (context, index) {
-        final surah = surahList[index];
-        final String arabicId = toArabicNumerals(surah['id'] as int);
-        final bool isCurrentSurah = _currentPlayingSurahId == surah['id'];
-
-        return Card(
-          elevation: 1,
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            leading: CircleAvatar(
-              backgroundColor: isCurrentSurah ? const Color(0xFF2E7D32) : const Color(0xFF2E7D32).withOpacity(0.1),
-              child: Text(
-                arabicId,
-                style: TextStyle(
-                  color: isCurrentSurah ? Colors.white : const Color(0xFF2E7D32), 
-                  fontWeight: FontWeight.bold
-                ),
-              ),
-            ),
-            title: Text(
-              "تلاوة سورة ${surah['name']}",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
-            ),
-            subtitle: Text(
-              isCurrentSurah && _isPlaying ? "جاري الاستماع الآن..." : "اضغط للاستماع للتلاوة العطرة",
-              style: TextStyle(color: isCurrentSurah ? const Color(0xFF2E7D32) : Colors.grey[600], fontSize: 12),
-            ),
-            trailing: Container(
-              decoration: BoxDecoration(
-                color: isCurrentSurah && _isPlaying ? Colors.orange : const Color(0xFF2E7D32),
-                shape: BoxShape.circle,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Icon(
-                  isCurrentSurah && _isPlaying ? Icons.pause : Icons.play_arrow, 
-                  color: Colors.white, 
-                  size: 20
-                ),
-              ),
-            ),
-            onTap: () => _playSurahAudio(surah['id'] as int),
+    return Column(
+      children: [
+        // قائمة اختيار القارئ مدمجة بشكل منسق في شاشة الصوتيات
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
           ),
-        );
-      },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "القارئ الحالي:",
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
+              ),
+              DropdownButton<String>(
+                value: _selectedReciter,
+                underline: const SizedBox(),
+                items: recitersList.map((reciter) {
+                  return DropdownMenuItem<String>(
+                    value: reciter['id'],
+                    child: Text(reciter['name']!, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  );
+                }).toList(),
+                onChanged: (value) async {
+                  if (value != null) {
+                    setState(() {
+                      _selectedReciter = value;
+                    });
+                    if (_currentPlayingSurahId != null) {
+                      // إعادة التشغيل فوراً بالقارئ الجديد إذا كان السورة قيد التشغيل
+                      int id = _currentPlayingSurahId!;
+                      _currentPlayingSurahId = null;
+                      await _playSurahAudio(id);
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: surahList.length,
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+            itemBuilder: (context, index) {
+              final surah = surahList[index];
+              final String arabicId = toArabicNumerals(surah['id'] as int);
+              final bool isCurrentSurah = _currentPlayingSurahId == surah['id'];
+
+              return Card(
+                elevation: 1,
+                margin: const EdgeInsets.symmetric(vertical: 5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: CircleAvatar(
+                    backgroundColor: isCurrentSurah ? const Color(0xFF2E7D32) : const Color(0xFF2E7D32).withOpacity(0.1),
+                    child: Text(
+                      arabicId,
+                      style: TextStyle(
+                        color: isCurrentSurah ? Colors.white : const Color(0xFF2E7D32), 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    "تلاوة سورة ${surah['name']}",
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                  ),
+                  subtitle: Text(
+                    isCurrentSurah && _isPlaying ? "جاري الاستماع الآن..." : "اضغط للاستماع للتلاوة العطرة",
+                    style: TextStyle(color: isCurrentSurah ? const Color(0xFF2E7D32) : Colors.grey[600], fontSize: 12),
+                  ),
+                  trailing: Container(
+                    decoration: BoxDecoration(
+                      color: isCurrentSurah && _isPlaying ? Colors.orange : const Color(0xFF2E7D32),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Icon(
+                        isCurrentSurah && _isPlaying ? Icons.pause : Icons.play_arrow, 
+                        color: Colors.white, 
+                        size: 20
+                      ),
+                    ),
+                  ),
+                  onTap: () => _playSurahAudio(surah['id'] as int),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  // ويدجت المشغل الصوتي المصغر والمنبثق ذكياً في الأسفل عند تشغيل أي صوت
   Widget _buildMiniAudioPlayer() {
     if (_currentPlayingSurahId == null) return const SizedBox.shrink();
 
@@ -425,7 +552,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 ),
               ],
             ),
-            // شريط التقدم الزمني الدقيق المستند إلى JustAudio
             Row(
               children: [
                 Text(
@@ -479,11 +605,17 @@ class _SurahListScreenState extends State<SurahListScreen> {
               ),
               const SizedBox(width: 10),
               Text(
-                _currentIndex == 0 ? 'القرآن الكريم' : 'الصوتيات والتلاوات',
+                _getTranslatedTitle(),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, letterSpacing: 0.5),
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.language, color: Colors.white),
+              onPressed: _showLanguageDialog,
+            )
+          ],
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -503,7 +635,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
             Expanded(
               child: _currentIndex == 0 ? _buildSurahListTab() : _buildAudioTab(),
             ),
-            // عرض المشغل المصغر تلقائياً إذا كان هنالك ملف صوتي نشط
             _buildMiniAudioPlayer(),
           ],
         ),
