@@ -14,6 +14,7 @@ dependencies:
   just_audio: ^0.9.43 # المكتبة الحالية لتشغيل الصوتيات
   path_provider: ^2.1.3 # لتحديد مسار حفظ الملفات الصوتية في ذاكرة الجهاز
   dio: ^5.5.0 # لتنزيل ملفات الـ MP3 من السيرفر وعرض نسبة التقدم
+  archive: ^3.6.1 # المكتبة الجديدة المضافة لفك ضغط ملفات سيرفرات القراء في الذاكرة
 
 flutter:
   uses-material-design: true
@@ -26,6 +27,8 @@ flutter:
     - assets/translation/id/
     - assets/icon/
     - assets/audio/
+    - assets/audiourls/ # المجلد الجديد المخصص لوضع ملفات الـ zip (مثل 45.zip و 123.zip) فيه
+    - assets/readers.json # ملف قائمة القراء الكامل الذي يحتوي على الـ IDs والأسماء
 
   fonts:
     - family: nam
