@@ -707,8 +707,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     inactiveColor: Colors.white30,
                     value: _position.inMilliseconds.toDouble(),
                     max: _duration.inMilliseconds.toDouble() == 0 ? 1.0 : _duration.inMilliseconds.toDouble(),
-                    onChanged: (value) {
-                      _audioPlayer.seek(Duration(milliseconds: value.toInt()));
+                    onChanged: (value) async {
+                      final position = Duration(milliseconds: value.toInt());
+                      await _audioPlayer.seek(position);
                     },
                   ),
                 ),
