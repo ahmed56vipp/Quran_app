@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:archive/archive.dart';
 import 'surah_detail_screen.dart'; 
 
 const String kSurahNameFont = 'nam';
@@ -26,7 +25,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   // إعدادات التطبيق الافتراضية
   String _currentLanguage = 'ar'; // ar, en, tr
   String _selectedReciterId = '45'; // القارئ الافتراضي
-  double _globalFontSize = 24.0; // حجم الخط العام للتطبيق
+  double _globalFontSize = 24.0; // حجم الخط العام للمصحف
 
   // قائمة القراء التي سيتم تحميلها ديناميكياً من ملف الـ JSON
   List<dynamic> _recitersList = [];
@@ -114,7 +113,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     {"id": 79, "name": "النازعات", "type": "مكية", "verses": 46, "isMeccan": true, "juz": 30},
     {"id": 80, "name": "عبس", "type": "مكية", "verses": 42, "isMeccan": true, "juz": 30},
     {"id": 81, "name": "التكوير", "type": "مكية", "verses": 29, "isMeccan": true, "juz": 30},
-    {"id": 82, "name": "الانفطار", "type": "مكية", "verses": 19, "isMeccan": true, "juz": 30},
+    {"id": 82, "name": "العلق", "type": "مكية", "verses": 19, "isMeccan": true, "juz": 30},
     {"id": 83, "name": "المطففين", "type": "مكية", "verses": 36, "isMeccan": true, "juz": 30},
     {"id": 84, "name": "الانشقاق", "type": "مكية", "verses": 25, "isMeccan": true, "juz": 30},
     {"id": 85, "name": "البروج", "type": "مكية", "verses": 22, "isMeccan": true, "juz": 30},
@@ -184,7 +183,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Future<void> _loadRecitersData() async {
     try {
-      // تم تعديل المسار هنا ليتطابق مع الـ pubspec.yaml الخاص بك
+      // قراءة ملف القراء الأساسي المعتمد في الـ pubspec.yaml الخاص بك
       String jsonString = await rootBundle.loadString('assets/data/readers.json');
       final List<dynamic> data = jsonDecode(jsonString);
       setState(() {
@@ -250,52 +249,19 @@ class _SurahListScreenState extends State<SurahListScreen> {
         _duration = Duration.zero;
       });
 
-      final currentReciter = _recitersList.firstWhere(
-        (r) => r['id'].toString() == _selectedReciterId,
-        orElse: () => null,
-      );
-
-      if (currentReciter == null) return;
-
-      int rId = int.tryParse(currentReciter['id'].toString()) ?? 0;
-      String audioUrl = "";
-
-      if (rId >= 1001) {
-        String baseServer = currentReciter['url'] ?? "";
-        String formattedId = surahId.toString().padLeft(3, '0');
-        audioUrl = "$baseServer$formattedId.mp3";
-      } else {
-        ByteData data = await rootBundle.load('assets/audiourls/$rId.zip');
-        List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-
-        Archive archive = ZipDecoder().decodeBytes(bytes);
-
-        for (ArchiveFile file in archive) {
-          if (file.isFile && file.name.endsWith('.json')) {
-            String jsonString = utf8.decode(file.content as List<int>);
-            List<dynamic> surahListJson = jsonDecode(jsonString);
-
-            String targetSurahFile = "${surahId.toString().padLeft(3, '0')}.mp3";
-
-            for (var surahItem in surahListJson) {
-              if (surahItem['F1'] == targetSurahFile) {
-                audioUrl = surahItem['F2']; 
-                break;
-              }
-            }
-          }
-        }
-      }
+      // جلب مسار ملف الـ rtx الخاص بالسورة من المجلد الجديد surah_f
+      String fileContent = await rootBundle.loadString('assets/surah_f/$surahId.rtx');
+      String audioUrl = fileContent.trim(); 
 
       if (audioUrl.isNotEmpty) {
         await _audioPlayer.setUrl(audioUrl);
         await _audioPlayer.play();
       } else {
-        throw Exception("الرابط غير متوفر");
+        throw Exception("الرابط المكتوب داخل ملف الـ rtx فارغ");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("خطأ في قراءة ملف الصوت أو تشغيل السورة")),
+        const SnackBar(content: Text("خطأ في قراءة ملف الصوت أو السورة من surah_f")),
       );
     }
   }
