@@ -42,13 +42,56 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.initState();
     currentJuz = widget.initialJuz;
     _loadData();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // دالة لمراقبة التمرير وتحديث الجزء الحالي ديناميكيًا بناءً على موقع النص
+  void _onScroll() {
+    if (juzData.isEmpty || verses.isEmpty) return;
+
+    double currentScroll = _scrollController.position.pixels;
+    double maxScroll = _scrollController.position.maxScrollExtent;
+    
+    if (maxScroll <= 0) return;
+
+    // حساب تقديري للآية المعروضة حاليًا بناءً على نسبة التمرير
+    double ratio = currentScroll / maxScroll;
+    int estimatedVerseIndex = (ratio * verses.length).floor();
+    if (estimatedVerseIndex >= verses.length) estimatedVerseIndex = verses.length - 1;
+    if (estimatedVerseIndex < 0) estimatedVerseIndex = 0;
+
+    int currentVerseNum = estimatedVerseIndex + 1;
+
+    // البحث في ملف الـ JSON عن الجزء المناسب للسورة والآية الحالية
+    for (var juz in juzData) {
+      int juzNumber = int.tryParse(juz['juz_number'].toString()) ?? 1;
+      var surahs = juz['surahs'] as Map<String, dynamic>?;
+      
+      if (surahs != null && surahs.containsKey(widget.surahId.toString())) {
+        var range = surahs[widget.surahId.toString()] as List<dynamic>?;
+        if (range != null && range.length == 2) {
+          int startVerse = int.tryParse(range[0].toString()) ?? 1;
+          int endVerse = int.tryParse(range[1].toString()) ?? widget.versesCount;
+
+          if (currentVerseNum >= startVerse && currentVerseNum <= endVerse) {
+            if (currentJuz != juzNumber) {
+              setState(() {
+                currentJuz = juzNumber;
+              });
+            }
+            break;
+          }
+        }
+      }
+    }
   }
 
   void _toggleAutoScroll() {
@@ -91,18 +134,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           
           // تصفية وحذف البسملة النصية تماماً لجميع السور عدا الفاتحة
           if (widget.surahId != 1) {
-            // تعبير نمطي مرن يتجاهل التشكيل والحركات تماماً لضمان حذف نص البسملة بشكل صحيح ومضمون
             final RegExp basmalahRegExp = RegExp(
-              r'^بِ_?سْ_?مِ_?\s+اللَّ_?هِ_?\s+الرَّ_?حْ_?مَٰ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
+              r'^بِ_?سْ_?مِ_?\s+اللَّ_?هِ_?\s+الرَّ_?حْ_?مَٰ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
               caseSensitive: false,
             );
             
-            // تنظيف النص من البسملة بكافة أشكال التشكيل المتوقعة
-            text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", "").trim();
+            text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", "").trim();
             text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "").trim();
             text = text.replaceFirst(basmalahRegExp, "").trim();
             
-            // إذا كان العنصر هو البسملة منفردة (مثل verse_0 في بعض السور) وأصبح فارغاً بعد الحذف، نتخطاه تماماً
             if (text.isEmpty) {
               continue;
             }
@@ -281,7 +321,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: Column(
                   children: [
-                    // عرض مخطوطة البسملة المصممة الكبيرة لجميع السور عدا الفاتحة
                     if (widget.surahId != 1) ...[
                       const Center(
                         child: Text(
