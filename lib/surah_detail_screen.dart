@@ -128,12 +128,14 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       final Map<String, dynamic> verseMap = data['verse'];
       
       List<String> loadedVerses = [];
+      // التأكد من جلب الآيات بالترتيب التصاعدي الصحيح بناءً على الأرقام
       for (int i = 0; i < verseMap.length; i++) {
-        if (verseMap.containsKey('verse_$i')) {
-          String text = verseMap['verse_$i'].toString().trim();
+        String key = 'verse_$i';
+        if (verseMap.containsKey(key)) {
+          String text = verseMap[key].toString().trim();
           
-          // تصفية وحذف البسملة النصية تماماً لجميع السور عدا الفاتحة
-          if (widget.surahId != 1) {
+          // تصفية وحذف البسملة النصية تماماً لجميع السور عدا الفاتحة والتوبة
+          if (widget.surahId != 1 && widget.surahId != 9) {
             final RegExp basmalahRegExp = RegExp(
               r'^بِ_?سْ_?مِ_?\s+اللَّ_?هِ_?\s+الرَّ_?حْ_?مَٰ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
               caseSensitive: false,
@@ -142,10 +144,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", "").trim();
             text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "").trim();
             text = text.replaceFirst(basmalahRegExp, "").trim();
-            
-            if (text.isEmpty) {
-              continue;
-            }
           }
           
           loadedVerses.add(text);
@@ -321,7 +319,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: Column(
                   children: [
-                    if (widget.surahId != 1) ...[
+                    // إظهار البسملة في البداية لجميع السور عدا الفاتحة (لأنها تحتوي عليها كآية) والتوبة
+                    if (widget.surahId != 1 && widget.surahId != 9) ...[
                       const Center(
                         child: Text(
                           "19", 
