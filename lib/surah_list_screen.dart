@@ -184,7 +184,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Future<void> _loadRecitersData() async {
     try {
-      String jsonString = await rootBundle.loadString('assets/readers.json');
+      // تم تعديل المسار هنا ليتطابق مع الـ pubspec.yaml الخاص بك
+      String jsonString = await rootBundle.loadString('assets/data/readers.json');
       final List<dynamic> data = jsonDecode(jsonString);
       setState(() {
         _recitersList = data;
@@ -706,10 +707,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     activeColor: const Color(0xFFFFD700),
                     inactiveColor: Colors.white30,
                     value: _position.inMilliseconds.toDouble(),
-                    max: _duration.inMilliseconds.toDouble() == 0 ? 1.0 : _duration.inMilliseconds.toDouble(),
-                    onChanged: (value) async {
-                      final position = Duration(milliseconds: value.toInt());
-                      await _audioPlayer.seek(position);
+                    max: _duration.inMilliseconds.toDouble() > 0 ? _duration.inMilliseconds.toDouble() : 1.0,
+                    onChanged: (value) {
+                      _audioPlayer.seek(Duration(milliseconds: value.toInt()));
                     },
                   ),
                 ),
