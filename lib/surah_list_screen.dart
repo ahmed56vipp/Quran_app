@@ -31,6 +31,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   List<dynamic> _recitersList = [];
   bool _isLoadingReciters = true;
 
+  // قائمة السور المعتمدة والمصححة برمجياً
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
     {"id": 2, "name": "البقرة", "type": "مدنية", "verses": 286, "isMeccan": false, "juz": 1},
@@ -113,7 +114,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     {"id": 79, "name": "النازعات", "type": "مكية", "verses": 46, "isMeccan": true, "juz": 30},
     {"id": 80, "name": "عبس", "type": "مكية", "verses": 42, "isMeccan": true, "juz": 30},
     {"id": 81, "name": "التكوير", "type": "مكية", "verses": 29, "isMeccan": true, "juz": 30},
-    {"id": 82, "name": "العلق", "type": "مكية", "verses": 19, "isMeccan": true, "juz": 30},
+    {"id": 82, "name": "الانفطار", "type": "مكية", "verses": 19, "isMeccan": true, "juz": 30}, // تم تصحيح الاسم هنا لمنع التكرار
     {"id": 83, "name": "المطففين", "type": "مكية", "verses": 36, "isMeccan": true, "juz": 30},
     {"id": 84, "name": "الانشقاق", "type": "مكية", "verses": 25, "isMeccan": true, "juz": 30},
     {"id": 85, "name": "البروج", "type": "مكية", "verses": 22, "isMeccan": true, "juz": 30},
@@ -156,6 +157,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
       _loadAppSettings();
     });
 
+    // الاستماع لحالة المشغل لتحديث أزرار الواجهة تلقائياً عند تغيير الحالات
     _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
@@ -168,12 +170,14 @@ class _SurahListScreenState extends State<SurahListScreen> {
       }
     });
 
+    // تحديث المدة الزمنية الكاملة للملف الصوتي الحالي
     _audioPlayer.durationStream.listen((d) {
       if (mounted && d != null) {
         setState(() => _duration = d);
       }
     });
 
+    // تحديث المؤشر اللحظي لتقدم المقطع الصوتي
     _audioPlayer.positionStream.listen((p) {
       if (mounted) {
         setState(() => _position = p);
@@ -183,7 +187,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Future<void> _loadRecitersData() async {
     try {
-      // قراءة ملف القراء الأساسي المعتمد في الـ pubspec.yaml الخاص بك
       String jsonString = await rootBundle.loadString('assets/data/readers.json');
       final List<dynamic> data = jsonDecode(jsonString);
       setState(() {
@@ -191,7 +194,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
         _isLoadingReciters = false;
       });
     } catch (e) {
-      print("خطأ في قراءة ملف صوتيات القراء readers.json: $e");
+      debugPrint("خطأ في قراءة ملف صوتيات القراء readers.json: $e");
       setState(() => _isLoadingReciters = false);
     }
   }
@@ -213,7 +216,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
+    _audioPlayer.dispose(); // تحرير الذاكرة وإغلاق مشغل الصوتيات عند الخروج لضمان عدم تسريب الموارد
     super.dispose();
   }
 
@@ -233,6 +236,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> _playSurahAudio(int surahId) async {
+    // إذا ضغط المستخدم على نفس السورة المشغلة حالياً، يتم التبديل بين الإيقاف المؤقت والاستمرار
     if (_currentPlayingSurahId == surahId) {
       if (_isPlaying) {
         await _audioPlayer.pause();
@@ -249,7 +253,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
         _duration = Duration.zero;
       });
 
-      // جلب مسار ملف الـ rtx الخاص بالسورة من المجلد الجديد surah_f
+      // جلب مسار ملف الـ .rtx من المجلد المخصص
       String fileContent = await rootBundle.loadString('assets/surah_f/$surahId.rtx');
       String audioUrl = fileContent.trim(); 
 
@@ -260,9 +264,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
         throw Exception("الرابط المكتوب داخل ملف الـ rtx فارغ");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("خطأ في قراءة ملف الصوت أو السورة من surah_f")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("خطأ في قراءة ملف الصوت أو السورة من surah_f")),
+        );
+      }
     }
   }
 
