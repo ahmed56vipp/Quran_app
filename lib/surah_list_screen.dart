@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'surah_detail_screen.dart'; 
 
+// الخط المخصص لأسماء السور
 const String kSurahNameFont = 'nam';
 
 class SurahListScreen extends StatefulWidget {
@@ -25,7 +26,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
   // إعدادات التطبيق الافتراضية
   String _currentLanguage = 'ar'; // ar, en, tr
   String _selectedReciterId = '45'; // القارئ الافتراضي
-  double _globalFontSize = 24.0; // حجم الخط العام للمصحف
 
   // قائمة القراء التي سيتم تحميلها ديناميكياً من ملف الـ JSON
   List<dynamic> _recitersList = [];
@@ -114,7 +114,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     {"id": 79, "name": "النازعات", "type": "مكية", "verses": 46, "isMeccan": true, "juz": 30},
     {"id": 80, "name": "عبس", "type": "مكية", "verses": 42, "isMeccan": true, "juz": 30},
     {"id": 81, "name": "التكوير", "type": "مكية", "verses": 29, "isMeccan": true, "juz": 30},
-    {"id": 82, "name": "الانفطار", "type": "مكية", "verses": 19, "isMeccan": true, "juz": 30}, // تم تصحيح الاسم هنا لمنع التكرار
+    {"id": 82, "name": "الانفطار", "type": "مكية", "verses": 19, "isMeccan": true, "juz": 30},
     {"id": 83, "name": "المطففين", "type": "مكية", "verses": 36, "isMeccan": true, "juz": 30},
     {"id": 84, "name": "الانشقاق", "type": "مكية", "verses": 25, "isMeccan": true, "juz": 30},
     {"id": 85, "name": "البروج", "type": "مكية", "verses": 22, "isMeccan": true, "juz": 30},
@@ -157,7 +157,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
       _loadAppSettings();
     });
 
-    // الاستماع لحالة المشغل لتحديث أزرار الواجهة تلقائياً عند تغيير الحالات
+    // الاستماع لحالة المشغل لتحديث أزرار الواجهة تلقائياً
     _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
@@ -204,14 +204,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
     setState(() {
       _currentLanguage = prefs.getString('app_lang') ?? 'ar';
       _selectedReciterId = prefs.getString('app_reciter') ?? '45';
-      _globalFontSize = prefs.getDouble('font_size') ?? 24.0;
     });
   }
 
   Future<void> _saveSetting(String key, dynamic value) async {
     final prefs = await SharedPreferences.getInstance();
     if (value is String) await prefs.setString(key, value);
-    if (value is double) await prefs.setDouble(key, value);
   }
 
   @override
@@ -236,7 +234,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
   }
 
   Future<void> _playSurahAudio(int surahId) async {
-    // إذا ضغط المستخدم على نفس السورة المشغلة حالياً، يتم التبديل بين الإيقاف المؤقت والاستمرار
     if (_currentPlayingSurahId == surahId) {
       if (_isPlaying) {
         await _audioPlayer.pause();
@@ -253,7 +250,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
         _duration = Duration.zero;
       });
 
-      // جلب مسار ملف الـ .rtx من المجلد المخصص
       String fileContent = await rootBundle.loadString('assets/surah_f/$surahId.rtx');
       String audioUrl = fileContent.trim(); 
 
@@ -383,7 +379,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 "${surah['name']}", 
                 style: const TextStyle(
                   fontFamily: kSurahNameFont,
-                  fontSize: 28,
+                  fontSize: 34, // 👈 تم تكبير حجم خط اسم السورة هنا ليكون أوضح وأبرز
                   color: Color(0xFF2C3E50),
                 ),
               ),
@@ -466,7 +462,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
               "${surah['name']}",
               style: const TextStyle(
                 fontFamily: kSurahNameFont,
-                fontSize: 26, 
+                fontSize: 32, // 👈 تم تكبير حجم خط اسم السورة هنا أيضاً في تبويب الصوتيات ليتناسق التصميم
                 color: Color(0xFF2C3E50),
               ),
             ),
@@ -504,6 +500,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
+            withOpacity: 1.0,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -575,43 +572,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.text_fields, color: Color(0xFF1B5E20)),
-                        SizedBox(width: 8),
-                        Text("حجم الخط الافتراضي للمصحف", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      ],
-                    ),
-                    Text("${_globalFontSize.toInt()} pt", style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                Slider(
-                  value: _globalFontSize,
-                  min: 20,
-                  max: 40,
-                  divisions: 10,
-                  activeColor: const Color(0xFF2E7D32),
-                  onChanged: (v) {
-                    setState(() => _globalFontSize = v);
-                    _saveSetting('font_size', v);
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
+        // 👈 تم إزالة الكارت (Card) الخاص بالتحكم في حجم خط الصوتيات والمصحف بالكامل من هنا لتبسيط الواجهة
         const SizedBox(height: 20),
         const Center(
           child: Column(
