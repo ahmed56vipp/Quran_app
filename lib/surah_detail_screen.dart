@@ -36,7 +36,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _isAutoScrolling = false;
   double _scrollSpeed = 0.1; 
 
-  double _fontSize = 24.0;
+  // تثبيت حجم الخط عند 24.0 وإزالة التحكم به بناءً على طلبك
+  final double _fontSize = 24.0;
   int _themeMode = 0; 
 
   @override
@@ -112,31 +113,47 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // نافذة اختيار رقم الآية للذهاب إليها
+  // نافذة اختيار رقم الآية للذهاب إليها بتصميم وألوان محسنة ومتناسقة
   void _showGoToVerseDialog() {
     final TextEditingController controller = TextEditingController();
+    final isDark = _themeMode == 2;
+
     showDialog(
       context: context,
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text("الذهاب إلى آية", style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            "الذهاب إلى آية", 
+            style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF2C3E50)),
+          ),
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black),
             decoration: InputDecoration(
               hintText: "أدخل رقم الآية (1 - ${verses.length})",
-              border: const OutlineInputBorder(),
+              hintStyle: TextStyle(color: isDark ? Colors.white60 : Colors.grey),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF2E7D32), width: 2),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("إلغاء", style: TextStyle(color: Colors.grey)),
+              child: const Text("إلغاء", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2E7D32),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
               onPressed: () {
                 int? verseNum = int.tryParse(controller.text);
                 if (verseNum != null && verseNum >= 1 && verseNum <= verses.length) {
@@ -144,7 +161,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   _scrollToVerse(verseNum - 1);
                 }
               },
-              child: const Text("اذهب الآن", style: TextStyle(color: Colors.white)),
+              child: const Text("اذهب الآن", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -178,11 +195,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   Future<void> _loadData() async {
     try {
-      // 1. تحميل بيانات الأجزاء
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
       juzData = json.decode(juzResponse);
 
-      // 2. تحميل آيات السورة وتنظيف البسملة الافتتاحية من verse_0
       final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
       final data = json.decode(response);
       final Map<String, dynamic> verseMap = data['verse'];
@@ -195,7 +210,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           
           if (widget.surahId != 1 && widget.surahId != 9) {
             final RegExp basmalahRegExp = RegExp(
-              r'^بِ_?سْ_?مِ_?\s+اللَّ_?هِ_?\s+الرَّ_?حْ_?مَٰ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
+              r'^بِ_?سْ_?مِ_?\s+اللَّ_?ه_?\s+الرَّ_?حْ_?مَ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
               caseSensitive: false,
             );
             
@@ -204,14 +219,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             text = text.replaceFirst(basmalahRegExp, "").trim();
           }
           
-          // تخطي التضمين إذا أصبحت آية البسملة الأولى فارغة تماماً لضبط الترقيم والتوافق
           if (text.isEmpty && i == 0) continue;
-          
           loadedVerses.add(text);
         }
       }
 
-      // 3. تحميل ملف التفسير الميسر المعتمد في مسار التراجم العربية للآيات
       try {
         final String tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
         final tafsirData = json.decode(tafsirResponse);
@@ -225,7 +237,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           }
         }
         if (verseMap.containsKey('verse_0') && loadedTafsir.isNotEmpty && widget.surahId != 1 && widget.surahId != 9) {
-          loadedTafsir.removeAt(0); // محاذاة التفسير مع إزالة آية البسملة الافتتاحية المماثلة
+          loadedTafsir.removeAt(0);
         }
         tafsirVerses = loadedTafsir;
       } catch (_) {
@@ -245,13 +257,14 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   Color _getBackgroundColor() {
-    if (_themeMode == 1) return const Color(0xFFFBF7EE);
-    if (_themeMode == 2) return const Color(0xFF121212);
-    return Colors.white;
+    if (_themeMode == 1) return const Color(0xFFFDF6E3); // لون دافئ مريح جداً للعين (Sepia)
+    if (_themeMode == 2) return const Color(0xFF121212); // لون ليلي حقيقي مريح للظلام
+    return const Color(0xFFF8F9FA); // لون فاتح نقي وخفيف بدلاً من الأبيض الصريح المجهد
   }
 
   Color _getTextColor() {
-    if (_themeMode == 2) return Colors.white;
+    if (_themeMode == 2) return const Color(0xFFE0E0E0);
+    if (_themeMode == 1) return const Color(0xFF5B4636);
     return const Color(0xFF2C3E50);
   }
 
@@ -265,6 +278,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return input;
   }
 
+  // الواجهة السفلية المُحسنة والمُبسطة بدون متحكم حجم الخط وبألوان متناسقة
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -277,26 +291,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             return Directionality(
               textDirection: TextDirection.rtl,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 24.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2)))),
-                    const SizedBox(height: 10),
-                    Text("حجم خط القراءة:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-                    Slider(
-                      value: _fontSize, min: 20, max: 40, divisions: 10,
-                      activeColor: const Color(0xFF2E7D32),
-                      onChanged: (v) {
-                        setState(() => _fontSize = v);
-                        setModalState(() => _fontSize = v);
-                      },
-                    ),
-                    const Divider(),
+                    const SizedBox(height: 16),
+                    
+                    // خيار عرض التفسير
                     SwitchListTile(
-                      title: Text("وضعية وضع التفسير", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-                      subtitle: const Text("عرض التفسير الميسر المعتمد أسفل كل آية", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      contentPadding: EdgeInsets.zero,
+                      title: Text("وضع التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                      subtitle: const Text("عرض التفسير المعتمد أسفل كل آية كترجمة ميسرة", style: TextStyle(fontSize: 11, color: Colors.grey)),
                       value: _showTafsir,
                       activeColor: const Color(0xFF2E7D32),
                       onChanged: (val) {
@@ -304,36 +311,64 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         setModalState(() => _showTafsir = val);
                       },
                     ),
-                    const Divider(),
-                    Text("وضع العرض والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                    const Divider(height: 24),
+                    
+                    // خيار وضع القراءة والوضوح
+                    Text("وضع القراءة والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        ChoiceChip(label: const Text("فاتح"), selected: _themeMode == 0, onSelected: (s) { setState(() => _themeMode = 0); setModalState(() {}); }),
-                        ChoiceChip(label: const Text("دافئ"), selected: _themeMode == 1, onSelected: (s) { setState(() => _themeMode = 1); setModalState(() {}); }),
-                        ChoiceChip(label: const Text("ليلي"), selected: _themeMode == 2, onSelected: (s) { setState(() => _themeMode = 2); setModalState(() {}); }),
+                        ChoiceChip(
+                          label: const Text("فاتح"), 
+                          selected: _themeMode == 0, 
+                          selectedColor: const Color(0xFFE8F5E9),
+                          labelStyle: TextStyle(color: _themeMode == 0 ? const Color(0xFF2E7D32) : Colors.grey),
+                          onSelected: (s) { setState(() => _themeMode = 0); setModalState(() {}); }
+                        ),
+                        ChoiceChip(
+                          label: const Text("دافئ"), 
+                          selected: _themeMode == 1, 
+                          selectedColor: const Color(0xFFFFECB3),
+                          labelStyle: TextStyle(color: _themeMode == 1 ? const Color(0xFF5B4636) : Colors.grey),
+                          onSelected: (s) { setState(() => _themeMode = 1); setModalState(() {}); }
+                        ),
+                        ChoiceChip(
+                          label: const Text("ليلي"), 
+                          selected: _themeMode == 2, 
+                          selectedColor: const Color(0xFF37474F),
+                          labelStyle: TextStyle(color: _themeMode == 2 ? Colors.white : Colors.grey),
+                          onSelected: (s) { setState(() => _themeMode = 2); setModalState(() {}); }
+                        ),
                       ],
                     ),
-                    const Divider(),
+                    const Divider(height: 24),
+                    
+                    // خيار التمرير الآلي الذكي
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("التمرير الآلي ذكي (أثناء القراءة):", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                        Text("التمرير الذكي التلقائي:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
                         ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(backgroundColor: _isAutoScrolling ? Colors.red : const Color(0xFF2E7D32)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isAutoScrolling ? Colors.red.shade700 : const Color(0xFF2E7D32),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+                          ),
                           onPressed: () {
                             _toggleAutoScroll();
-                            navigatorPopContext() { Navigator.pop(context); }
                             setModalState(() {});
                           },
-                          icon: Icon(_isAutoScrolling ? Icons.pause : Icons.play_arrow, color: Colors.white),
-                          label: Text(_isAutoScrolling ? "إيقاف" : "تشغيل", style: const TextStyle(color: Colors.white)),
+                          icon: Icon(_isAutoScrolling ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 18),
+                          label: Text(_isAutoScrolling ? "إيقاف" : "تشغيل", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         )
                       ],
                     ),
+                    const SizedBox(height: 8),
                     Slider(
                       value: _scrollSpeed, min: 0.1, max: 1.0, divisions: 9,
-                      activeColor: Colors.orange,
+                      activeColor: const Color(0xFF2E7D32),
+                      inactiveColor: Colors.grey.shade300,
                       label: "السرعة: $_scrollSpeed",
                       onChanged: (v) {
                         setModalState(() => _scrollSpeed = v);
@@ -357,6 +392,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _themeMode == 2;
+    
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -366,14 +403,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // تم إزالة حاوية الإطار الخارجي والحدود بالكامل ليظهر الاسم مندمجاً ونقياً
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     widget.surahId == 2 ? 'البَقَرَةِ' : widget.surahName,
-                    style: const TextStyle(fontFamily: 'nam', fontSize: 24, color: Color(0xFFFFFFD700), fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontFamily: 'nam', fontSize: 24, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -386,10 +422,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "$currentJuz", 
-                    style: const TextStyle(fontFamily: 'jzu12', fontSize: 24, color: Color(0xFFFFFFD700), fontWeight: FontWeight.bold),
+                    "الجزء $currentJuz", 
+                    style: const TextStyle(fontFamily: 'jzu12', fontSize: 16, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 5),
+                  const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.gps_fixed, color: Colors.white, size: 22),
                     tooltip: "ذهاب إلى آية",
@@ -397,6 +433,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.tune, color: Colors.white),
+                    tooltip: "خيارات العرض",
                     onPressed: _showSettingsBottomSheet,
                   ),
                 ],
@@ -412,7 +449,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               gradient: LinearGradient(colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)]),
             ),
           ),
-          elevation: 2,
+          elevation: 0, // جعل شريط التطبيق مسطحاً ومندمجاً بشكل أجمل
         ),
         body: isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
@@ -427,21 +464,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // إظهار رسم البسملة في البداية لجميع السور عدا الفاتحة والتوبة فوق أول آية فعلية للقرّاء
                       if (index == 0 && widget.surahId != 1 && widget.surahId != 9) ...[
-                        const Center(
+                        Center(
                           child: Text(
                             "19", 
-                            style: TextStyle(fontFamily: 'bsm60', fontSize: 85, color: Color(0xFF2E7D32)),
+                            style: TextStyle(fontFamily: 'bsm60', fontSize: 85, color: const Color(0xFF2E7D32).withOpacity(0.9)),
                             textAlign: TextAlign.center,
                           ),
                         ),
                         const SizedBox(height: 24),
                       ],
                       
-                      // حاوية عرض نص الآية وعلامة الترقيم المصحفية الخاصة بها
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Text.rich(
                           TextSpan(
                             children: [
@@ -450,14 +485,18 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                 style: TextStyle(
                                   fontSize: _fontSize,
                                   fontFamily: 'nss', 
-                                  height: 1.9,
+                                  height: 2.1, // تحسين الارتفاع لراحة أكبر عند القراءة البصرية
                                   color: _getTextColor(),
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
                               TextSpan(
                                 text: " ﴿$arabicNum﴾ ", 
-                                style: const TextStyle(fontFamily: 'quran_num', fontSize: 22, color: Color(0xFFC19A6B)),
+                                style: TextStyle(
+                                  fontFamily: 'quran_num', 
+                                  fontSize: 22, 
+                                  color: isDark ? const Color(0xFFFFD700) : const Color(0xFFC19A6B)
+                                ),
                               ),
                             ],
                           ),
@@ -466,26 +505,29 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         ),
                       ),
                       
-                      // عرض حقل التفسير الميسر عند تفعيل وضع التفسير من الإعدادات
                       if (_showTafsir) ...[
                         Container(
-                          margin: const EdgeInsets.only(top: 4, bottom: 14),
-                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(top: 6, bottom: 16),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: _themeMode == 2 ? const Color(0xFF1A251C) : const Color(0xFFE8F5E9).withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(8),
+                            color: isDark ? const Color(0xFF1B281E) : const Color(0xFFE8F5E9).withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isDark ? Colors.transparent : const Color(0xFFC8E6C9).withOpacity(0.5),
+                              width: 1
+                            )
                           ),
                           child: Text(
                             currentTafsir,
                             style: TextStyle(
                               fontSize: _fontSize - 6,
-                              height: 1.6,
-                              color: _themeMode == 2 ? Colors.white70 : const Color(0xFF37474F),
+                              height: 1.7,
+                              color: isDark ? Colors.white70 : const Color(0xFF37474F),
                             ),
                             textDirection: TextDirection.rtl,
                           ),
                         ),
-                        const Divider(height: 1, thickness: 0.5),
+                        Divider(height: 1, thickness: 0.5, color: isDark ? Colors.white12 : Colors.grey.shade300),
                       ],
                     ],
                   );
