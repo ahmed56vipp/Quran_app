@@ -37,7 +37,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _isAutoScrolling = false;
   double _scrollSpeed = 0.1; 
 
-  // إعادة تفعيل التحكم الديناميكي بحجم الخط
+  // التحكم الديناميكي بحجم الخط
   double _fontSize = 24.0;
   int _themeMode = 0; 
 
@@ -264,7 +264,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return input;
   }
 
-  // الواجهة السفلية المُحدثة لتدعم تعديل حجم الخط والأنماط والألوان
+  // الواجهة السفلية المُحدثة والمُصلحة بالكامل للأيقونات وحجم الخط
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -285,7 +285,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
                     
-                    // تحجيم حجم الخط (+ / -)
+                    // تحجيم حجم الخط (+ / -) مع إصلاح تمرير الألوان
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -293,7 +293,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         Row(
                           children: [
                             IconButton(
-                              icon: Icon(Icons.remove_circle_outline, color: const Color(0xFF2E7D32), isDark ? Colors.white70 : Colors.black87),
+                              icon: Icon(
+                                Icons.remove_circle_outline, 
+                                color: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                              ),
                               onPressed: () {
                                 if (_fontSize > 16) {
                                   setState(() => _fontSize -= 2);
@@ -306,7 +309,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
                             ),
                             IconButton(
-                              icon: Icon(Icons.add_circle_outline, color: const Color(0xFF2E7D32), isDark ? Colors.white70 : Colors.black87),
+                              icon: Icon(
+                                Icons.add_circle_outline, 
+                                color: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                              ),
                               onPressed: () {
                                 if (_fontSize < 42) {
                                   setState(() => _fontSize += 2);
@@ -488,7 +494,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // عرض البسملة في بداية السورة بأسلوب مصحفي ورقي فاخر
                         if (index == 0 && widget.surahId != 1 && widget.surahId != 9) ...[
                           Center(
                             child: Text(
@@ -500,7 +505,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           const SizedBox(height: 32),
                         ],
                         
-                        // نص الآية القرآني المطور بالتصفح الورقي
                         Card(
                           elevation: isDark ? 0 : 2,
                           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -540,7 +544,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           ),
                         ),
                         
-                        // عرض التفسير الميسر أسفل الكارت الورقي للآية إن كان مفعلاً
                         if (_showTafsir) ...[
                           const SizedBox(height: 16),
                           Container(
