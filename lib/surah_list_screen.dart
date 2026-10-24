@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'surah_detail_screen.dart'; 
-import 'utils.dart'; // 👈 استيراد ملف الأدوات الموحد لمنع تكرار الكود
+import 'utils.dart';
 
 // الخط المخصص لأسماء السور
 const String kSurahNameFont = 'nam';
@@ -158,7 +158,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
       _loadAppSettings();
     });
 
-    // الاستماع لحالة المشغل لتحديث أزرار الواجهة تلقائياً
     _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
@@ -171,14 +170,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
       }
     });
 
-    // تحديث المدة الزمنية الكاملة للملف الصوتي الحالي
     _audioPlayer.durationStream.listen((d) {
       if (mounted && d != null) {
         setState(() => _duration = d);
       }
     });
 
-    // تحديث المؤشر اللحظي لتقدم المقطع الصوتي
     _audioPlayer.positionStream.listen((p) {
       if (mounted) {
         setState(() => _position = p);
@@ -215,7 +212,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   @override
   void dispose() {
-    _audioPlayer.dispose(); // تحرير الذاكرة وإغلاق مشغل الصوتيات عند الخروج لضمان عدم تسريب الموارد
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -553,3 +550,97 @@ class _SurahListScreenState extends State<SurahListScreen> {
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) {
+                            setState(() => _selectedReciterId = val);
+                            _saveSetting('app_reciter', val);
+                          }
+                        },
+                      ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Center(
+          child: Column(
+            children: [
+              Text("تطبيق المصحف الشريف الإلكتروني v1.0.0", style: TextStyle(color: Colors.grey, fontSize: 13)),
+              SizedBox(height: 4),
+              Text("جميع التلاوات الصوتية تعمل عبر خوادم شبكة MP3Quran المباشرة", style: TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
+            ],
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildMiniAudioPlayer() {
+    if (_currentPlayingSurahId == null) return const SizedBox.shrink();
+
+    final currentSurah = surahList.firstWhere((s) => s['id'] == _currentPlayingSurahId);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: const BoxDecoration(
+        color: Color(0xFF1B5E20),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, -2))],
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.music_note, color: Color(0xFFFFD700)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "المشغل الحالي: ${currentSurah['name']}",
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, color: Colors.white, size: 32),
+                  onPressed: () => _playSurahAudio(_currentPlayingSurahId!),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                  onPressed: () async {
+                    await _audioPlayer.stop();
+                    setState(() {
+                      _currentPlayingSurahId = null;
+                    });
+                  },
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Text(
+                  _formatDuration(_position),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+                Expanded(
+                  child: Slider(
+                    activeColor: const Color(0xFFFFD700),
+                    inactiveColor: Colors.white30,
+                    value: _position.inMilliseconds.toDouble(),
+                    max: _duration.inMilliseconds.toDouble() > 0 ? _duration.inMilliseconds.toDouble() : 1.0,
+                    onChanged: (value) {
+                      _audioPlayer.seek(Duration(milliseconds: value.toInt()));
+                    },
+                  ),
+                ),
+                Text(
+                  _formatDuration(_duration),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
