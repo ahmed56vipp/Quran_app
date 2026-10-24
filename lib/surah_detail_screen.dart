@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'utils.dart'; // 👈 استيراد ملف الدلالات الموحد لمنع تكرار الكود
+import 'utils.dart';
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -32,13 +32,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _showTafsir = false;
   int currentJuz = 1;
   
-  // التحكم في التصفح الورقي (صفحة تلو الأخرى)
   final PageController _pageController = PageController();
   Timer? _scrollTimer;
   bool _isAutoScrolling = false;
   double _scrollSpeed = 0.1; 
 
-  // التحكم الديناميكي بحجم الخط
   double _fontSize = 24.0;
   int _themeMode = 0; 
 
@@ -56,7 +54,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  // تحديث الجزء الحالي ديناميكيًا عند تغيير الصفحة (الآية)
   void _onPageChanged(int index) {
     if (juzData.isEmpty || verses.isEmpty) return;
 
@@ -85,7 +82,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // الانتقال السلس إلى آية محددة في العرض الورقي
   void _scrollToVerse(int index) {
     if (_pageController.hasClients) {
       _pageController.animateToPage(
@@ -96,7 +92,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // نافذة اختيار رقم الآية للذهاب إليها بتصميم وألوان محسنة ومتناسقة
   void _showGoToVerseDialog() {
     final TextEditingController controller = TextEditingController();
     final isDark = _themeMode == 2;
@@ -152,7 +147,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // التمرير الآلي للصفحات تلقائياً بناءً على السرعة المحددة
   void _toggleAutoScroll() {
     setState(() {
       _isAutoScrolling = !_isAutoScrolling;
@@ -180,6 +174,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  // دالة محسنة ومصححة لتحميل الآيات والنصوص بمرونة تامة
   Future<void> _loadData() async {
     try {
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
@@ -187,46 +182,63 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
       final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
       final data = json.decode(response);
-      final Map<String, dynamic> verseMap = data['verse'];
       
-      List<String> loadedVerses = [];
-      for (int i = 0; i < verseMap.length; i++) {
-        String key = 'verse_$i';
-        if (verseMap.containsKey(key)) {
-          String text = verseMap[key].toString().trim();
-          
-          if (widget.surahId != 1 && widget.surahId != 9) {
-            final RegExp basmalahRegExp = RegExp(
-              r'^بِ_?سْ_?مِ_?\s+اللَّ_?ه_?\s+الرَّ_?حْ_?مَ_?نِ_?\s+الرَّ_?حِ_?يمِ_?\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَنِ\s+الرَّحِيمِ\s*|^بِسْمِ\s+اللَّهِ\s+الرَّحْمَٰنِ\s+الرَّحِيمِ\s*',
-              caseSensitive: false,
-            );
-            
-            text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", "").trim();
-            text = text.replaceAll("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", "").trim();
-            text = text.replaceFirst(basmalahRegExp, "").trim();
+      Map<String, dynamic> verseMap = {};
+      if (data is Map) {
+        if (data.containsKey('verse')) {
+          var vData = data['verse'];
+          if (vData is Map) {
+            verseMap = Map<String, dynamic>.from(vData);
+          } else if (vData is List) {
+            for (int i = 0; i < vData.length; i++) {
+              verseMap['verse_$i'] = vData[i];
+            }
           }
-          
-          if (text.isEmpty && i == 0) continue;
-          loadedVerses.add(text);
+        } else {
+          verseMap = Map<String, dynamic>.from(data);
         }
+      }
+
+      List<String> loadedVerses = [];
+      List<String> sortedKeys = verseMap.keys.toList();
+      sortedKeys.sort((a, b) {
+        int numA = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+        int numB = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+        return numA.compareTo(numB);
+      });
+
+      for (String key in sortedKeys) {
+        String text = verseMap[key].toString().trim();
+        if (text.isEmpty) continue;
+        
+        if (widget.surahId != 1 && widget.surahId != 9 && key == sortedKeys.first) {
+          text = text.replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'), '').trim();
+        }
+        loadedVerses.add(text);
+      }
+
+      if (loadedVerses.isEmpty) {
+        loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
       try {
         final String tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
         final tafsirData = json.decode(tafsirResponse);
-        final Map<String, dynamic> tafsirMap = tafsirData['verse'] ?? {};
-        List<String> loadedTafsir = [];
-        
-        for (int i = 0; i < tafsirMap.length; i++) {
-          String key = 'verse_$i';
-          if (tafsirMap.containsKey(key)) {
-            loadedTafsir.add(tafsirMap[key].toString().trim());
-          }
+        Map<String, dynamic> tafsirMap = {};
+        if (tafsirData is Map && tafsirData.containsKey('verse')) {
+          tafsirMap = Map<String, dynamic>.from(tafsirData['verse']);
+        } else if (tafsirData is Map) {
+          tafsirMap = Map<String, dynamic>.from(tafsirData);
         }
-        if (verseMap.containsKey('verse_0') && loadedTafsir.isNotEmpty && widget.surahId != 1 && widget.surahId != 9) {
-          loadedTafsir.removeAt(0);
+        List<String> tafsirKeys = tafsirMap.keys.toList();
+        tafsirKeys.sort((a, b) {
+          int numA = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          int numB = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          return numA.compareTo(numB);
+        });
+        for (String key in tafsirKeys) {
+          tafsirVerses.add(tafsirMap[key].toString().trim());
         }
-        tafsirVerses = loadedTafsir;
       } catch (_) {
         tafsirVerses = [];
       }
@@ -244,9 +256,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   Color _getBackgroundColor() {
-    if (_themeMode == 1) return const Color(0xFFFDF6E3); // دافئ (Sepia)
-    if (_themeMode == 2) return const Color(0xFF121212); // ليلي
-    return const Color(0xFFF8F9FA); // فاتح نقّي
+    if (_themeMode == 1) return const Color(0xFFFDF6E3); 
+    if (_themeMode == 2) return const Color(0xFF121212); 
+    return const Color(0xFFF8F9FA); 
   }
 
   Color _getTextColor() {
@@ -255,7 +267,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return const Color(0xFF2C3E50);
   }
 
-  // الواجهة السفلية المُحدثة والمُصلحة بالكامل للأيقونات وحجم الخط
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -276,7 +287,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
                     
-                    // تحجيم حجم الخط (+ / -)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -284,10 +294,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         Row(
                           children: [
                             IconButton(
-                              icon: Icon(
-                                Icons.remove_circle_outline, 
-                                color: isDark ? Colors.white70 : const Color(0xFF2E7D32),
-                              ),
+                              icon: Icon(Icons.remove_circle_outline, color: isDark ? Colors.white70 : const Color(0xFF2E7D32)),
                               onPressed: () {
                                 if (_fontSize > 16) {
                                   setState(() => _fontSize -= 2);
@@ -300,10 +307,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
                             ),
                             IconButton(
-                              icon: Icon(
-                                Icons.add_circle_outline, 
-                                color: isDark ? Colors.white70 : const Color(0xFF2E7D32),
-                              ),
+                              icon: Icon(Icons.add_circle_outline, color: isDark ? Colors.white70 : const Color(0xFF2E7D32)),
                               onPressed: () {
                                 if (_fontSize < 42) {
                                   setState(() => _fontSize += 2);
@@ -317,11 +321,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                     const Divider(height: 16),
                     
-                    // خيار عرض التفسير
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text("وضع التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-                      subtitle: const Text("عرض التفسير المعتمد أسفل كل آية كترجمة ميسرة", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      subtitle: const Text("عرض التفسير المعتمد أسفل كل آية", style: TextStyle(fontSize: 11, color: Colors.grey)),
                       value: _showTafsir,
                       activeColor: const Color(0xFF2E7D32),
                       onChanged: (val) {
@@ -331,7 +334,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                     const Divider(height: 16),
                     
-                    // خيار وضع القراءة والوضوح
                     Text("وضع القراءة والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
                     const SizedBox(height: 12),
                     Row(
@@ -359,44 +361,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           onSelected: (s) { setState(() => _themeMode = 2); setModalState(() {}); }
                         ),
                       ],
-                    ),
-                    const Divider(height: 20),
-                    
-                    // خيار التمرير الآلي للصفحات الورقية
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("التقليب التلقائي للصفحات:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isAutoScrolling ? Colors.red.shade700 : const Color(0xFF2E7D32),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
-                          ),
-                          onPressed: () {
-                            _toggleAutoScroll();
-                            setModalState(() {});
-                          },
-                          icon: Icon(_isAutoScrolling ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 18),
-                          label: Text(_isAutoScrolling ? "إيقاف" : "تشغيل", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Slider(
-                      value: _scrollSpeed, min: 0.1, max: 1.0, divisions: 9,
-                      activeColor: const Color(0xFF2E7D32),
-                      inactiveColor: Colors.grey.shade300,
-                      label: "السرعة: $_scrollSpeed",
-                      onChanged: (v) {
-                        setModalState(() => _scrollSpeed = v);
-                        setState(() => _scrollSpeed = v);
-                        if (_isAutoScrolling) {
-                          _scrollTimer?.cancel();
-                          _isAutoScrolling = false;
-                          _toggleAutoScroll();
-                        }
-                      },
                     ),
                   ],
                 ),
