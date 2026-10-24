@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'surah_list_screen.dart';
+import 'surah_list_screen.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,9 +24,9 @@ class QuranApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2E7D32),
           primary: const Color(0xFF2E7D32),
-          background: const Color(0xFFFDFBF7),
+          surface: const Color(0xFFFFDFB7),
         ),
-        scaffoldBackgroundColor: const Color(0xFFFDFBF7),
+        scaffoldBackgroundColor: const Color(0xFFFFDFB7),
       ),
       home: const SurahListScreen(),
     );
