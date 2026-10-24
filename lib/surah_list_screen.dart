@@ -23,7 +23,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Duration _position = Duration.zero;
 
   String _currentLanguage = 'ar'; 
-  String _selectedReciterId = '45'; 
+  String _selectedReciterId = '123'; // القارئ الافتراضي (مشاري العفاسي مثلاً أو أول قارئ)
 
   List<dynamic> _recitersList = [];
   bool _isLoadingReciters = true;
@@ -204,7 +204,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _currentLanguage = prefs.getString('app_lang') ?? 'ar';
-      _selectedReciterId = prefs.getString('app_reciter') ?? '45';
+      _selectedReciterId = prefs.getString('app_reciter') ?? '123';
     });
   }
 
@@ -234,13 +234,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return 'الإعدادات';
   }
 
+  // دالة التشغيل المُحدثة بالكامل لضمان الاستماع للقارئ المُختار بدقة
   Future<void> _playSurahAudio(int surahId) async {
-    if (_currentPlayingSurahId == surahId) {
-      if (_isPlaying) {
-        await _audioPlayer.pause();
-      } else {
-        await _audioPlayer.play();
-      }
+    if (_currentPlayingSurahId == surahId && _isPlaying) {
+      await _audioPlayer.pause();
+      return;
+    } else if (_currentPlayingSurahId == surahId && !_isPlaying) {
+      await _audioPlayer.play();
       return;
     }
 
@@ -252,19 +252,38 @@ class _SurahListScreenState extends State<SurahListScreen> {
       });
 
       String audioUrl = '';
-      
-      // 1. محاولة جلب الرابط من ملفات audiourls (F2) كما هو مدعوم في المشروع
+      String formattedSurahNum = surahId.toString().padLeft(3, '0');
+
+      // 1. البحث السريع عن القارئ المُختار حالياً في قائمة _recitersList لمعرفة السيرفر المخصص له
       try {
-        String jsonString = await rootBundle.loadString('assets/audiourls/$surahId.json');
-        final dynamic decoded = jsonDecode(jsonString);
-        if (decoded is List && decoded.isNotEmpty) {
-          audioUrl = decoded[0]['F2'] ?? '';
+        final selectedReciter = _recitersList.firstWhere(
+          (r) => r['id'].toString() == _selectedReciterId,
+          orElse: () => null,
+        );
+
+        if (selectedReciter != null) {
+          // استخراج حقل السيرفر أو الرابط من بيانات القارئ في الـ JSON
+          String? server = selectedReciter['Server'] ?? selectedReciter['server'] ?? selectedReciter['url'];
+          if (server != null && server.isNotEmpty) {
+            audioUrl = '$server/$formattedSurahNum.mp3';
+          }
         }
       } catch (_) {}
 
-      // 2. السيرفر البديل الرسمي إذا لم يتوفر في audiourls
+      // 2. إذا لم يتوفر سيرفر مباشر للقارئ، نقوم بجلبه من ملفات الـ audiourls الخاصة بالسورة
       if (audioUrl.isEmpty) {
-        audioUrl = 'https://server8.mp3quran.net/afs/${surahId.toString().padLeft(3, '0')}.mp3';
+        try {
+          String jsonString = await rootBundle.loadString('assets/audiourls/$surahId.json');
+          final dynamic decoded = jsonDecode(jsonString);
+          if (decoded is List && decoded.isNotEmpty) {
+            audioUrl = decoded[0]['F2'] ?? decoded[0]['url'] ?? '';
+          }
+        } catch (_) {}
+      }
+
+      // 3. السيرفر الاحتياطي النهائي في حال تعذر الحصول على الرابط
+      if (audioUrl.isEmpty) {
+        audioUrl = 'https://server8.mp3quran.net/afs/$formattedSurahNum.mp3';
       }
 
       if (audioUrl.isNotEmpty) {
@@ -304,7 +323,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           centerTitle: true,
-          // توبيب جانبي قابل للتمرير
           bottom: TabBar(
             isScrollable: true,
             indicatorColor: const Color(0xFFFFD700),
@@ -567,7 +585,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         items: _recitersList.map((r) {
-                          // قراءة الاسم حسب لغة التطبيق الحالية أو الحقول المتاحة في readers.json[span_4](start_span)[span_4](end_span)
                           String readerName = r[_currentLanguage] ?? r['ar'] ?? r['en'] ?? r['name'] ?? 'قارئ غير معروف';
                           return DropdownMenuItem<String>(
                             value: r['id'].toString(),
