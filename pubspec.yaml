@@ -27,8 +27,8 @@ flutter:
     - assets/translation/id/
     - assets/icon/
     - assets/audiourls/
-    - assets/data/readers.json
     - assets/surah_f/
+
   fonts:
     - family: nam
       fonts:
