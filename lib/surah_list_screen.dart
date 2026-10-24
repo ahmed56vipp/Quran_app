@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'surah_detail_screen.dart'; 
 import 'utils.dart';
 
-// الخط المخصص لأسماء السور
 const String kSurahNameFont = 'nam';
 
 class SurahListScreen extends StatefulWidget {
@@ -17,22 +16,18 @@ class SurahListScreen extends StatefulWidget {
 }
 
 class _SurahListScreenState extends State<SurahListScreen> {
-  // إعدادات مشغل الصوتيات
   late AudioPlayer _audioPlayer;
   int? _currentPlayingSurahId;
   bool _isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
-  // إعدادات التطبيق الافتراضية
-  String _currentLanguage = 'ar'; // ar, en, tr
-  String _selectedReciterId = '45'; // القارئ الافتراضي
+  String _currentLanguage = 'ar'; 
+  String _selectedReciterId = '45'; 
 
-  // قائمة القراء التي سيتم تحميلها ديناميكياً من ملف الـ JSON
   List<dynamic> _recitersList = [];
   bool _isLoadingReciters = true;
 
-  // قائمة السور المعتمدة والمصححة برمجياً
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
     {"id": 2, "name": "البقرة", "type": "مدنية", "verses": 286, "isMeccan": false, "juz": 1},
@@ -186,7 +181,15 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Future<void> _loadRecitersData() async {
     try {
       String jsonString = await rootBundle.loadString('assets/data/readers.json');
-      final List<dynamic> data = jsonDecode(jsonString);
+      final dynamic decoded = jsonDecode(jsonString);
+      List<dynamic> data = [];
+      if (decoded is List) {
+        data = decoded;
+      } else if (decoded is Map && decoded.containsKey('reciters')) {
+        data = decoded['reciters'];
+      } else if (decoded is Map) {
+        data = decoded.values.firstWhere((v) => v is List, orElse: () => []) as List;
+      }
       setState(() {
         _recitersList = data;
         _isLoadingReciters = false;
@@ -219,11 +222,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
   String _getTranslatedTitle(int index) {
     if (_currentLanguage == 'en') {
       if (index == 0) return 'Holy Quran';
-      if (index == 1) return 'Audio Recitations';
+      if (index == 1) return 'Audio';
       return 'Settings';
     } else if (_currentLanguage == 'tr') {
-      if (index == 0) return 'Kur\'an-ı Kerim';
-      if (index == 1) return 'Sesli Dinleme';
+      if (index == 0) return 'Kur\'an';
+      if (index == 1) return 'Sesli';
       return 'Ayarlar';
     }
     if (index == 0) return 'القرآن الكريم';
@@ -248,19 +251,34 @@ class _SurahListScreenState extends State<SurahListScreen> {
         _duration = Duration.zero;
       });
 
-      String fileContent = await rootBundle.loadString('assets/surah_f/$surahId.rtx');
-      String audioUrl = fileContent.trim(); 
+      String audioUrl = '';
+      try {
+        String fileContent = await rootBundle.loadString('assets/surah_f/$surahId.rtx');
+        audioUrl = fileContent.trim();
+      } catch (_) {
+        final selectedReciter = _recitersList.firstWhere(
+          (r) => r['id'].toString() == _selectedReciterId,
+          orElse: () => _recitersList.isNotEmpty ? _recitersList.first : null,
+        );
+        if (selectedReciter != null && (selectedReciter['Server'] != null || selectedReciter['server'] != null)) {
+          String server = selectedReciter['Server'] ?? selectedReciter['server'];
+          String formattedId = surahId.toString().padLeft(3, '0');
+          audioUrl = '$server/$formattedId.mp3';
+        } else {
+          audioUrl = 'https://server8.mp3quran.net/afs/${surahId.toString().padLeft(3, '0')}.mp3';
+        }
+      }
 
       if (audioUrl.isNotEmpty) {
         await _audioPlayer.setUrl(audioUrl);
         await _audioPlayer.play();
       } else {
-        throw Exception("الرابط المكتوب داخل ملف الـ rtx فارغ");
+        throw Exception("رابط التلاوة فارغ");
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("خطأ في قراءة ملف الصوت أو السورة من surah_f")),
+          SnackBar(content: Text("تعذّر التشغيل الصوتي: تأكد من الاتصال أو ملفات الرابط")),
         );
       }
     }
@@ -288,7 +306,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           centerTitle: true,
+          // جعل شريط التوبيب قابلاً للتمرير ومنسقاً بشكل جانبي جميل
           bottom: TabBar(
+            isScrollable: true,
             indicatorColor: const Color(0xFFFFD700),
             indicatorWeight: 3,
             labelColor: Colors.white,
@@ -479,29 +499,33 @@ class _SurahListScreenState extends State<SurahListScreen> {
     );
   }
 
+  // تصميم مُحسن واحترافي لتبويب الإعدادات
   Widget _buildSettingsTab() {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 3,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.language, color: Color(0xFF1B5E20)),
-                    SizedBox(width: 8),
-                    Text("لغة واجهة التطبيق / Interface Language", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Icon(Icons.language, color: Color(0xFF1B5E20), size: 26),
+                    SizedBox(width: 10),
+                    Text("لغة واجهة التطبيق", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B5E20))),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: _currentLanguage,
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
                   items: const [
                     DropdownMenuItem(value: 'ar', child: Text("العربية")),
                     DropdownMenuItem(value: 'en', child: Text("English")),
@@ -518,34 +542,38 @@ class _SurahListScreenState extends State<SurahListScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 3,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.person, color: Color(0xFF1B5E20)),
-                    SizedBox(width: 8),
-                    Text("القارئ الافتراضي للصوتيات", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Icon(Icons.person, color: Color(0xFF1B5E20), size: 26),
+                    SizedBox(width: 10),
+                    Text("القارئ الافتراضي للصوتيات", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B5E20))),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 _isLoadingReciters
                     ? const Center(child: CircularProgressIndicator())
                     : DropdownButtonFormField<String>(
                         value: _recitersList.any((r) => r['id'].toString() == _selectedReciterId)
                             ? _selectedReciterId
                             : (_recitersList.isNotEmpty ? _recitersList.first['id'].toString() : null),
-                        decoration: const InputDecoration(border: OutlineInputBorder()),
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                         items: _recitersList.map((r) {
+                          String readerName = r['name'] ?? r['Title'] ?? r['reciter_name'] ?? 'قارئ غير معروف';
                           return DropdownMenuItem<String>(
                             value: r['id'].toString(),
-                            child: Text(r['name'] ?? 'قارئ غير معروف'),
+                            child: Text(readerName),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -559,13 +587,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 30),
         const Center(
           child: Column(
             children: [
-              Text("تطبيق المصحف الشريف الإلكتروني v1.0.0", style: TextStyle(color: Colors.grey, fontSize: 13)),
-              SizedBox(height: 4),
-              Text("جميع التلاوات الصوتية تعمل عبر خوادم شبكة MP3Quran المباشرة", style: TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
+              Text("تطبيق المصحف الشريف الإلكتروني v1.0.0", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+              SizedBox(height: 6),
+              Text("جميع التلاوات الصوتية تعمل عبر شبكة MP3Quran المباشرة", style: TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
             ],
           ),
         )
