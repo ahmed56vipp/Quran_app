@@ -252,21 +252,19 @@ class _SurahListScreenState extends State<SurahListScreen> {
       });
 
       String audioUrl = '';
+      
+      // 1. محاولة جلب الرابط من ملفات audiourls (F2) كما هو مدعوم في المشروع
       try {
-        String fileContent = await rootBundle.loadString('assets/surah_f/$surahId.rtx');
-        audioUrl = fileContent.trim();
-      } catch (_) {
-        final selectedReciter = _recitersList.firstWhere(
-          (r) => r['id'].toString() == _selectedReciterId,
-          orElse: () => _recitersList.isNotEmpty ? _recitersList.first : null,
-        );
-        if (selectedReciter != null && (selectedReciter['Server'] != null || selectedReciter['server'] != null)) {
-          String server = selectedReciter['Server'] ?? selectedReciter['server'];
-          String formattedId = surahId.toString().padLeft(3, '0');
-          audioUrl = '$server/$formattedId.mp3';
-        } else {
-          audioUrl = 'https://server8.mp3quran.net/afs/${surahId.toString().padLeft(3, '0')}.mp3';
+        String jsonString = await rootBundle.loadString('assets/audiourls/$surahId.json');
+        final dynamic decoded = jsonDecode(jsonString);
+        if (decoded is List && decoded.isNotEmpty) {
+          audioUrl = decoded[0]['F2'] ?? '';
         }
+      } catch (_) {}
+
+      // 2. السيرفر البديل الرسمي إذا لم يتوفر في audiourls
+      if (audioUrl.isEmpty) {
+        audioUrl = 'https://server8.mp3quran.net/afs/${surahId.toString().padLeft(3, '0')}.mp3';
       }
 
       if (audioUrl.isNotEmpty) {
@@ -278,7 +276,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("تعذّر التشغيل الصوتي: تأكد من الاتصال أو ملفات الرابط")),
+          const SnackBar(content: Text("تعذّر تشغيل التلاوة الصوتية")),
         );
       }
     }
@@ -306,7 +304,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           centerTitle: true,
-          // جعل شريط التوبيب قابلاً للتمرير ومنسقاً بشكل جانبي جميل
+          // توبيب جانبي قابل للتمرير
           bottom: TabBar(
             isScrollable: true,
             indicatorColor: const Color(0xFFFFD700),
@@ -499,7 +497,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
     );
   }
 
-  // تصميم مُحسن واحترافي لتبويب الإعدادات
   Widget _buildSettingsTab() {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -570,7 +567,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         items: _recitersList.map((r) {
-                          String readerName = r['name'] ?? r['Title'] ?? r['reciter_name'] ?? 'قارئ غير معروف';
+                          // قراءة الاسم حسب لغة التطبيق الحالية أو الحقول المتاحة في readers.json[span_4](start_span)[span_4](end_span)
+                          String readerName = r[_currentLanguage] ?? r['ar'] ?? r['en'] ?? r['name'] ?? 'قارئ غير معروف';
                           return DropdownMenuItem<String>(
                             value: r['id'].toString(),
                             child: Text(readerName),
