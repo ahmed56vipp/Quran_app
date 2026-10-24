@@ -147,6 +147,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
+  // دالة تحميل البيانات المصححة لجلب جميع الآيات وترتيبها بشكل دقيق وتلافي ظهور البسملة فقط
   Future<void> _loadData() async {
     try {
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
@@ -172,27 +173,36 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       }
 
       List<String> loadedVerses = [];
-      List<String> sortedKeys = verseMap.keys.toList();
-      sortedKeys.sort((a, b) {
-        int numA = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-        int numB = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-        return numA.compareTo(numB);
-      });
+      var entries = verseMap.entries.toList();
 
-      for (String key in sortedKeys) {
-        String text = verseMap[key].toString().trim();
-        if (text.isEmpty) continue;
-        
-        if (widget.surahId != 1 && widget.surahId != 9 && key == sortedKeys.first) {
-          text = text.replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'), '').trim();
+      if (entries.isEmpty) {
+        loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
+      } else {
+        // ترتيب المفاتيح تصاعدياً بحسب أرقام الآيات
+        entries.sort((a, b) {
+          int numA = int.tryParse(a.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          int numB = int.tryParse(b.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          return numA.compareTo(numB);
+        });
+
+        for (var entry in entries) {
+          String text = entry.value.toString().trim();
+          if (text.isEmpty) continue;
+
+          // إذا كانت الآية الأولى تحتوي على البسملة في السور غير الفاتحة والتوبة، نقوم بإزالتها من نص الآية لأنها تعرض بشكل مستقل بالأعلى
+          if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0')) {
+            text = text.replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'), '').trim();
+            if (text.isEmpty) continue; // تخطي العنصر إذا كان مخصصاً للبسملة فقط
+          }
+          loadedVerses.add(text);
         }
-        loadedVerses.add(text);
       }
 
       if (loadedVerses.isEmpty) {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
+      // محاولة تحميل التفسير الميسر
       try {
         final String tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
         final tafsirData = json.decode(tafsirResponse);
@@ -202,15 +212,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         } else if (tafsirData is Map) {
           tafsirMap = Map<String, dynamic>.from(tafsirData);
         }
-        List<String> tafsirKeys = tafsirMap.keys.toList();
-        tafsirKeys.sort((a, b) {
-          int numA = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-          int numB = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+        var tafsirEntries = tafsirMap.entries.toList();
+        tafsirEntries.sort((a, b) {
+          int numA = int.tryParse(a.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          int numB = int.tryParse(b.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
           return numA.compareTo(numB);
         });
-        for (String key in tafsirKeys) {
-          tafsirVerses.add(tafsirMap[key].toString().trim());
-        }
+        tafsirVerses = tafsirEntries.map((e) => e.value.toString().trim()).toList();
       } catch (_) {
         tafsirVerses = [];
       }
