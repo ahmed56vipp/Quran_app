@@ -147,34 +147,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  void _toggleAutoScroll() {
-    setState(() {
-      _isAutoScrolling = !_isAutoScrolling;
-    });
-
-    if (_isAutoScrolling) {
-      int durationMilliseconds = (3000 / _scrollSpeed).round();
-      _scrollTimer = Timer.periodic(Duration(milliseconds: durationMilliseconds), (timer) {
-        if (_pageController.hasClients) {
-          int nextPage = _pageController.page!.round() + 1;
-          if (nextPage >= verses.length) {
-            timer.cancel();
-            setState(() => _isAutoScrolling = false);
-          } else {
-            _pageController.animateToPage(
-              nextPage,
-              duration: const Duration(milliseconds: 800),
-              curve: Curves.linear,
-            );
-          }
-        }
-      });
-    } else {
-      _scrollTimer?.cancel();
-    }
-  }
-
-  // دالة محسنة ومصححة لتحميل الآيات والنصوص بمرونة تامة
   Future<void> _loadData() async {
     try {
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
