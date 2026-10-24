@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'utils.dart'; // 👈 استيراد ملف الدلالات الموحد لمنع تكرار الكود
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -254,16 +255,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return const Color(0xFF2C3E50);
   }
 
-  String toArabicNumerals(int number) {
-    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    String input = number.toString();
-    for (int i = 0; i < english.length; i++) {
-      input = input.replaceAll(english[i], arabic[i]);
-    }
-    return input;
-  }
-
   // الواجهة السفلية المُحدثة والمُصلحة بالكامل للأيقونات وحجم الخط
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
@@ -285,7 +276,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2)))),
                     const SizedBox(height: 16),
                     
-                    // تحجيم حجم الخط (+ / -) مع إصلاح تمرير الألوان
+                    // تحجيم حجم الخط (+ / -)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
