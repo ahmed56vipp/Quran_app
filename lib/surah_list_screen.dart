@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'surah_detail_screen.dart'; 
+import 'utils.dart'; // 👈 استيراد ملف الأدوات الموحد لمنع تكرار الكود
 
 // الخط المخصص لأسماء السور
 const String kSurahNameFont = 'nam';
@@ -268,16 +269,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
     }
   }
 
-  String toArabicNumerals(int number) {
-    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    String input = number.toString();
-    for (int i = 0; i < english.length; i++) {
-      input = input.replaceAll(english[i], arabic[i]);
-    }
-    return input;
-  }
-
   Color surConditionColor(bool isMeccan) {
     return isMeccan ? const Color(0xFFE65100) : const Color(0xFF0277BD);
   }
@@ -379,7 +370,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 "${surah['name']}", 
                 style: const TextStyle(
                   fontFamily: kSurahNameFont,
-                  fontSize: 34, // 👈 تم تكبير حجم خط اسم السورة هنا ليكون أوضح وأبرز
+                  fontSize: 34,
                   color: Color(0xFF2C3E50),
                 ),
               ),
@@ -462,7 +453,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
               "${surah['name']}",
               style: const TextStyle(
                 fontFamily: kSurahNameFont,
-                fontSize: 32, // 👈 تم تكبير حجم خط اسم السورة هنا أيضاً في تبويب الصوتيات ليتناسق التصميم
+                fontSize: 32,
                 color: Color(0xFF2C3E50),
               ),
             ),
@@ -500,7 +491,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
-            withOpacity: 1.0,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -563,98 +553,3 @@ class _SurahListScreenState extends State<SurahListScreen> {
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) {
-                            setState(() => _selectedReciterId = val);
-                            _saveSetting('app_reciter', val);
-                          }
-                        },
-                      ),
-              ],
-            ),
-          ),
-        ),
-        // 👈 تم إزالة الكارت (Card) الخاص بالتحكم في حجم خط الصوتيات والمصحف بالكامل من هنا لتبسيط الواجهة
-        const SizedBox(height: 20),
-        const Center(
-          child: Column(
-            children: [
-              Text("تطبيق المصحف الشريف الإلكتروني v1.0.0", style: TextStyle(color: Colors.grey, fontSize: 13)),
-              SizedBox(height: 4),
-              Text("جميع التلاوات الصوتية تعمل عبر خوادم شبكة MP3Quran المباشرة", style: TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
-            ],
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget _buildMiniAudioPlayer() {
-    if (_currentPlayingSurahId == null) return const SizedBox.shrink();
-
-    final currentSurah = surahList.firstWhere((s) => s['id'] == _currentPlayingSurahId);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1B5E20),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, -2))],
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.music_note, color: Color(0xFFFFD700)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    "المشغل الحالي: ${currentSurah['name']}",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, color: Colors.white, size: 32),
-                  onPressed: () => _playSurahAudio(_currentPlayingSurahId!),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-                  onPressed: () async {
-                    await _audioPlayer.stop();
-                    setState(() {
-                      _currentPlayingSurahId = null;
-                    });
-                  },
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Text(
-                  _formatDuration(_position),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-                Expanded(
-                  child: Slider(
-                    activeColor: const Color(0xFFFFD700),
-                    inactiveColor: Colors.white30,
-                    value: _position.inMilliseconds.toDouble(),
-                    max: _duration.inMilliseconds.toDouble() > 0 ? _duration.inMilliseconds.toDouble() : 1.0,
-                    onChanged: (value) {
-                      _audioPlayer.seek(Duration(milliseconds: value.toInt()));
-                    },
-                  ),
-                ),
-                Text(
-                  _formatDuration(_duration),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
