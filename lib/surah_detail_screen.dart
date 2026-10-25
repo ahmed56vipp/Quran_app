@@ -97,7 +97,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           String text = entry.value.toString().trim();
           if (text.isEmpty) continue;
 
-          // حذف البسملة نهائياً من نصوص الآيات الأساسية
+          // إزالة البسملة النصية تماماً من الآيات لعدم التكرار (ما عدا سورة الفاتحة إذا كانت الآية الأولى هي البسملة بناءً على هيكلة ملفها)
           if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0' || i == 0)) {
             text = text
                 .replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ|بسم الله الرحمن الرحيم'), '')
@@ -114,7 +114,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // تحميل التفسير الميسر بدقة لتلافي مشكلة عدم عمله
+      // تحميل التفسير الميسر بدقة تامة من مجلد translation
       try {
         String tafsirResponse = '';
         try {
@@ -297,10 +297,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // اسم السورة بخط surah_nam
+                    // فرض خط surah_nam لاسم السورة بدقة
                     Text(
                       widget.surahName,
-                      style: const TextStyle(fontSize: 24, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 26, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -313,7 +313,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // اسم الجزء بخط jzu12 عبر الرقم (مثال: currentJuz)
+                  // عرض الجزء بخط jzu12 عبر الرقم
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -354,8 +354,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // رسمة البسملة عبر خط bsm60 بالرقم 27
-                    if (widget.surahId != 1 && widget.surahId != 9) ...[
+                    // عرض رسمة البسملة بالرقم 27 باستخدام خط bsm60 (ما عدا سورة التوبة رقم 9)
+                    if (widget.surahId != 9) ...[
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -373,7 +373,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       const SizedBox(height: 10),
                     ],
 
-                    // كارد عرض الآيات والتفسير الجانبي المتناسق
+                    // كارد عرض الآيات والتفسير الجانبي المنظم
                     Card(
                       elevation: isDark ? 0 : 3,
                       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -412,13 +412,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               textDirection: TextDirection.rtl,
                             ),
 
-                            // التبويب الجانبي لعرض التفسير بجانب الآيات بشكل مرتب
+                            // التبويب الجانبي لعرض التفسير بجانب الآيات عند تفعيله
                             if (_showTafsir) ...[
                               const Divider(height: 30, thickness: 1.5),
                               const Align(
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  "التفسير الميسر (عرض جانبي):",
+                                  "التفسير الميسر (التبويب الجانبي):",
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
