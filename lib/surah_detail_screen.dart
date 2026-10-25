@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'utils.dart';
 
@@ -29,10 +30,14 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   List<String> tafsirVerses = [];
   List<dynamic> juzData = [];
   bool isLoading = true;
-  bool _showTafsir = false;
   int currentJuz = 1;
-  int selectedVerseIndex = 0; // لتبويب التفسير المدمج للآية المحددة
-  
+  int selectedVerseIndex = 0;
+
+  // متغيرات التمرير التلقائي
+  bool _isAutoScrolling = false;
+  Timer? _autoScrollTimer;
+  double _scrollSpeed = 1.0;
+
   final ScrollController _scrollController = ScrollController();
   double _fontSize = 24.0;
   int _themeMode = 0; 
@@ -46,8 +51,30 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   void dispose() {
+    _autoScrollTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _toggleAutoScroll() {
+    if (_isAutoScrolling) {
+      _autoScrollTimer?.cancel();
+      setState(() => _isAutoScrolling = false);
+    } else {
+      setState(() => _isAutoScrolling = true);
+      _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        if (_scrollController.hasClients) {
+          double maxScroll = _scrollController.position.maxScrollExtent;
+          double currentScroll = _scrollController.offset;
+          if (currentScroll >= maxScroll) {
+            _autoScrollTimer?.cancel();
+            setState(() => _isAutoScrolling = false);
+          } else {
+            _scrollController.jumpTo(currentScroll + _scrollSpeed);
+          }
+        }
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -111,7 +138,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // تحميل التفسير الميسر
+      // تحميل التفسير الميسر المنفصل
       try {
         String tafsirResponse = '';
         List<String> possiblePaths = [
@@ -184,7 +211,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return const Color(0xFF2C3E50);
   }
 
-  // نافذة الذهاب إلى آية
+  // نافذة الذهاب إلى آية فعالة
   void _showGoToVerseDialog() {
     final TextEditingController controller = TextEditingController();
     final isDark = _themeMode == 2;
@@ -203,7 +230,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             style: TextStyle(color: isDark ? Colors.white : Colors.black),
             decoration: InputDecoration(
               hintText: "أدخل رقم الآية (1 - ${verses.length})",
-              hintStyle: TextStyle(color: Colors.grey),
+              hintStyle: const TextStyle(color: Colors.grey),
             ),
           ),
           actions: [
@@ -214,8 +241,17 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 int? vNum = int.tryParse(controller.text);
                 if (vNum != null && vNum >= 1 && vNum <= verses.length) {
                   Navigator.pop(context);
-                  setState(() => selectedVerseIndex = vNum - 1);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("تم الانتقال للآية $vNum")));
+                  setState(() {
+                    selectedVerseIndex = vNum - 1;
+                  });
+                  // تمرير الشاشة إلى موقع تقريبي للآية المحددة
+                  if (_scrollController.hasClients) {
+                    _scrollController.animateTo(
+                      vNum * 50.0, 
+                      duration: const Duration(milliseconds: 500), 
+                      curve: Curves.easeInOut,
+                    );
+                  }
                 }
               },
               child: const Text("انتقال", style: TextStyle(color: Colors.white)),
@@ -226,14 +262,73 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // حفظ العلامة المرجعية
-  void _saveBookmark() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("تم حفظ علامة مرجعية عند سورة ${widget.surahName}"),
-        backgroundColor: const Color(0xFF2E7D32),
-        duration: const Duration(seconds: 2),
-      ),
+  // حفظ العلامة المرجعية فعلياً باستخدام SharedPreferences
+  Future<void> _saveBookmark() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_surah', widget.surahId);
+    await prefs.setString('last_surah_name', widget.surahName);
+    await prefs.setInt('last_verse', selectedVerseIndex + 1);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("تم حفظ علامة مرجعية في سورة ${widget.surahName} - الآية ${selectedVerseIndex + 1}"),
+          backgroundColor: const Color(0xFF2E7D32),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  // شاشة عرض التفسير الميسر المنفصلة
+  void _openTafsirScreen() {
+    final isDark = _themeMode == 2;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 45, height: 5, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)))),
+                const SizedBox(height: 15),
+                Text("التفسير الميسر - سورة ${widget.surahName}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF2E7D32))),
+                const Divider(height: 20),
+                Expanded(
+                  child: tafsirVerses.isEmpty
+                      ? const Center(child: Text("التفسير غير متوفر لهذه السورة حالياً", style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                          itemCount: tafsirVerses.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("الآية (${index + 1}):", style: TextStyle(fontWeight: FontWeight.bold, color: const Color(0xFF2E7D32), fontSize: 13)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    tafsirVerses[index],
+                                    style: TextStyle(fontSize: 15, height: 1.6, color: isDark ? Colors.white70 : Colors.black87),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -286,16 +381,44 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ],
                     ),
                     const Divider(height: 24),
-                    SwitchListTile(
+                    ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text("وضع التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
-                      subtitle: const Text("عرض التفسير المدمج للآية المحددة", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      value: _showTafsir,
-                      activeColor: const Color(0xFF2E7D32),
-                      onChanged: (val) {
-                        setState(() => _showTafsir = val);
-                        setModalState(() => _showTafsir = val);
+                      leading: const Icon(Icons.menu_book, color: Color(0xFF2E7D32)),
+                      title: Text("فتح التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
+                      subtitle: const Text("عرض تفسير السورة بشكل منفصل", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _openTafsirScreen();
                       },
+                    ),
+                    const Divider(height: 24),
+                    Text("وضع العرض والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        ChoiceChip(
+                          label: const Text("فاتح"), 
+                          selected: _themeMode == 0, 
+                          selectedColor: const Color(0xFFE8F5E9),
+                          labelStyle: TextStyle(color: _themeMode == 0 ? const Color(0xFF2E7D32) : Colors.grey, fontWeight: FontWeight.bold),
+                          onSelected: (s) { setState(() => _themeMode = 0); setModalState(() {}); }
+                        ),
+                        ChoiceChip(
+                          label: const Text("دافئ"), 
+                          selected: _themeMode == 1, 
+                          selectedColor: const Color(0xFFFFECB3),
+                          labelStyle: TextStyle(color: _themeMode == 1 ? const Color(0xFF5B4636) : Colors.grey, fontWeight: FontWeight.bold),
+                          onSelected: (s) { setState(() => _themeMode = 1); setModalState(() {}); }
+                        ),
+                        ChoiceChip(
+                          label: const Text("ليلي"), 
+                          selected: _themeMode == 2, 
+                          selectedColor: const Color(0xFF37474F),
+                          labelStyle: TextStyle(color: _themeMode == 2 ? Colors.white : Colors.grey, fontWeight: FontWeight.bold),
+                          onSelected: (s) { setState(() => _themeMode = 2); setModalState(() {}); }
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -323,10 +446,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // عرض اسم السورة النصي الفعلي باستخدام خط surah_nam
+                    // اسم السورة بخط surah_nam
                     Text(
                       widget.surahName,
-                      style: const TextStyle(fontSize: 24, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 26, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -336,22 +459,25 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ],
                 ),
               ),
+              // الأزرار والإضافات المدمجة في الشريط العلوي
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // زر علامة مرجعية
                   IconButton(
-                    icon: const Icon(Icons.bookmark_add_outlined, color: Color(0xFFFFD700), size: 22),
+                    icon: Icon(_isAutoScrolling ? Icons.pause_circle_filled : Icons.play_circle_filled, color: const Color(0xFFFFD700), size: 22),
+                    tooltip: _isAutoScrolling ? "إيقاف التمرير" : "التمرير التلقائي",
+                    onPressed: _toggleAutoScroll,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.bookmark_add_outlined, color: Colors.white, size: 20),
                     tooltip: "حفظ علامة مرجعية",
                     onPressed: _saveBookmark,
                   ),
-                  // زر الذهاب إلى آية
                   IconButton(
                     icon: const Icon(Icons.gps_fixed, color: Colors.white, size: 20),
                     tooltip: "الذهاب إلى آية",
                     onPressed: _showGoToVerseDialog,
                   ),
-                  // عرض الجزء المدمج
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -360,7 +486,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                     child: Text(
                       currentJuz.toString(), 
-                      style: const TextStyle(fontSize: 15, fontFamily: 'jzu12', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 16, fontFamily: 'jzu12', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -391,7 +517,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // رسمة البسملة بالرقم 27 عبر خط bsm60 (ما عدا التوبة)
                     if (widget.surahId != 9) ...[
                       Center(
                         child: Padding(
@@ -410,7 +535,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       const SizedBox(height: 10),
                     ],
 
-                    // كارد النص القراني
                     Card(
                       elevation: isDark ? 0 : 3,
                       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -448,52 +572,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         ),
                       ),
                     ),
-
-                    // التبويب المدمج والمختصر للتفسير الميسر (يعرض تفسير الآية المحددة فقط لعدم إطالة الصفحة)
-                    if (_showTafsir) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1B281E) : const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF2E7D32).withOpacity(0.3)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "تفسير الآية (${selectedVerseIndex + 1}):",
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
-                                ),
-                                TextButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedVerseIndex = (selectedVerseIndex + 1) % verses.length;
-                                    });
-                                  },
-                                  icon: const Icon(Icons.navigate_next, size: 18),
-                                  label: const Text("الآية التالية", style: TextStyle(fontSize: 12)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              selectedVerseIndex < tafsirVerses.length ? tafsirVerses[selectedVerseIndex] : "التفسير غير متوفر لهذه الآية.",
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.7,
-                                color: isDark ? Colors.white : const Color(0xFF37474F),
-                              ),
-                              textDirection: TextDirection.rtl,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
