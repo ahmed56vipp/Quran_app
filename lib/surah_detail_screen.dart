@@ -54,6 +54,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
       juzData = json.decode(juzResponse);
 
+      // تحميل بيانات السورة
       String response = '';
       try {
         response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}-json');
@@ -97,12 +98,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           String text = entry.value.toString().trim();
           if (text.isEmpty) continue;
 
-          // إزالة البسملة النصية تماماً من الآيات لعدم التكرار (ما عدا سورة الفاتحة إذا كانت الآية الأولى هي البسملة بناءً على هيكلة ملفها)
-          if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0' || i == 0)) {
-            text = text
-                .replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ|بسم الله الرحمن الرحيم'), '')
-                .trim();
-            if (text.isEmpty) {
+          // حذف البسملة النصية تماماً من جميع السور (ما عدا سورة الفاتحة إن وجد فيها نص البسملة كآية أولى وكانت مطلوبة)
+          if (widget.surahId != 1 && widget.surahId != 9) {
+            if (text.contains("بِسْمِ") || text.contains("بسم")) {
               continue; 
             }
           }
@@ -114,7 +112,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // تحميل التفسير الميسر بدقة تامة من مجلد translation
+      // تحميل التفسير الميسر بدقة من مسارات ملفات الترجمة
       try {
         String tafsirResponse = '';
         try {
@@ -297,7 +295,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // فرض خط surah_nam لاسم السورة بدقة
+                    // فرض استخدام خط surah_nam حصرياً لاسم السورة
                     Text(
                       widget.surahName,
                       style: const TextStyle(fontSize: 26, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
@@ -313,7 +311,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // عرض الجزء بخط jzu12 عبر الرقم
+                  // عرض رقم الجزء بخط jzu12
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -354,7 +352,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // عرض رسمة البسملة بالرقم 27 باستخدام خط bsm60 (ما عدا سورة التوبة رقم 9)
+                    // رسمة البسملة برقم 27 عبر خط bsm60 (باستثناء سورة التوبة رقم 9)
                     if (widget.surahId != 9) ...[
                       Center(
                         child: Padding(
@@ -412,7 +410,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               textDirection: TextDirection.rtl,
                             ),
 
-                            // التبويب الجانبي لعرض التفسير بجانب الآيات عند تفعيله
+                            // التبويب الجانبي للتفسير الميسر عند تفعيله
                             if (_showTafsir) ...[
                               const Divider(height: 30, thickness: 1.5),
                               const Align(
