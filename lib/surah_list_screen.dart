@@ -23,7 +23,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Duration _position = Duration.zero;
 
   String _currentLanguage = 'ar'; 
-  String _selectedReciterId = '123'; // القارئ الافتراضي (مشاري العفاسي مثلاً أو أول قارئ)
+  String _selectedReciterId = '123'; // القارئ الافتراضي
 
   List<dynamic> _recitersList = [];
   bool _isLoadingReciters = true;
@@ -234,7 +234,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return 'الإعدادات';
   }
 
-  // دالة التشغيل المُحدثة بالكامل لضمان الاستماع للقارئ المُختار بدقة
+  // دالة تشغيل الصوت المصححة لتطابق بنية ملفات القراء في audiourls (مثل 123.json)
   Future<void> _playSurahAudio(int surahId) async {
     if (_currentPlayingSurahId == surahId && _isPlaying) {
       await _audioPlayer.pause();
@@ -252,37 +252,23 @@ class _SurahListScreenState extends State<SurahListScreen> {
       });
 
       String audioUrl = '';
-      String formattedSurahNum = surahId.toString().padLeft(3, '0');
 
-      // 1. البحث السريع عن القارئ المُختار حالياً في قائمة _recitersList لمعرفة السيرفر المخصص له
+      // 1. قراءة رابط التلاوة من ملف الـ JSON الخاص بالقارئ المختار حالياً (مثال: assets/audiourls/123.json)[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span)
       try {
-        final selectedReciter = _recitersList.firstWhere(
-          (r) => r['id'].toString() == _selectedReciterId,
-          orElse: () => null,
-        );
-
-        if (selectedReciter != null) {
-          // استخراج حقل السيرفر أو الرابط من بيانات القارئ في الـ JSON
-          String? server = selectedReciter['Server'] ?? selectedReciter['server'] ?? selectedReciter['url'];
-          if (server != null && server.isNotEmpty) {
-            audioUrl = '$server/$formattedSurahNum.mp3';
+        String jsonString = await rootBundle.loadString('assets/audiourls/$_selectedReciterId.json');
+        final dynamic decoded = jsonDecode(jsonString);
+        if (decoded is List && decoded.isNotEmpty) {
+          // جلب الرابط الخاص بالسورة المطلوبة (surahId يتوافق مع ترتيب السور داخل الملف أو الفهرس)
+          if (decoded.length >= surahId) {
+            var item = decoded[surahId - 1];
+            audioUrl = item['F2'] ?? item['url'] ?? item['server'] ?? '';
           }
         }
       } catch (_) {}
 
-      // 2. إذا لم يتوفر سيرفر مباشر للقارئ، نقوم بجلبه من ملفات الـ audiourls الخاصة بالسورة
+      // 2. إذا لم يتم العثور على الرابط داخل ملف القارئ، نجرب السيرفر الاحتياطي المباشر
       if (audioUrl.isEmpty) {
-        try {
-          String jsonString = await rootBundle.loadString('assets/audiourls/$surahId.json');
-          final dynamic decoded = jsonDecode(jsonString);
-          if (decoded is List && decoded.isNotEmpty) {
-            audioUrl = decoded[0]['F2'] ?? decoded[0]['url'] ?? '';
-          }
-        } catch (_) {}
-      }
-
-      // 3. السيرفر الاحتياطي النهائي في حال تعذر الحصول على الرابط
-      if (audioUrl.isEmpty) {
+        String formattedSurahNum = surahId.toString().padLeft(3, '0');
         audioUrl = 'https://server8.mp3quran.net/afs/$formattedSurahNum.mp3';
       }
 
