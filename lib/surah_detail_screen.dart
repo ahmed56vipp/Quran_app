@@ -33,10 +33,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   int currentJuz = 1;
   
   final PageController _pageController = PageController();
-  Timer? _scrollTimer;
-  bool _isAutoScrolling = false;
-  double _scrollSpeed = 0.1; 
-
   double _fontSize = 24.0;
   int _themeMode = 0; 
 
@@ -49,14 +45,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   void dispose() {
-    _scrollTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
   void _onPageChanged(int index) {
     if (juzData.isEmpty || verses.isEmpty) return;
-
     int currentVerseNum = index + 1;
 
     for (var juz in juzData) {
@@ -86,7 +80,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (_pageController.hasClients) {
       _pageController.animateToPage(
         index,
-        duration: const Duration(milliseconds: 600),
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
     }
@@ -147,13 +141,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // دالة تحميل البيانات المصححة بالكامل لتتطابق مع هيكلة ملفات surah_X-json
+  // دالة تحميل وتحليل الآيات بشكل دقيق لتلافي مشكلة عرض الآية الأولى فقط
   Future<void> _loadData() async {
     try {
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
       juzData = json.decode(juzResponse);
 
-      // محاولة تحميل ملف السورة بالصيغة الموجودة في مستودعك (surah_X-json)
       String response = '';
       try {
         response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}-json');
@@ -186,7 +179,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       var entries = verseMap.entries.toList();
 
       if (entries.isNotEmpty) {
-        // ترتيب المفاتيح تصاعدياً حسب أرقام الآيات
+        // ترتيب المفاتيح تصاعدياً حسب أرقام الآيات بدقة
         entries.sort((a, b) {
           int numA = int.tryParse(a.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
           int numB = int.tryParse(b.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -197,22 +190,22 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           String text = entry.value.toString().trim();
           if (text.isEmpty) continue;
 
-          // استبعاد السطور الخاصة بالبسملة البحتة إذا كانت مفصولة لوحدها، أو تنظيفها
+          // إذا كانت السورة غير الفاتحة والتوبة، والمفتاح هو البسملة المستقلة، نقوم بتخطيها لكي لا تتكرر بشكل فارغ
           if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0')) {
-            if (text.contains("بِسْمِ اللَّهِ") || text.length < 40) {
-              continue; // تخطي مفتاح البسملة المستقل لكي لا يظهر كآية فارغة
+            if (text.contains("بِسْمِ اللَّهِ") && text.length < 50) {
+              continue; 
             }
           }
           loadedVerses.add(text);
         }
       }
 
-      // بديل احتياطي في حال لم يتم جلب الآيات بالطريقة أعلاه
+      // إذا فشل التحميل أو كانت القائمة فارغة، نستخدم ولادة احتياطية للآيات
       if (loadedVerses.isEmpty) {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // محاولة تحميل التفسير الميسر بالصيغتين المتاحتين
+      // تحميل التفسير الميسر
       try {
         String tafsirResponse = '';
         try {
@@ -275,18 +268,18 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             return Directionality(
               textDirection: TextDirection.rtl,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 24.0),
+                padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 30.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2)))),
-                    const SizedBox(height: 16),
+                    Center(child: Container(width: 45, height: 5, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)))),
+                    const SizedBox(height: 20),
                     
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("حجم خط القراءة:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                        Text("حجم خط القراءة:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
                         Row(
                           children: [
                             IconButton(
@@ -315,12 +308,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         )
                       ],
                     ),
-                    const Divider(height: 16),
+                    const Divider(height: 24),
                     
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text("وضع التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-                      subtitle: const Text("عرض التفسير المعتمد أسفل كل آية", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      title: Text("وضع التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
+                      subtitle: const Text("عرض التفسير المعتمد أسفل الآية", style: TextStyle(fontSize: 12, color: Colors.grey)),
                       value: _showTafsir,
                       activeColor: const Color(0xFF2E7D32),
                       onChanged: (val) {
@@ -328,9 +321,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         setModalState(() => _showTafsir = val);
                       },
                     ),
-                    const Divider(height: 16),
+                    const Divider(height: 24),
                     
-                    Text("وضع القراءة والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                    Text("وضع العرض والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -339,21 +332,21 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           label: const Text("فاتح"), 
                           selected: _themeMode == 0, 
                           selectedColor: const Color(0xFFE8F5E9),
-                          labelStyle: TextStyle(color: _themeMode == 0 ? const Color(0xFF2E7D32) : Colors.grey),
+                          labelStyle: TextStyle(color: _themeMode == 0 ? const Color(0xFF2E7D32) : Colors.grey, fontWeight: FontWeight.bold),
                           onSelected: (s) { setState(() => _themeMode = 0); setModalState(() {}); }
                         ),
                         ChoiceChip(
                           label: const Text("دافئ"), 
                           selected: _themeMode == 1, 
                           selectedColor: const Color(0xFFFFECB3),
-                          labelStyle: TextStyle(color: _themeMode == 1 ? const Color(0xFF5B4636) : Colors.grey),
+                          labelStyle: TextStyle(color: _themeMode == 1 ? const Color(0xFF5B4636) : Colors.grey, fontWeight: FontWeight.bold),
                           onSelected: (s) { setState(() => _themeMode = 1); setModalState(() {}); }
                         ),
                         ChoiceChip(
                           label: const Text("ليلي"), 
                           selected: _themeMode == 2, 
                           selectedColor: const Color(0xFF37474F),
-                          labelStyle: TextStyle(color: _themeMode == 2 ? Colors.white : Colors.grey),
+                          labelStyle: TextStyle(color: _themeMode == 2 ? Colors.white : Colors.grey, fontWeight: FontWeight.bold),
                           onSelected: (s) { setState(() => _themeMode = 2); setModalState(() {}); }
                         ),
                       ],
@@ -381,36 +374,46 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.surahId == 2 ? 'البَقَرَةِ' : widget.surahName,
-                    style: const TextStyle(fontFamily: 'nam', fontSize: 24, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "آياتها: ${widget.versesCount}", 
-                    style: const TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.surahName,
+                      style: const TextStyle(fontSize: 20, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "آياتها: ${widget.versesCount} | النوع: ${widget.surahType}", 
+                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
+                  ],
+                ),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    "الجزء $currentJuz", 
-                    style: const TextStyle(fontFamily: 'jzu12', fontSize: 16, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "جزء $currentJuz", 
+                      style: const TextStyle(fontSize: 13, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   IconButton(
-                    icon: const Icon(Icons.gps_fixed, color: Colors.white, size: 22),
+                    icon: const Icon(Icons.gps_fixed, color: Colors.white, size: 20),
                     tooltip: "ذهاب إلى آية",
                     onPressed: _showGoToVerseDialog,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.tune, color: Colors.white),
+                    icon: const Icon(Icons.tune, color: Colors.white, size: 20),
                     tooltip: "خيارات العرض",
                     onPressed: _showSettingsBottomSheet,
                   ),
@@ -440,28 +443,40 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   final String currentTafsir = (index < tafsirVerses.length) ? tafsirVerses[index] : "التفسير الميسر لهذه الآية غير متوفر حالياً.";
 
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (index == 0 && widget.surahId != 1 && widget.surahId != 9) ...[
                           Center(
-                            child: Text(
-                              "19", 
-                              style: TextStyle(fontFamily: 'bsm60', fontSize: 85, color: const Color(0xFF2E7D32).withOpacity(0.9)),
-                              textAlign: TextAlign.center,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E7D32).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                                style: TextStyle(
+                                  fontFamily: 'nam', 
+                                  fontSize: 26, 
+                                  color: Color(0xFF2E7D32),
+                                  fontWeight: FontWeight.bold
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 20),
                         ],
                         
                         Card(
-                          elevation: isDark ? 0 : 2,
+                          elevation: isDark ? 0 : 3,
                           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           child: Padding(
-                            padding: const EdgeInsets.all(20.0),
+                            padding: const EdgeInsets.all(22.0),
                             child: Column(
                               children: [
                                 Text.rich(
@@ -481,8 +496,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                         text: " ﴿$arabicNum﴾ ", 
                                         style: TextStyle(
                                           fontFamily: 'quran_num', 
-                                          fontSize: 24, 
-                                          color: isDark ? const Color(0xFFFFD700) : const Color(0xFFC19A6B)
+                                          fontSize: _fontSize * 0.9, 
+                                          color: isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32),
+                                          fontWeight: FontWeight.bold
                                         ),
                                       ),
                                     ],
@@ -500,43 +516,49 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1B281E) : const Color(0xFFE8F5E9).withOpacity(0.5),
+                              color: isDark ? const Color(0xFF1B281E) : const Color(0xFFE8F5E9).withOpacity(0.6),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isDark ? Colors.transparent : const Color(0xFFC8E6C9).withOpacity(0.5),
+                                color: isDark ? Colors.transparent : const Color(0xFFC8E6C9),
                                 width: 1
                               )
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "التفسير الميسر:",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32),
-                                  ),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.menu_book_outlined, size: 16, color: Color(0xFF2E7D32)),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "التفسير الميسر:",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 Text(
                                   currentTafsir,
                                   style: TextStyle(
-                                  fontSize: _fontSize - 6,
-                                  height: 1.8,
-                                  color: isDark ? Colors.white70 : const Color(0xFF37474F),
+                                    fontSize: _fontSize > 20 ? _fontSize - 6 : 16,
+                                    height: 1.8,
+                                    color: isDark ? Colors.white70 : const Color(0xFF37474F),
+                                  ),
+                                  textDirection: TextDirection.rtl,
                                 ),
-                                textDirection: TextDirection.rtl,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
