@@ -28,18 +28,17 @@ class SurahDetailScreen extends StatefulWidget {
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
   List<String> verses = [];
   List<String> tafsirVerses = [];
-  List<dynamic> juzData = [];
   bool isLoading = true;
   int currentJuz = 1;
   int selectedVerseIndex = 0;
 
-  // متغيرات التمرير التلقائي وسرعته
+  // متغيرات التمرير التلقائي
   bool _isAutoScrolling = false;
   Timer? _autoScrollTimer;
-  double _scrollSpeed = 0.8; // سرعة افتراضية قابلة للتعديل
+  double _scrollSpeed = 1.0;
 
   final ScrollController _scrollController = ScrollController();
-  double _fontSize = 20.0; // تصغير الخط قليلاً ليكون مناسباً كالمصحف
+  double _fontSize = 20.0; // حجم مريح كالمصحف
   int _themeMode = 0; 
 
   @override
@@ -56,7 +55,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  // تشغيل وإيقاف التمرير التلقائي بالسرعة المحددة
+  // التحكم بالتمرير التلقائي الفعلي
   void _toggleAutoScroll() {
     if (_isAutoScrolling) {
       _autoScrollTimer?.cancel();
@@ -80,9 +79,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   Future<void> _loadData() async {
     try {
-      final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
-      juzData = json.decode(juzResponse);
-
       String response = '';
       try {
         response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}-json');
@@ -139,7 +135,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // تحميل التفسير الميسر المنفصل
+      // تحميل التفسير
       try {
         String tafsirResponse = '';
         List<String> possiblePaths = [
@@ -184,7 +180,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           tafsirVerses = tafsirEntries.map((e) => e.value.toString().trim()).toList();
         }
       } catch (e) {
-        debugPrint("خطأ في جلب التفسير: $e");
         tafsirVerses = [];
       }
 
@@ -212,7 +207,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return const Color(0xFF2C3E50);
   }
 
-  // نافذة الذهاب إلى آية مع التمرير الفعلي الفوري
+  // الذهاب إلى آية بدقة تامة
   void _showGoToVerseDialog() {
     final TextEditingController controller = TextEditingController();
     final isDark = _themeMode == 2;
@@ -243,12 +238,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 if (vNum != null && vNum >= 1 && vNum <= verses.length) {
                   Navigator.pop(context);
                   setState(() => selectedVerseIndex = vNum - 1);
-                  // حساب موقع تقريبي والانتقال إليه بسلاسة
+                  // حساب موقع النزول بدقة للانتقال للآية المطلوبة
                   if (_scrollController.hasClients) {
-                    double targetOffset = (vNum / verses.length) * _scrollController.position.maxScrollExtent;
+                    double offsetPerVerse = _scrollController.position.maxScrollExtent / verses.length;
                     _scrollController.animateTo(
-                      targetOffset,
-                      duration: const Duration(milliseconds: 600),
+                      (vNum - 1) * offsetPerVerse,
+                      duration: const Duration(milliseconds: 500),
                       curve: Curves.easeInOut,
                     );
                   }
@@ -262,7 +257,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // حفظ العلامة المرجعية الفعالة مع رسالة واضحة
+  // حفظ العلامة المرجعية
   Future<void> _saveBookmark() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('last_surah', widget.surahId);
@@ -332,7 +327,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // قائمة الإعدادات والتحكم بالسرعة والخطوط
+  // إعدادات العرض، السرعة والخطوط
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -371,7 +366,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             IconButton(
                               icon: Icon(Icons.add_circle_outline, color: isDark ? Colors.white70 : const Color(0xFF2E7D32)),
                               onPressed: () {
-                                if (_fontSize < 36) {
+                                if (_fontSize < 32) {
                                   setState(() => _fontSize += 2);
                                   setModalState(() {});
                                 }
@@ -382,7 +377,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ],
                     ),
                     const Divider(height: 20),
-                    // التحكم في سرعة التمرير التلقائي
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -468,7 +462,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // فرض استخدام خط surah_nam لاسم السورة النصي (مثل الفاتحة، البقرة)
+                    // عرض اسم السورة بالخط المخصص surah_nam
                     Text(
                       widget.surahName,
                       style: const TextStyle(fontSize: 24, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
@@ -481,7 +475,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ],
                 ),
               ),
-              // دمج جميع الإضافات داخل الشريط العلوي
+              // دمج جميع الإضافات في شريط التبويب العلوي
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -570,7 +564,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                 TextSpan(
                                   text: "${verses[i]} ",
                                   style: TextStyle(
-                                    fontSize: _fontSize,
+                                    fontSize: _fontSize, // خط مصغر ومرتب
                                     fontFamily: 'nss', 
                                     height: 2.4,
                                     color: selectedVerseIndex == i ? const Color(0xFF2E7D32) : _getTextColor(),
