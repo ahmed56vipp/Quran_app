@@ -98,7 +98,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           String text = entry.value.toString().trim();
           if (text.isEmpty) continue;
 
-          // حذف البسملة النصية تماماً من جميع السور (ما عدا سورة الفاتحة إن وجد فيها نص البسملة كآية أولى وكانت مطلوبة)
+          // حذف البسملة النصية الزائدة من بدايات السور (ما عدا الفاتحة إن وجدت كآية أولى)
           if (widget.surahId != 1 && widget.surahId != 9) {
             if (text.contains("بِسْمِ") || text.contains("بسم")) {
               continue; 
@@ -112,42 +112,50 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // تحميل التفسير الميسر بدقة من مسارات ملفات الترجمة
+      // تحميل التفسير الميسر بدقة من كافة المسارات المحتملة في مستودعك
       try {
         String tafsirResponse = '';
-        try {
-          tafsirResponse = await rootBundle.loadString('assets/translation/ar/ar_translation_${widget.surahId}-json');
-        } catch (_) {
+        List<String> possiblePaths = [
+          'assets/translation/ar/ar_translation_${widget.surahId}-json',
+          'assets/translation/ar/ar_translation_${widget.surahId}.json',
+          'assets/translation/ar/surah_${widget.surahId}-json',
+          'assets/translation/ar/surah_${widget.surahId}.json',
+        ];
+        
+        for (var path in possiblePaths) {
           try {
-            tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}-json');
-          } catch (_) {
-            tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
-          }
+            tafsirResponse = await rootBundle.loadString(path);
+            if (tafsirResponse.isNotEmpty) break;
+          } catch (_) {}
         }
 
-        final tafsirData = json.decode(tafsirResponse);
-        Map<String, dynamic> tafsirMap = {};
-        if (tafsirData is Map && tafsirData.containsKey('verse')) {
-          var tData = tafsirData['verse'];
-          if (tData is Map) {
-            tafsirMap = Map<String, dynamic>.from(tData);
-          } else if (tData is List) {
-            for (int i = 0; i < tData.length; i++) {
-              tafsirMap['verse_${i + 1}'] = tData[i];
+        if (tafsirResponse.isNotEmpty) {
+          final tafsirData = json.decode(tafsirResponse);
+          Map<String, dynamic> tafsirMap = {};
+          if (tafsirData is Map) {
+            if (tafsirData.containsKey('verse')) {
+              var tData = tafsirData['verse'];
+              if (tData is Map) {
+                tafsirMap = Map<String, dynamic>.from(tData);
+              } else if (tData is List) {
+                for (int i = 0; i < tData.length; i++) {
+                  tafsirMap['verse_${i + 1}'] = tData[i];
+                }
+              }
+            } else {
+              tafsirMap = Map<String, dynamic>.from(tafsirData);
             }
           }
-        } else if (tafsirData is Map) {
-          tafsirMap = Map<String, dynamic>.from(tafsirData);
-        }
 
-        var tafsirEntries = tafsirMap.entries.toList();
-        tafsirEntries.sort((a, b) {
-          int numA = int.tryParse(a.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-          int numB = int.tryParse(b.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-          return numA.compareTo(numB);
-        });
-        
-        tafsirVerses = tafsirEntries.map((e) => e.value.toString().trim()).toList();
+          var tafsirEntries = tafsirMap.entries.toList();
+          tafsirEntries.sort((a, b) {
+            int numA = int.tryParse(a.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+            int numB = int.tryParse(b.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+            return numA.compareTo(numB);
+          });
+          
+          tafsirVerses = tafsirEntries.map((e) => e.value.toString().trim()).toList();
+        }
       } catch (e) {
         debugPrint("خطأ في جلب التفسير: $e");
         tafsirVerses = [];
@@ -295,10 +303,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // فرض استخدام خط surah_nam حصرياً لاسم السورة
+                    // فرض استخدام خط surah_nam عبر تمرير رقم السورة (widget.surahId)
                     Text(
-                      widget.surahName,
-                      style: const TextStyle(fontSize: 26, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      widget.surahId.toString(),
+                      style: const TextStyle(fontSize: 28, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -311,7 +319,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // عرض رقم الجزء بخط jzu12
+                  // عرض اسم/رقم الجزء المدمج بخط jzu12 عبر تمرير رقم الجزء (currentJuz)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -319,8 +327,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      "$currentJuz", 
-                      style: const TextStyle(fontSize: 16, fontFamily: 'jzu12', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      currentJuz.toString(), 
+                      style: const TextStyle(fontSize: 18, fontFamily: 'jzu12', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -352,7 +360,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // رسمة البسملة برقم 27 عبر خط bsm60 (باستثناء سورة التوبة رقم 9)
+                    // رسمة البسملة برقم 27 عبر خط bsm60 (باستثناء سورة التوبة رقم 9 والفاتحة 1 إن لم تتطلب)
                     if (widget.surahId != 9) ...[
                       Center(
                         child: Padding(
@@ -371,7 +379,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       const SizedBox(height: 10),
                     ],
 
-                    // كارد عرض الآيات والتفسير الجانبي المنظم
+                    // كارد عرض الآيات والتفسير المدمج الجانبي
                     Card(
                       elevation: isDark ? 0 : 3,
                       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -410,13 +418,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               textDirection: TextDirection.rtl,
                             ),
 
-                            // التبويب الجانبي للتفسير الميسر عند تفعيله
+                            // التبويب الجانبي المدمج لعرض التفسير الميسر بجانب/أسفل كل آية عند تفعيله
                             if (_showTafsir) ...[
                               const Divider(height: 30, thickness: 1.5),
                               const Align(
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  "التفسير الميسر (التبويب الجانبي):",
+                                  "التفسير الميسر:",
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
