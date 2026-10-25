@@ -147,38 +147,46 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // دالة تحميل البيانات المصححة لجلب جميع الآيات وترتيبها بشكل دقيق وتلافي ظهور البسملة فقط
+  // دالة تحميل البيانات المصححة بالكامل لتتطابق مع هيكلة ملفات surah_X-json
   Future<void> _loadData() async {
     try {
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
       juzData = json.decode(juzResponse);
 
-      final String response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
-      final data = json.decode(response);
-      
+      // محاولة تحميل ملف السورة بالصيغة الموجودة في مستودعك (surah_X-json)
+      String response = '';
+      try {
+        response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}-json');
+      } catch (_) {
+        try {
+          response = await rootBundle.loadString('assets/surah/surah_${widget.surahId}.json');
+        } catch (_) {}
+      }
+
       Map<String, dynamic> verseMap = {};
-      if (data is Map) {
-        if (data.containsKey('verse')) {
-          var vData = data['verse'];
-          if (vData is Map) {
-            verseMap = Map<String, dynamic>.from(vData);
-          } else if (vData is List) {
-            for (int i = 0; i < vData.length; i++) {
-              verseMap['verse_$i'] = vData[i];
+      if (response.isNotEmpty) {
+        final data = json.decode(response);
+        if (data is Map) {
+          if (data.containsKey('verse')) {
+            var vData = data['verse'];
+            if (vData is Map) {
+              verseMap = Map<String, dynamic>.from(vData);
+            } else if (vData is List) {
+              for (int i = 0; i < vData.length; i++) {
+                verseMap['verse_$i'] = vData[i];
+              }
             }
+          } else {
+            verseMap = Map<String, dynamic>.from(data);
           }
-        } else {
-          verseMap = Map<String, dynamic>.from(data);
         }
       }
 
       List<String> loadedVerses = [];
       var entries = verseMap.entries.toList();
 
-      if (entries.isEmpty) {
-        loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
-      } else {
-        // ترتيب المفاتيح تصاعدياً بحسب أرقام الآيات
+      if (entries.isNotEmpty) {
+        // ترتيب المفاتيح تصاعدياً حسب أرقام الآيات
         entries.sort((a, b) {
           int numA = int.tryParse(a.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
           int numB = int.tryParse(b.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -189,22 +197,30 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           String text = entry.value.toString().trim();
           if (text.isEmpty) continue;
 
-          // إذا كانت الآية الأولى تحتوي على البسملة في السور غير الفاتحة والتوبة، نقوم بإزالتها من نص الآية لأنها تعرض بشكل مستقل بالأعلى
+          // استبعاد السطور الخاصة بالبسملة البحتة إذا كانت مفصولة لوحدها، أو تنظيفها
           if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0')) {
-            text = text.replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ'), '').trim();
-            if (text.isEmpty) continue; // تخطي العنصر إذا كان مخصصاً للبسملة فقط
+            if (text.contains("بِسْمِ اللَّهِ") || text.length < 40) {
+              continue; // تخطي مفتاح البسملة المستقل لكي لا يظهر كآية فارغة
+            }
           }
           loadedVerses.add(text);
         }
       }
 
+      // بديل احتياطي في حال لم يتم جلب الآيات بالطريقة أعلاه
       if (loadedVerses.isEmpty) {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // محاولة تحميل التفسير الميسر
+      // محاولة تحميل التفسير الميسر بالصيغتين المتاحتين
       try {
-        final String tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
+        String tafsirResponse = '';
+        try {
+          tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}-json');
+        } catch (_) {
+          tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
+        }
+
         final tafsirData = json.decode(tafsirResponse);
         Map<String, dynamic> tafsirMap = {};
         if (tafsirData is Map && tafsirData.containsKey('verse')) {
@@ -506,21 +522,21 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                 Text(
                                   currentTafsir,
                                   style: TextStyle(
-                                    fontSize: _fontSize - 6,
-                                    height: 1.8,
-                                    color: isDark ? Colors.white70 : const Color(0xFF37474F),
-                                  ),
-                                  textDirection: TextDirection.rtl,
+                                  fontSize: _fontSize - 6,
+                                  height: 1.8,
+                                  color: isDark ? Colors.white70 : const Color(0xFF37474F),
                                 ),
-                              ],
-                            ),
+                                textDirection: TextDirection.rtl,
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ],
-                    ),
-                  );
-                },
-              ),
+                    ],
+                  ),
+                );
+              },
+            ),
       ),
     );
   }
