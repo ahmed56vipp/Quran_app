@@ -33,13 +33,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   int currentJuz = 1;
   int selectedVerseIndex = 0;
 
-  // متغيرات التمرير التلقائي
+  // متغيرات التمرير التلقائي وسرعته
   bool _isAutoScrolling = false;
   Timer? _autoScrollTimer;
-  double _scrollSpeed = 1.0;
+  double _scrollSpeed = 0.8; // سرعة افتراضية قابلة للتعديل
 
   final ScrollController _scrollController = ScrollController();
-  double _fontSize = 24.0;
+  double _fontSize = 20.0; // تصغير الخط قليلاً ليكون مناسباً كالمصحف
   int _themeMode = 0; 
 
   @override
@@ -56,13 +56,14 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
+  // تشغيل وإيقاف التمرير التلقائي بالسرعة المحددة
   void _toggleAutoScroll() {
     if (_isAutoScrolling) {
       _autoScrollTimer?.cancel();
       setState(() => _isAutoScrolling = false);
     } else {
       setState(() => _isAutoScrolling = true);
-      _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
         if (_scrollController.hasClients) {
           double maxScroll = _scrollController.position.maxScrollExtent;
           double currentScroll = _scrollController.offset;
@@ -211,7 +212,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return const Color(0xFF2C3E50);
   }
 
-  // نافذة الذهاب إلى آية فعالة
+  // نافذة الذهاب إلى آية مع التمرير الفعلي الفوري
   void _showGoToVerseDialog() {
     final TextEditingController controller = TextEditingController();
     final isDark = _themeMode == 2;
@@ -241,14 +242,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 int? vNum = int.tryParse(controller.text);
                 if (vNum != null && vNum >= 1 && vNum <= verses.length) {
                   Navigator.pop(context);
-                  setState(() {
-                    selectedVerseIndex = vNum - 1;
-                  });
-                  // تمرير الشاشة إلى موقع تقريبي للآية المحددة
+                  setState(() => selectedVerseIndex = vNum - 1);
+                  // حساب موقع تقريبي والانتقال إليه بسلاسة
                   if (_scrollController.hasClients) {
+                    double targetOffset = (vNum / verses.length) * _scrollController.position.maxScrollExtent;
                     _scrollController.animateTo(
-                      vNum * 50.0, 
-                      duration: const Duration(milliseconds: 500), 
+                      targetOffset,
+                      duration: const Duration(milliseconds: 600),
                       curve: Curves.easeInOut,
                     );
                   }
@@ -262,7 +262,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // حفظ العلامة المرجعية فعلياً باستخدام SharedPreferences
+  // حفظ العلامة المرجعية الفعالة مع رسالة واضحة
   Future<void> _saveBookmark() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('last_surah', widget.surahId);
@@ -280,7 +280,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // شاشة عرض التفسير الميسر المنفصلة
+  // شاشة التفسير المنفصلة
   void _openTafsirScreen() {
     final isDark = _themeMode == 2;
     showModalBottomSheet(
@@ -293,7 +293,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           textDirection: TextDirection.rtl,
           child: Container(
             padding: const EdgeInsets.all(20),
-            height: MediaQuery.of(context).size.height * 0.7,
+            height: MediaQuery.of(context).size.height * 0.75,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -332,6 +332,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
+  // قائمة الإعدادات والتحكم بالسرعة والخطوط
   void _showSettingsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -360,7 +361,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             IconButton(
                               icon: Icon(Icons.remove_circle_outline, color: isDark ? Colors.white70 : const Color(0xFF2E7D32)),
                               onPressed: () {
-                                if (_fontSize > 16) {
+                                if (_fontSize > 14) {
                                   setState(() => _fontSize -= 2);
                                   setModalState(() {});
                                 }
@@ -370,7 +371,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             IconButton(
                               icon: Icon(Icons.add_circle_outline, color: isDark ? Colors.white70 : const Color(0xFF2E7D32)),
                               onPressed: () {
-                                if (_fontSize < 42) {
+                                if (_fontSize < 36) {
                                   setState(() => _fontSize += 2);
                                   setModalState(() {});
                                 }
@@ -380,7 +381,28 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         )
                       ],
                     ),
-                    const Divider(height: 24),
+                    const Divider(height: 20),
+                    // التحكم في سرعة التمرير التلقائي
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("سرعة التمرير التلقائي:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
+                        Slider(
+                          value: _scrollSpeed,
+                          min: 0.2,
+                          max: 3.0,
+                          divisions: 14,
+                          activeColor: const Color(0xFF2E7D32),
+                          inactiveColor: Colors.grey[300],
+                          label: _scrollSpeed.toStringAsFixed(1),
+                          onChanged: (val) {
+                            setState(() => _scrollSpeed = val);
+                            setModalState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.menu_book, color: Color(0xFF2E7D32)),
@@ -391,9 +413,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         _openTafsirScreen();
                       },
                     ),
-                    const Divider(height: 24),
+                    const Divider(height: 20),
                     Text("وضع العرض والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -446,10 +468,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // اسم السورة بخط surah_nam
+                    // فرض استخدام خط surah_nam لاسم السورة النصي (مثل الفاتحة، البقرة)
                     Text(
                       widget.surahName,
-                      style: const TextStyle(fontSize: 26, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 24, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -459,7 +481,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   ],
                 ),
               ),
-              // الأزرار والإضافات المدمجة في الشريط العلوي
+              // دمج جميع الإضافات داخل الشريط العلوي
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -486,7 +508,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     ),
                     child: Text(
                       currentJuz.toString(), 
-                      style: const TextStyle(fontSize: 16, fontFamily: 'jzu12', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 15, fontFamily: 'jzu12', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 4),
