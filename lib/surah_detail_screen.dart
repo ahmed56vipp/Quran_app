@@ -97,13 +97,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           String text = entry.value.toString().trim();
           if (text.isEmpty) continue;
 
-          // حذف وحذف نص البسملة نهائياً من الآية الأولى إذا كانت السورة غير الفاتحة والتوبة
+          // حذف البسملة نهائياً من نصوص الآيات الأساسية
           if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0' || i == 0)) {
             text = text
                 .replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ|بسم الله الرحمن الرحيم'), '')
                 .trim();
             if (text.isEmpty) {
-              continue; // تخطي المفتاح إذا كان خاصاً بالبسملة فقط ولم يتبقَ نص للآية الأولى
+              continue; 
             }
           }
           loadedVerses.add(text);
@@ -114,30 +114,44 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         loadedVerses = List.generate(widget.versesCount, (index) => "الآية الكريمة رقم ${index + 1}");
       }
 
-      // تحميل التفسير الميسر
+      // تحميل التفسير الميسر بدقة لتلافي مشكلة عدم عمله
       try {
         String tafsirResponse = '';
         try {
-          tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}-json');
+          tafsirResponse = await rootBundle.loadString('assets/translation/ar/ar_translation_${widget.surahId}-json');
         } catch (_) {
-          tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
+          try {
+            tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}-json');
+          } catch (_) {
+            tafsirResponse = await rootBundle.loadString('assets/translation/ar/surah_${widget.surahId}.json');
+          }
         }
 
         final tafsirData = json.decode(tafsirResponse);
         Map<String, dynamic> tafsirMap = {};
         if (tafsirData is Map && tafsirData.containsKey('verse')) {
-          tafsirMap = Map<String, dynamic>.from(tafsirData['verse']);
+          var tData = tafsirData['verse'];
+          if (tData is Map) {
+            tafsirMap = Map<String, dynamic>.from(tData);
+          } else if (tData is List) {
+            for (int i = 0; i < tData.length; i++) {
+              tafsirMap['verse_${i + 1}'] = tData[i];
+            }
+          }
         } else if (tafsirData is Map) {
           tafsirMap = Map<String, dynamic>.from(tafsirData);
         }
+
         var tafsirEntries = tafsirMap.entries.toList();
         tafsirEntries.sort((a, b) {
           int numA = int.tryParse(a.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
           int numB = int.tryParse(b.key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
           return numA.compareTo(numB);
         });
+        
         tafsirVerses = tafsirEntries.map((e) => e.value.toString().trim()).toList();
-      } catch (_) {
+      } catch (e) {
+        debugPrint("خطأ في جلب التفسير: $e");
         tafsirVerses = [];
       }
 
@@ -220,7 +234,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text("وضع التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
-                      subtitle: const Text("عرض التفسير المعتمد أسفل الآيات", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      subtitle: const Text("عرض التفسير المعتمد بجانب الآيات", style: TextStyle(fontSize: 12, color: Colors.grey)),
                       value: _showTafsir,
                       activeColor: const Color(0xFF2E7D32),
                       onChanged: (val) {
@@ -281,18 +295,16 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                child: Row(
                   children: [
+                    // اسم السورة بخط surah_nam
                     Text(
                       widget.surahName,
-                      style: const TextStyle(fontSize: 20, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 24, fontFamily: 'surah_nam', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(width: 12),
                     Text(
-                      "آياتها: ${widget.versesCount} | النوع: ${widget.surahType}", 
+                      "آياتها: ${widget.versesCount}", 
                       style: const TextStyle(fontSize: 11, color: Colors.white70),
                     ),
                   ],
@@ -301,18 +313,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // اسم الجزء بخط jzu12 عبر الرقم (مثال: currentJuz)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      "جزء $currentJuz", 
-                      style: const TextStyle(fontSize: 13, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                      "$currentJuz", 
+                      style: const TextStyle(fontSize: 16, fontFamily: 'jzu12', color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.tune, color: Colors.white, size: 20),
                     tooltip: "خيارات العرض",
@@ -341,13 +354,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // عرض البسملة باستخدام خط bsm60 (عن طريق تمرير الرقم 1 ليطابق رسمة الخط المخصص)
+                    // رسمة البسملة عبر خط bsm60 بالرقم 27
                     if (widget.surahId != 1 && widget.surahId != 9) ...[
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
                           child: Text(
-                            "1", 
+                            "27", 
                             style: TextStyle(
                               fontFamily: 'bsm60',
                               fontSize: 55,
@@ -360,99 +373,111 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       const SizedBox(height: 10),
                     ],
 
-                    // كارد عرض الآيات متصلة كالمصحف الورقي باستخدام خط nss للآيات و quran_num (123456) للأرقام
+                    // كارد عرض الآيات والتفسير الجانبي المتناسق
                     Card(
                       elevation: isDark ? 0 : 3,
                       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
-                        child: Text.rich(
-                          TextSpan(
-                            children: [
-                              for (int i = 0; i < verses.length; i++) ...[
-                                TextSpan(
-                                  text: "${verses[i]} ",
-                                  style: TextStyle(
-                                    fontSize: _fontSize,
-                                    fontFamily: 'nss', 
-                                    height: 2.4,
-                                    color: _getTextColor(),
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                                // استخدام خط quran_num (123456.ttf) مع رقم الآية الفعلي (i + 1) لرسم رمز الآية المخصص
-                                TextSpan(
-                                  text: " ${(i + 1)} ", 
-                                  style: TextStyle(
-                                    fontFamily: 'quran_num', 
-                                    fontSize: _fontSize * 0.9, 
-                                    color: isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32),
-                                    fontWeight: FontWeight.bold
-                                  ),
-                                ),
-                              ]
-                            ],
-                          ),
-                          textAlign: TextAlign.justify,
-                          textDirection: TextDirection.rtl,
-                        ),
-                      ),
-                    ),
-
-                    // التفسير الميسر في حال تفعيله
-                    if (_showTafsir) ...[
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1B281E) : const Color(0xFFE8F5E9).withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isDark ? Colors.transparent : const Color(0xFFC8E6C9),
-                            width: 1
-                          )
-                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.menu_book_outlined, size: 16, color: Color(0xFF2E7D32)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  "التفسير الميسر:",
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  for (int i = 0; i < verses.length; i++) ...[
+                                    TextSpan(
+                                      text: "${verses[i]} ",
+                                      style: TextStyle(
+                                        fontSize: _fontSize,
+                                        fontFamily: 'nss', 
+                                        height: 2.4,
+                                        color: _getTextColor(),
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: " ${(i + 1)} ", 
+                                      style: TextStyle(
+                                        fontFamily: 'quran_num', 
+                                        fontSize: _fontSize * 0.9, 
+                                        color: isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32),
+                                        fontWeight: FontWeight.bold
+                                      ),
+                                    ),
+                                  ]
+                                ],
+                              ),
+                              textAlign: TextAlign.justify,
+                              textDirection: TextDirection.rtl,
+                            ),
+
+                            // التبويب الجانبي لعرض التفسير بجانب الآيات بشكل مرتب
+                            if (_showTafsir) ...[
+                              const Divider(height: 30, thickness: 1.5),
+                              const Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  "التفسير الميسر (عرض جانبي):",
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32),
+                                    color: Color(0xFF2E7D32),
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (int i = 0; i < tafsirVerses.length; i++)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 10.0),
-                                    child: Text(
-                                      "${toArabicNumerals(i + 1)}: ${tafsirVerses[i]}",
-                                      style: TextStyle(
-                                        fontSize: _fontSize > 20 ? _fontSize - 6 : 15,
-                                        height: 1.8,
-                                        color: isDark ? Colors.white70 : const Color(0xFF37474F),
+                              ),
+                              const SizedBox(height: 12),
+                              for (int i = 0; i < verses.length; i++)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 14.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF2E7D32).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          "${i + 1}",
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2E7D32), fontSize: 12),
+                                        ),
                                       ),
-                                      textDirection: TextDirection.rtl,
-                                    ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              verses[i],
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontFamily: 'nss',
+                                                color: isDark ? Colors.white60 : Colors.grey[700],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              (i < tafsirVerses.length) ? tafsirVerses[i] : "التفسير غير متوفر",
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                height: 1.6,
+                                                color: isDark ? Colors.white : const Color(0xFF37474F),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                              ],
-                            ),
+                                ),
+                            ],
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
