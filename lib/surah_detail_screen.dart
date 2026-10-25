@@ -49,7 +49,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  // دالة لتحميل وتحليل الآيات متسلسلة كالمصحف الورقي
   Future<void> _loadData() async {
     try {
       final String juzResponse = await rootBundle.loadString('assets/data/juz.json');
@@ -93,14 +92,18 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           return numA.compareTo(numB);
         });
 
-        for (var entry in entries) {
+        for (int i = 0; i < entries.length; i++) {
+          var entry = entries[i];
           String text = entry.value.toString().trim();
           if (text.isEmpty) continue;
 
-          // تنظيف البسملة إذا كانت مستقلة في المفتاح الأول للسور غير الفاتحة والتوبة
-          if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0')) {
-            if (text.contains("بِسْمِ اللَّهِ") && text.length < 50) {
-              continue; 
+          // حذف وحذف نص البسملة نهائياً من الآية الأولى إذا كانت السورة غير الفاتحة والتوبة
+          if (widget.surahId != 1 && widget.surahId != 9 && (entry.key == 'verse_0' || entry.key == '0' || i == 0)) {
+            text = text
+                .replaceAll(RegExp(r'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ|بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ|بسم الله الرحمن الرحيم'), '')
+                .trim();
+            if (text.isEmpty) {
+              continue; // تخطي المفتاح إذا كان خاصاً بالبسملة فقط ولم يتبقَ نص للآية الأولى
             }
           }
           loadedVerses.add(text);
@@ -181,7 +184,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   children: [
                     Center(child: Container(width: 45, height: 5, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)))),
                     const SizedBox(height: 20),
-                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -215,7 +217,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ],
                     ),
                     const Divider(height: 24),
-                    
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text("وضع التفسير الميسر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
@@ -228,7 +229,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       },
                     ),
                     const Divider(height: 24),
-                    
                     Text("وضع العرض والوضوح:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : Colors.black87)),
                     const SizedBox(height: 12),
                     Row(
@@ -341,13 +341,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // البسملة بخط bsm60 المخصص
+                    // عرض البسملة باستخدام خط bsm60 (عن طريق تمرير الرقم 1 ليطابق رسمة الخط المخصص)
                     if (widget.surahId != 1 && widget.surahId != 9) ...[
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
                           child: Text(
-                            "ﷴ", // أو رمز البسملة في الخط المخصص
+                            "1", 
                             style: TextStyle(
                               fontFamily: 'bsm60',
                               fontSize: 55,
@@ -360,7 +360,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       const SizedBox(height: 10),
                     ],
 
-                    // كارد عرض القرآن الكريم متصلاً كالمصحف الورقي
+                    // كارد عرض الآيات متصلة كالمصحف الورقي باستخدام خط nss للآيات و quran_num (123456) للأرقام
                     Card(
                       elevation: isDark ? 0 : 3,
                       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -381,8 +381,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
+                                // استخدام خط quran_num (123456.ttf) مع رقم الآية الفعلي (i + 1) لرسم رمز الآية المخصص
                                 TextSpan(
-                                  text: " ﴿${toArabicNumerals(i + 1)}﴾ ", 
+                                  text: " ${(i + 1)} ", 
                                   style: TextStyle(
                                     fontFamily: 'quran_num', 
                                     fontSize: _fontSize * 0.9, 
