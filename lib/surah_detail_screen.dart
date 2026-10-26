@@ -94,6 +94,32 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await prefs.setInt('last_read_surah', widget.surahId);
   }
 
+  // يعيد رقم الجزء الصحيح بحسب السورة ورقم الآية.
+  // بداية كل جزء مكتوبة على شكل [رقم السورة، رقم الآية].
+  int _getJuzForVerse(int surahId, int verseNumber) {
+    const juzStarts = <List<int>>[
+      [1, 1], [2, 142], [2, 253], [3, 93], [4, 24],
+      [4, 148], [5, 82], [6, 111], [7, 88], [8, 41],
+      [9, 93], [11, 6], [12, 53], [15, 1], [17, 1],
+      [18, 75], [21, 1], [23, 1], [25, 21], [27, 56],
+      [29, 46], [33, 31], [36, 28], [39, 32], [41, 47],
+      [46, 1], [51, 31], [58, 1], [67, 1], [78, 1],
+    ];
+
+    var juz = 1;
+    for (var i = 0; i < juzStarts.length; i++) {
+      final startSurah = juzStarts[i][0];
+      final startVerse = juzStarts[i][1];
+      if (surahId > startSurah ||
+          (surahId == startSurah && verseNumber >= startVerse)) {
+        juz = i + 1;
+      } else {
+        break;
+      }
+    }
+    return juz.clamp(1, 30).toInt();
+  }
+
   // ---------------- تحميل الآيات والتفسير ----------------
 
   int _numberFromKey(String key) {
