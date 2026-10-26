@@ -29,6 +29,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
   bool _isLoadingReciters = true;
   int? _lastReadSurahId;
   int _selectedTabIndex = 0;
+  bool _isDarkMode = false;
+
+  Color get _pageColor => _isDarkMode ? const Color(0xFF101713) : const Color(0xFFF7F5EC);
+  Color get _surfaceColor => _isDarkMode ? const Color(0xFF1A2620) : Colors.white;
+  Color get _textColor => _isDarkMode ? const Color(0xFFECEFEA) : const Color(0xFF20352A);
+  Color get _mutedTextColor => _isDarkMode ? const Color(0xFFB8C5BC) : const Color(0xFF68766D);
 
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
@@ -211,6 +217,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
       _currentLanguage = prefs.getString('app_lang') ?? 'ar';
       _selectedReciterId = prefs.getString('app_reciter') ?? '123';
       _lastReadSurahId = prefs.getInt('last_read_surah');
+      _isDarkMode = prefs.getBool('app_dark_mode') ?? false;
     });
   }
 
@@ -294,7 +301,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
         labelText: compact ? 'القارئ' : 'اختر القارئ',
         prefixIcon: const Icon(Icons.record_voice_over_rounded, color: green),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: _surfaceColor,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
@@ -321,6 +328,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Future<void> _saveSetting(String key, dynamic value) async {
     final prefs = await SharedPreferences.getInstance();
     if (value is String) await prefs.setString(key, value);
+    if (value is bool) await prefs.setBool(key, value);
   }
 
   @override
@@ -418,15 +426,31 @@ class _SurahListScreenState extends State<SurahListScreen> {
   @override
   Widget build(BuildContext context) {
     const green = Color(0xFF174D35);
-    const gold = Color(0xFFE3C16F);
+    const gold = Color(0xFFD6B45C);
+
+    final theme = ThemeData(
+      useMaterial3: true,
+      brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+      scaffoldBackgroundColor: _pageColor,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF176344),
+        brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+        primary: const Color(0xFF176344),
+        secondary: const Color(0xFFD6B45C),
+        surface: _surfaceColor,
+      ),
+      appBarTheme: const AppBarTheme(centerTitle: true),
+    );
 
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: DefaultTabController(
+      child: Theme(
+        data: theme,
+        child: DefaultTabController(
         length: 4,
         child: Builder(
           builder: (tabContext) => Scaffold(
-            backgroundColor: const Color(0xFFF6F5EF),
+            backgroundColor: _pageColor,
             appBar: AppBar(
               elevation: 0,
               backgroundColor: green,
@@ -468,8 +492,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
             ),
             bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedTabIndex,
-              backgroundColor: Colors.white,
-              indicatorColor: const Color(0xFFE8F1E9),
+              backgroundColor: _surfaceColor,
+              indicatorColor: _isDarkMode ? const Color(0xFF294B3A) : const Color(0xFFE8F1E9),
               onDestinationSelected: (index) {
                 setState(() => _selectedTabIndex = index);
                 DefaultTabController.of(tabContext).animateTo(index);
@@ -484,12 +508,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
   Widget _buildHomeTab(BuildContext tabContext) {
     const green = Color(0xFF174D35);
-    const gold = Color(0xFFE3C16F);
+    const gold = Color(0xFFD6B45C);
     final last = surahList.cast<Map<String, dynamic>?>().firstWhere(
       (item) => item?['id'] == _lastReadSurahId,
       orElse: () => null,
@@ -520,13 +545,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
         const SizedBox(height: 10),
         Card(
           elevation: 0,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: green.withOpacity(.12))),
+          color: _surfaceColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: green.withOpacity(.25))),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: const CircleAvatar(backgroundColor: Color(0xFFE8F1E9), child: Icon(Icons.bookmark_added_rounded, color: green)),
-            title: Text(last?['name'] as String? ?? 'ابدأ من سورة الفاتحة', style: const TextStyle(fontFamily: kSurahNameFont, fontSize: 26, color: green)),
-            subtitle: const Text('سيظهر سؤال للرجوع إلى آخر آية قرأتها'),
+            title: Text(last?['name'] as String? ?? 'ابدأ من سورة الفاتحة', style: TextStyle(fontFamily: kSurahNameFont, fontSize: 26, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
+            subtitle: Text('سيظهر سؤال للرجوع إلى آخر آية قرأتها', style: TextStyle(color: _mutedTextColor)),
             trailing: const Icon(Icons.chevron_left_rounded, color: green),
             onTap: () => _openSurah(last ?? surahList.first),
           ),
@@ -544,12 +569,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(top: 8),
-      color: Colors.white,
+      color: _surfaceColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFE8F1E9), borderRadius: BorderRadius.circular(13)), child: Icon(icon, color: green)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: green)),
-        subtitle: Text(subtitle),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
+        subtitle: Text(subtitle, style: TextStyle(color: _mutedTextColor)),
         trailing: const Icon(Icons.chevron_left_rounded),
         onTap: onTap,
       ),
@@ -558,7 +583,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Widget _buildSurahListTab() {
     const green = Color(0xFF174D35);
-    const gold = Color(0xFFE3C16F);
+    const gold = Color(0xFFD6B45C);
 
     Map<String, dynamic>? lastSurah;
     for (final surah in surahList) {
@@ -695,7 +720,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: green,
+                          color: _isDarkMode ? const Color(0xFFE4D19A) : green,
                         ),
                       ),
                     ],
@@ -703,7 +728,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                   const SizedBox(height: 10),
                   Card(
                     elevation: 0,
-                    color: Colors.white,
+                    color: _surfaceColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                       side: BorderSide(color: green.withOpacity(0.12)),
@@ -798,7 +823,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 return Card(
                   elevation: 0,
                   margin: const EdgeInsets.only(bottom: 9),
-                  color: Colors.white,
+                  color: _surfaceColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(17),
                     side: BorderSide(
@@ -939,12 +964,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
           return Card(
             elevation: 0,
             margin: const EdgeInsets.symmetric(vertical: 4),
-            color: Colors.white,
+            color: _surfaceColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: isCurrent ? green.withOpacity(.5) : Colors.black12)),
             child: ListTile(
               leading: CircleAvatar(backgroundColor: const Color(0xFFE8F1E9), child: Text(toArabicNumerals(id), style: const TextStyle(color: green, fontWeight: FontWeight.bold))),
-              title: Text(surah['name'] as String, style: const TextStyle(fontFamily: kSurahNameFont, fontSize: 27, color: green)),
-              subtitle: Text('${_selectedReciterName()} • سورة ${surah['name']}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              title: Text(surah['name'] as String, style: TextStyle(fontFamily: kSurahNameFont, fontSize: 27, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
+              subtitle: Text('${_selectedReciterName()} • سورة ${surah['name']}', style: TextStyle(fontSize: 12, color: _mutedTextColor)),
               trailing: Icon(isCurrent && _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: green, size: 32),
               onTap: () => _playSurahAudio(id),
             ),
@@ -959,7 +984,23 @@ class _SurahListScreenState extends State<SurahListScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         Card(
-          elevation: 3,
+          color: _surfaceColor,
+          child: SwitchListTile(
+            secondary: const Icon(Icons.dark_mode_rounded, color: Color(0xFFD6B45C), size: 28),
+            title: Text('المظهر الداكن', style: TextStyle(fontWeight: FontWeight.bold, color: _textColor)),
+            subtitle: Text(_isDarkMode ? 'الوضع الداكن مفعّل' : 'التبديل بين المظهر الفاتح والداكن', style: TextStyle(color: _mutedTextColor)),
+            value: _isDarkMode,
+            activeColor: const Color(0xFFD6B45C),
+            onChanged: (value) {
+              setState(() => _isDarkMode = value);
+              _saveSetting('app_dark_mode', value);
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          color: _surfaceColor,
+          elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -968,9 +1009,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.language, color: Color(0xFF1B5E20), size: 26),
+                    Icon(Icons.language, color: Color(0xFF287653), size: 26),
                     SizedBox(width: 10),
-                    Text("لغة واجهة التطبيق", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B5E20))),
+                    Text("لغة واجهة التطبيق", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF287653))),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -998,7 +1039,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
         ),
         const SizedBox(height: 16),
         Card(
-          elevation: 3,
+          elevation: 0,
+          color: _surfaceColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1007,9 +1049,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.person, color: Color(0xFF1B5E20), size: 26),
+                    Icon(Icons.person, color: Color(0xFF287653), size: 26),
                     SizedBox(width: 10),
-                    Text("القارئ الافتراضي للصوتيات", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1B5E20))),
+                    Text("القارئ الافتراضي للصوتيات", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF287653))),
                   ],
                 ),
                 const SizedBox(height: 12),
