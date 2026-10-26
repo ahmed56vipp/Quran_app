@@ -96,7 +96,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await prefs.setInt('last_read_surah', widget.surahId);
   }
 
-  // يعيد رقم الجزء الصحيح بحسب السورة ورقم الآية.
   int _getJuzForVerse(int surahId, int verseNumber) {
     const juzStarts = <List<int>>[
       [1, 1], [2, 142], [2, 253], [3, 93], [4, 24],
@@ -120,8 +119,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
     return juz.clamp(1, 30).toInt();
   }
-
-  // ---------------- تحميل الآيات والتفسير ----------------
 
   int _numberFromKey(String key) {
     return int.tryParse(key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -253,8 +250,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       await _restoreLastPosition();
     }
   }
-
-  // ---------------- العلامات المرجعية ----------------
 
   int _intValue(dynamic value) {
     if (value is int) return value;
@@ -498,8 +493,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // ---------------- تتبّع الآية أثناء التمرير ----------------
-
   void _onScroll() {
     _scrollSelectionDebounce?.cancel();
     _scrollSelectionDebounce = Timer(
@@ -557,8 +550,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       _updatingVerseFromScroll = false;
     }
   }
-
-  // ---------------- الانتقال إلى آية ----------------
 
   Future<void> _scrollToVerse(int index) async {
     if (!mounted || index < 0 || index >= verses.length) return;
@@ -668,8 +659,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (result != null && mounted) await _scrollToVerse(result - 1);
   }
 
-  // ---------------- التمرير التلقائي ----------------
-
   void _toggleAutoScroll() {
     if (_isAutoScrolling) {
       _stopAutoScroll();
@@ -716,8 +705,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // ---------------- التفسير ----------------
-
   void _openTafsirScreen() {
     final isDark = _themeMode == 2;
 
@@ -745,7 +732,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       fontWeight: FontWeight.bold,
                       color: isDark
                           ? Colors.white
-                          : const Color(0xFF2E7D32),
+                          : Color(0xFF2E7D32),
                     ),
                   ),
                   const Divider(height: 24),
@@ -781,8 +768,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       },
     );
   }
-
-  // ---------------- الإعدادات المدمجة والتبويب الموحد ----------------
 
   void _showSettingsBottomSheet() {
     showModalBottomSheet<void>(
@@ -826,7 +811,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           fontSize: 18,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF2E7D32),
+                              : Color(0xFF2E7D32),
                         ),
                       ),
                       const Divider(height: 24),
@@ -1052,8 +1037,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // ---------------- أدوات مساعدة ----------------
-
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1072,8 +1055,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (_themeMode == 1) return const Color(0xFF5B4636);
     return const Color(0xFF2C3E50);
   }
-
-  // ---------------- واجهة المصحف ----------------
 
   @override
   Widget build(BuildContext context) {
@@ -1096,7 +1077,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   widget.surahName,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontFamily: 'surah_nam', // متطابق مع pubspec.yaml
+                    fontFamily: 'surah_nam',
                     fontSize: 24,
                     color: Color(0xFFFFD700),
                     fontWeight: FontWeight.bold,
@@ -1137,7 +1118,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               ),
             ),
             IconButton(
-              tooltip: 'التبويب المدمج وأدوات القراءة',
+              tooltip: 'أدوات القراءة',
               icon: const Icon(Icons.tune, color: Colors.white),
               onPressed: _showSettingsBottomSheet,
             ),
