@@ -711,10 +711,10 @@ class _SurahListScreenState extends State<SurahListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.bookmark_rounded, color: green),
-                      SizedBox(width: 8),
+                      const Icon(Icons.bookmark_rounded, color: green),
+                      const SizedBox(width: 8),
                       Text(
                         'متابعة القراءة',
                         style: TextStyle(
