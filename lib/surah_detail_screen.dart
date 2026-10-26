@@ -96,6 +96,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await prefs.setInt('last_read_surah', widget.surahId);
   }
 
+  // يعيد رقم الجزء الصحيح بحسب السورة ورقم الآية.
+  // بداية كل جزء مكتوبة على شكل [رقم السورة، رقم الآية].
   int _getJuzForVerse(int surahId, int verseNumber) {
     const juzStarts = <List<int>>[
       [1, 1], [2, 142], [2, 253], [3, 93], [4, 24],
@@ -119,6 +121,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
     return juz.clamp(1, 30).toInt();
   }
+
+  // ---------------- تحميل الآيات والتفسير ----------------
 
   int _numberFromKey(String key) {
     return int.tryParse(key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -163,6 +167,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       final text = entry.value.toString().trim();
       if (text.isEmpty) continue;
 
+      // لا نحذف آية كاملة لمجرد احتوائها على البسملة؛ فهذا قد يغيّر
+      // أرقام الآيات ويجعل العلامات المرجعية تشير إلى آيات خاطئة.
+      // يبقى خيار removeBasmala محفوظًا لتوافق الاستدعاءات القديمة.
       if (removeBasmala &&
           (text == 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ' ||
               text == 'بسم الله الرحمن الرحيم')) {
@@ -179,7 +186,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       try {
         final value = await rootBundle.loadString(path);
         if (value.trim().isNotEmpty) return value;
-      } catch (_) {}
+      } catch (_) {
+        // تجربة المسار التالي.
+      }
     }
     return null;
   }
@@ -251,6 +260,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  // ---------------- العلامات المرجعية ----------------
+
   int _intValue(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
@@ -281,6 +292,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         }
       }
 
+      // ترحيل العلامة القديمة مرة واحدة إن لم تكن موجودة.
       final oldSurah = prefs.getInt('last_surah');
       final oldVerse = prefs.getInt('last_verse');
       if (oldSurah != null &&
@@ -301,7 +313,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       if (!mounted) return;
       setState(() => _bookmarks = loaded);
       await prefs.setString(_bookmarksKey, json.encode(loaded));
-    } catch (_) {}
+    } catch (_) {
+      // لا يمنع تعذّر التخزين فتح المصحف.
+    }
   }
 
   Future<void> _persistBookmarks() async {
@@ -339,6 +353,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     try {
       await _persistBookmarks();
       final prefs = await SharedPreferences.getInstance();
+      // توافق مع نسخة التطبيق التي تستخدم آخر موضع محفوظ.
       await prefs.setInt('last_surah', widget.surahId);
       await prefs.setString('last_surah_name', widget.surahName);
       await prefs.setInt('last_verse', verseNumber);
@@ -493,6 +508,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
+  // ---------------- تتبّع الآية أثناء التمرير ----------------
+
   void _onScroll() {
     _scrollSelectionDebounce?.cancel();
     _scrollSelectionDebounce = Timer(
@@ -550,6 +567,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       _updatingVerseFromScroll = false;
     }
   }
+
+  // ---------------- الانتقال إلى آية ----------------
 
   Future<void> _scrollToVerse(int index) async {
     if (!mounted || index < 0 || index >= verses.length) return;
@@ -659,6 +678,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (result != null && mounted) await _scrollToVerse(result - 1);
   }
 
+  // ---------------- التمرير التلقائي ----------------
+
   void _toggleAutoScroll() {
     if (_isAutoScrolling) {
       _stopAutoScroll();
@@ -705,6 +726,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  // ---------------- التفسير ----------------
+
   void _openTafsirScreen() {
     final isDark = _themeMode == 2;
 
@@ -732,7 +755,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       fontWeight: FontWeight.bold,
                       color: isDark
                           ? Colors.white
-                          : Color(0xFF2E7D32),
+                          : const Color(0xFF2E7D32),
                     ),
                   ),
                   const Divider(height: 24),
@@ -768,6 +791,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       },
     );
   }
+
+  // ---------------- الإعدادات المدمجة ----------------
 
   void _showSettingsBottomSheet() {
     showModalBottomSheet<void>(
@@ -805,13 +830,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ),
                       const SizedBox(height: 18),
                       Text(
-                        'التبويب المدمج لأدوات القراءة',
+                        'أدوات القراءة',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                           color: isDark
                               ? Colors.white
-                              : Color(0xFF2E7D32),
+                              : const Color(0xFF2E7D32),
                         ),
                       ),
                       const Divider(height: 24),
@@ -1037,6 +1062,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
+  // ---------------- أدوات مساعدة ----------------
+
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1055,6 +1082,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (_themeMode == 1) return const Color(0xFF5B4636);
     return const Color(0xFF2C3E50);
   }
+
+  // ---------------- واجهة المصحف ----------------
 
   @override
   Widget build(BuildContext context) {
