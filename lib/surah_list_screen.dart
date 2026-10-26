@@ -28,6 +28,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
   List<dynamic> _recitersList = [];
   bool _isLoadingReciters = true;
   int? _lastReadSurahId;
+  int _selectedTabIndex = 0;
 
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
@@ -248,16 +249,19 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   String _getTranslatedTitle(int index) {
     if (_currentLanguage == 'en') {
-      if (index == 0) return 'Holy Quran';
-      if (index == 1) return 'Audio';
+      if (index == 0) return 'Home';
+      if (index == 1) return 'Holy Quran';
+      if (index == 2) return 'Audio';
       return 'Settings';
     } else if (_currentLanguage == 'tr') {
-      if (index == 0) return 'Kur\'an';
-      if (index == 1) return 'Sesli';
+      if (index == 0) return 'Ana Sayfa';
+      if (index == 1) return 'Kur\'an';
+      if (index == 2) return 'Sesli';
       return 'Ayarlar';
     }
-    if (index == 0) return 'القرآن الكريم';
-    if (index == 1) return 'التلاوات';
+    if (index == 0) return 'الرئيسية';
+    if (index == 1) return 'القرآن الكريم';
+    if (index == 2) return 'التلاوات';
     return 'الإعدادات';
   }
 
@@ -288,7 +292,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
           // جلب الرابط الخاص بالسورة المطلوبة (surahId يتوافق مع ترتيب السور داخل الملف أو الفهرس)
           if (decoded.length >= surahId) {
             var item = decoded[surahId - 1];
-            audioUrl = item['F2'] ?? item['url'] ?? item['server'] ?? '';
+            if (item is String) {
+              audioUrl = item;
+            } else if (item is Map) {
+              final rawUrl = item['F2'] ?? item['url'] ?? item['server'];
+              if (rawUrl is String) audioUrl = rawUrl;
+            }
           }
         }
       } catch (_) {}
@@ -332,78 +341,141 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: DefaultTabController(
-        length: 3,
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF6F5EF),
-          appBar: AppBar(
-            elevation: 0,
-            backgroundColor: green,
-            foregroundColor: Colors.white,
-            centerTitle: true,
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.menu_book_rounded, color: gold, size: 27),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    _currentLanguage == 'ar'
-                        ? 'مصحف المدينة المنورة'
-                        : _currentLanguage == 'tr'
-                            ? 'Medine Mushafı'
-                            : 'Madinah Quran',
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+        length: 4,
+        child: Builder(
+          builder: (tabContext) => Scaffold(
+            backgroundColor: const Color(0xFFF6F5EF),
+            appBar: AppBar(
+              elevation: 0,
+              backgroundColor: green,
+              foregroundColor: Colors.white,
+              centerTitle: true,
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.menu_book_rounded, color: gold, size: 27),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      _currentLanguage == 'ar'
+                          ? 'مصحف المدينة المنورة'
+                          : _currentLanguage == 'tr'
+                              ? 'Medine Mushafı'
+                              : 'Madinah Quran',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
+                ],
+              ),
+            ),
+            body: Column(
+              children: [
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildHomeTab(tabContext),
+                      _buildSurahListTab(),
+                      _buildAudioTab(),
+                      _buildSettingsTab(),
+                    ],
+                  ),
                 ),
+                _buildMiniAudioPlayer(),
               ],
             ),
-            bottom: TabBar(
-              isScrollable: false,
-              indicatorColor: gold,
-              indicatorWeight: 3,
-              indicatorSize: TabBarIndicatorSize.label,
-              labelColor: gold,
-              unselectedLabelColor: Colors.white70,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-              tabs: [
-                Tab(
-                  icon: const Icon(Icons.menu_book_rounded),
-                  text: _getTranslatedTitle(0),
-                ),
-                Tab(
-                  icon: const Icon(Icons.headphones_rounded),
-                  text: _getTranslatedTitle(1),
-                ),
-                Tab(
-                  icon: const Icon(Icons.tune_rounded),
-                  text: _getTranslatedTitle(2),
-                ),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _selectedTabIndex,
+              backgroundColor: Colors.white,
+              indicatorColor: const Color(0xFFE8F1E9),
+              onDestinationSelected: (index) {
+                setState(() => _selectedTabIndex = index);
+                DefaultTabController.of(tabContext).animateTo(index);
+              },
+              destinations: const [
+                NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'الرئيسية'),
+                NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book_rounded), label: 'المصحف'),
+                NavigationDestination(icon: Icon(Icons.headphones_outlined), selectedIcon: Icon(Icons.headphones_rounded), label: 'الصوتيات'),
+                NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings_rounded), label: 'الإعدادات'),
               ],
             ),
-          ),
-          body: Column(
-            children: [
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildSurahListTab(),
-                    _buildAudioTab(),
-                    _buildSettingsTab(),
-                  ],
-                ),
-              ),
-              _buildMiniAudioPlayer(),
-            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHomeTab(BuildContext tabContext) {
+    const green = Color(0xFF174D35);
+    const gold = Color(0xFFE3C16F);
+    final last = surahList.cast<Map<String, dynamic>?>().firstWhere(
+      (s) => s?['id'] == _lastReadSurahId,
+      orElse: () => null,
+    );
+
+    Widget actionCard({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+      return Card(
+        elevation: 1,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          leading: Container(
+            width: 48, height: 48,
+            decoration: BoxDecoration(color: const Color(0xFFE8F1E9), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: green, size: 27),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: green)),
+          subtitle: Text(subtitle),
+          trailing: const Icon(Icons.chevron_left_rounded, color: gold),
+          onTap: onTap,
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFF1D6245), Color(0xFF123B2B)]),
+            boxShadow: [BoxShadow(color: green.withOpacity(.18), blurRadius: 18, offset: const Offset(0, 8))],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.auto_stories_rounded, color: gold, size: 38),
+            const SizedBox(height: 14),
+            const Text('وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.bold, fontFamily: 'nam')),
+            const SizedBox(height: 8),
+            const Text('رفيقك اليومي لقراءة القرآن الكريم', style: TextStyle(color: Colors.white70, fontSize: 14)),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: gold, foregroundColor: green),
+              onPressed: () => _openSurah(surahList.first),
+              icon: const Icon(Icons.menu_book_rounded), label: const Text('ابدأ القراءة', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 18),
+        const Padding(padding: EdgeInsets.only(bottom: 8), child: Text('متابعة سريعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: green))),
+        actionCard(
+          icon: Icons.bookmark_outline_rounded,
+          title: 'متابعة القراءة',
+          subtitle: last == null ? 'ابدأ من سورة الفاتحة' : 'آخر سورة فتحتها: ${last['name']}',
+          onTap: () => _openSurah(last ?? surahList.first),
+        ),
+        actionCard(icon: Icons.headphones_rounded, title: 'استمع للتلاوات', subtitle: 'اختر سورة وقارئك المفضل', onTap: () {
+          setState(() => _selectedTabIndex = 2);
+          DefaultTabController.of(tabContext).animateTo(2);
+        }),
+        actionCard(icon: Icons.tune_rounded, title: 'إعدادات التطبيق', subtitle: 'اللغة والقارئ المفضل', onTap: () {
+          setState(() => _selectedTabIndex = 3);
+          DefaultTabController.of(tabContext).animateTo(3);
+        }),
+        const SizedBox(height: 12),
+        const Center(child: Text('اللهم اجعل القرآن ربيع قلوبنا', style: TextStyle(color: Color(0xFF7A817A), fontSize: 14))),
+      ],
     );
   }
 
