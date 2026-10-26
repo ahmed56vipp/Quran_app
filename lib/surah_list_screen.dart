@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'surah_detail_screen.dart'; 
 import 'utils.dart';
 
-const String kSurahNameFont = 'nam';
+const String kSurahNameFont = 'surah_nam';
 
 class SurahListScreen extends StatefulWidget {
   const SurahListScreen({super.key});
