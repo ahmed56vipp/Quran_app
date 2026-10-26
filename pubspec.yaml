@@ -30,7 +30,7 @@ flutter:
     - assets/surah_f/
 
   fonts:
-    - family: nam
+    - family: surah_nam
       fonts:
         - asset: assets/fonts/surah_nam.ttf 
 
