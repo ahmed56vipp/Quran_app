@@ -13,6 +13,7 @@ class SurahDetailScreen extends StatefulWidget {
   final int versesCount;
   final String surahType;
   final int initialJuz;
+  final int? initialVerse;
 
   const SurahDetailScreen({
     super.key,
@@ -21,6 +22,7 @@ class SurahDetailScreen extends StatefulWidget {
     required this.versesCount,
     required this.surahType,
     required this.initialJuz,
+    this.initialVerse,
   });
 
   @override
@@ -254,6 +256,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           ..addAll(List.generate(fallback.length, (_) => GlobalKey()));
         isLoading = false;
       });
+      await _restoreLastPosition();
     }
   }
 
@@ -393,11 +396,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
       final savedSurah = prefs.getInt('last_surah');
       final savedVerse = prefs.getInt('last_verse');
-      if (savedSurah == widget.surahId &&
-          savedVerse != null &&
-          savedVerse >= 1 &&
-          savedVerse <= verses.length) {
-        await _scrollToVerse(savedVerse - 1);
+      final targetVerse = widget.initialVerse ??
+          (savedSurah == widget.surahId ? savedVerse : null);
+      if (targetVerse != null && targetVerse >= 1 && targetVerse <= verses.length) {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        if (mounted) await _scrollToVerse(targetVerse - 1);
       }
     } catch (_) {}
   }
@@ -578,9 +581,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     _saveLastReadPosition(index);
 
     await WidgetsBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 40));
     if (!mounted || index >= _verseKeys.length) return;
 
-    final target = _verseKeys[index].currentContext;
+    var target = _verseKeys[index].currentContext;
+    if (target == null) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      target = _verseKeys[index].currentContext;
+    }
     if (target == null) {
       _showMessage('تعذّر تحديد موضع الآية، حاول مرة أخرى');
       return;
