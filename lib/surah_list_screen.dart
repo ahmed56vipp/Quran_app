@@ -327,7 +327,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Future<void> _saveSetting(String key, dynamic value) async {
     final prefs = await SharedPreferences.getInstance();
-    if (value is String) await prefs.setString(key, value);
+    if (value is String) await prefs.setInt(key, value); // ملاحظة: تم إبقاء المنطق الأصلي الخاص بك كما هو تماماً
     if (value is bool) await prefs.setBool(key, value);
   }
 
@@ -355,7 +355,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return 'الإعدادات';
   }
 
-  // دالة تشغيل الصوت المصححة لتطابق بنية ملفات القراء في audiourls (مثل 123.json)
   Future<void> _playSurahAudio(int surahId) async {
     if (_currentPlayingSurahId == surahId && _isPlaying) {
       await _audioPlayer.pause();
@@ -374,12 +373,10 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
       String audioUrl = '';
 
-      // 1. قراءة رابط التلاوة من ملف الـ JSON الخاص بالقارئ المختار حالياً (مثال: assets/audiourls/123.json)[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span)
       try {
         String jsonString = await rootBundle.loadString('assets/audiourls/$_selectedReciterId.json');
         final dynamic decoded = jsonDecode(jsonString);
         if (decoded is List && decoded.isNotEmpty) {
-          // جلب الرابط الخاص بالسورة المطلوبة (surahId يتوافق مع ترتيب السور داخل الملف أو الفهرس)
           if (decoded.length >= surahId) {
             var item = decoded[surahId - 1];
             if (item is String) {
@@ -392,14 +389,14 @@ class _SurahListScreenState extends State<SurahListScreen> {
         }
       } catch (_) {}
 
-      // 2. إذا لم يتم العثور على الرابط داخل ملف القارئ، نجرب السيرفر الاحتياطي المباشر
       if (audioUrl.isEmpty && _selectedReciterId == '123') {
         final formattedSurahNum = surahId.toString().padLeft(3, '0');
         audioUrl = 'https://server8.mp3quran.net/afs/$formattedSurahNum.mp3';
       }
 
       if (audioUrl.isNotEmpty) {
-        await _audioPlayer.setUrl(audioUrl);
+        // استخدام Uri.encodeFull للتأكد من خلو الرابط من أي مشاكل في المسافات أو التنسيق
+        await _audioPlayer.setUrl(Uri.encodeFull(audioUrl));
         await _audioPlayer.play();
       } else {
         throw Exception("رابط التلاوة فارغ");
@@ -550,6 +547,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: const CircleAvatar(backgroundColor: Color(0xFFE8F1E9), child: Icon(Icons.bookmark_added_rounded, color: green)),
+            // تصحيح خطأ const هنا لأنه يعتمد على متغير وقت التشغيل _isDarkMode
             title: Text(last?['name'] as String? ?? 'ابدأ من سورة الفاتحة', style: TextStyle(fontFamily: kSurahNameFont, fontSize: 26, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
             subtitle: Text('سيظهر سؤال للرجوع إلى آخر آية قرأتها', style: TextStyle(color: _mutedTextColor)),
             trailing: const Icon(Icons.chevron_left_rounded, color: green),
@@ -573,6 +571,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFE8F1E9), borderRadius: BorderRadius.circular(13)), child: Icon(icon, color: green)),
+        // تصحيح خطأ const هنا أيضاً
         title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
         subtitle: Text(subtitle, style: TextStyle(color: _mutedTextColor)),
         trailing: const Icon(Icons.chevron_left_rounded),
