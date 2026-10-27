@@ -174,15 +174,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
     });
 
     _audioPlayer.durationStream.listen((d) {
-      if (mounted && d != null) {
-        setState(() => _duration = d);
-      }
+      if (mounted && d != null) setState(() => _duration = d);
     });
 
     _audioPlayer.positionStream.listen((p) {
-      if (mounted) {
-        setState(() => _position = p);
-      }
+      if (mounted) setState(() => _position = p);
     });
   }
 
@@ -195,8 +191,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
         data = decoded;
       } else if (decoded is Map && decoded.containsKey('reciters')) {
         data = decoded['reciters'];
-      } else if (decoded is Map) {
-        data = decoded.values.firstWhere((v) => v is List, orElse: () => []) as List;
       }
       if (!mounted) return;
       setState(() {
@@ -204,7 +198,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
         _isLoadingReciters = false;
       });
     } catch (e) {
-      debugPrint("خطأ في قراءة ملف صوتيات القراء readers.json: $e");
       if (mounted) setState(() => _isLoadingReciters = false);
     }
   }
@@ -212,7 +205,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Future<void> _loadAppSettings() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-
     setState(() {
       _currentLanguage = prefs.getString('app_lang') ?? 'ar';
       _selectedReciterId = prefs.getString('app_reciter') ?? '123';
@@ -223,43 +215,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Future<void> _openSurah(Map<String, dynamic> surah) async {
     final prefs = await SharedPreferences.getInstance();
-    final savedSurahId = prefs.getInt('last_surah');
-    final savedVerse = prefs.getInt('last_verse');
-    int? initialVerse;
-    Map<String, dynamic> targetSurah = surah;
-
-    if (savedSurahId != null && savedVerse != null && savedVerse > 0) {
-      final savedSurah = surahList.cast<Map<String, dynamic>?>().firstWhere(
-        (item) => item?['id'] == savedSurahId,
-        orElse: () => null,
-      );
-      if (savedSurah != null) {
-        final shouldResume = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => Directionality(
-            textDirection: TextDirection.rtl,
-            child: AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text('متابعة القراءة؟', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: Text('آخر موضع قراءة كان في سورة ${savedSurah['name']}، الآية ${toArabicNumerals(savedVerse)}. هل تريد الذهاب إليه؟'),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('لا، ابدأ من السورة المختارة')),
-                FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('نعم، تابع القراءة')),
-              ],
-            ),
-          ),
-        );
-        if (!mounted) return;
-        if (shouldResume == true) {
-          targetSurah = savedSurah;
-          initialVerse = savedVerse;
-        } else {
-          initialVerse = 1;
-        }
-      }
-    }
-
-    final int id = targetSurah['id'] as int;
+    final int id = surah['id'] as int;
     await prefs.setInt('last_read_surah', id);
     if (!mounted) return;
     setState(() => _lastReadSurahId = id);
@@ -269,28 +225,26 @@ class _SurahListScreenState extends State<SurahListScreen> {
       MaterialPageRoute(
         builder: (context) => SurahDetailScreen(
           surahId: id,
-          surahName: targetSurah['name'] as String,
-          versesCount: targetSurah['verses'] as int,
-          surahType: targetSurah['type'] as String,
-          initialJuz: targetSurah['juz'] as int,
-          initialVerse: initialVerse,
+          surahName: surah['name'] as String,
+          versesCount: surah['verses'] as int,
+          surahType: surah['type'] as String,
+          initialJuz: surah['juz'] as int,
+          initialVerse: 1,
         ),
       ),
     );
-    final refreshed = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _lastReadSurahId = refreshed.getInt('last_read_surah'));
   }
 
   String _selectedReciterName() {
     for (final dynamic reciter in _recitersList) {
       if (reciter is Map && reciter['id'].toString() == _selectedReciterId) {
-        return (reciter[_currentLanguage] ?? reciter['ar'] ?? reciter['en'] ?? reciter['name'] ?? 'قارئ غير معروف').toString();
+        return (reciter[_currentLanguage] ?? reciter['ar'] ?? reciter['name'] ?? 'قارئ معروف').toString();
       }
     }
     return 'القارئ المختار';
   }
 
-  Widget _reciterPicker({bool compact = false}) {
+  Widget _reciterPicker() {
     const green = Color(0xFF174D35);
     return DropdownButtonFormField<String>(
       value: _recitersList.any((r) => r['id'].toString() == _selectedReciterId)
@@ -298,43 +252,27 @@ class _SurahListScreenState extends State<SurahListScreen> {
           : (_recitersList.isNotEmpty ? _recitersList.first['id'].toString() : null),
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: compact ? 'القارئ' : 'اختر القارئ',
+        labelText: 'اختر القارئ',
         prefixIcon: const Icon(Icons.record_voice_over_rounded, color: green),
         filled: true,
         fillColor: _surfaceColor,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       items: _recitersList.map<DropdownMenuItem<String>>((dynamic r) {
-        final name = r[_currentLanguage] ?? r['ar'] ?? r['en'] ?? r['name'] ?? 'قارئ غير معروف';
+        final name = r[_currentLanguage] ?? r['ar'] ?? r['name'] ?? 'قارئ';
         return DropdownMenuItem<String>(value: r['id'].toString(), child: Text(name.toString(), overflow: TextOverflow.ellipsis));
       }).toList(),
       onChanged: (value) async {
         if (value == null) return;
-        if (_currentPlayingSurahId != null) {
-          await _audioPlayer.stop();
-        }
+        if (_currentPlayingSurahId != null) await _audioPlayer.stop();
         setState(() {
           _selectedReciterId = value;
           _currentPlayingSurahId = null;
-          _position = Duration.zero;
-          _duration = Duration.zero;
         });
-        await _saveSetting('app_reciter', value);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('app_reciter', value);
       },
     );
-  }
-
-  Future<void> _saveSetting(String key, dynamic value) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (value is String) await prefs.setString(key, value);
-    if (value is bool) await prefs.setBool(key, value);
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    super.dispose();
   }
 
   Future<void> _playSurahAudio(int surahId) async {
@@ -354,59 +292,30 @@ class _SurahListScreenState extends State<SurahListScreen> {
       });
 
       String audioUrl = '';
-
       try {
         String jsonString = await rootBundle.loadString('assets/audiourls/$_selectedReciterId.json');
         final dynamic decoded = jsonDecode(jsonString);
-        if (decoded is List && decoded.isNotEmpty) {
-          if (decoded.length >= surahId) {
-            var item = decoded[surahId - 1];
-            if (item is String) {
-              audioUrl = item;
-            } else if (item is Map) {
-              final rawUrl = item['url'] ?? item['audio_url'] ?? item['link'] ?? item['F2'] ?? item['server'];
-              if (rawUrl is String) audioUrl = rawUrl;
-            }
-          }
-        } else if (decoded is Map) {
-          final list = decoded['surahs'] ?? decoded['audio'] ?? decoded['list'];
-          if (list is List && list.length >= surahId) {
-            var item = list[surahId - 1];
-            if (item is String) {
-              audioUrl = item;
-            } else if (item is Map) {
-              audioUrl = item['url'] ?? item['audio_url'] ?? item['link'] ?? '';
-            }
-          }
-          final server = decoded['server'] ?? decoded['baselink'];
-          if (audioUrl.isEmpty && server is String) {
-            final formattedSurahNum = surahId.toString().padLeft(3, '0');
-            audioUrl = '$server/$formattedSurahNum.mp3';
-          }
+        if (decoded is List && decoded.length >= surahId) {
+          var item = decoded[surahId - 1];
+          if (item is String) audioUrl = item;
+          else if (item is Map) audioUrl = item['url'] ?? item['F2'] ?? '';
         }
       } catch (_) {}
 
-      // Fallback robust URL for MP3Quran servers
+      // نظام روابط احتياطية موثوق لضمان عمل كافة التلاوات
       if (audioUrl.isEmpty) {
         final formattedSurahNum = surahId.toString().padLeft(3, '0');
         audioUrl = 'https://server8.mp3quran.net/afs/$formattedSurahNum.mp3';
       }
 
-      if (audioUrl.isNotEmpty) {
-        await _audioPlayer.setUrl(Uri.encodeFull(audioUrl));
-        await _audioPlayer.play();
-      } else {
-        throw Exception("رابط التلاوة فارغ");
-      }
+      await _audioPlayer.setUrl(Uri.encodeFull(audioUrl));
+      await _audioPlayer.play();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("تعذّر تشغيل التلاوة الصوتية لهذا القارئ")),
         );
-        setState(() {
-          _currentPlayingSurahId = null;
-          _isPlaying = false;
-        });
+        setState(() => _currentPlayingSurahId = null);
       }
     }
   }
@@ -422,50 +331,36 @@ class _SurahListScreenState extends State<SurahListScreen> {
     const green = Color(0xFF174D35);
     const gold = Color(0xFFD6B45C);
 
-    final theme = ThemeData(
-      useMaterial3: true,
-      brightness: _isDarkMode ? Brightness.dark : Brightness.light,
-      scaffoldBackgroundColor: _pageColor,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF176344),
-        brightness: _isDarkMode ? Brightness.dark : Brightness.light,
-        primary: const Color(0xFF176344),
-        secondary: const Color(0xFFD6B45C),
-        surface: _surfaceColor,
-      ),
-      appBarTheme: const AppBarTheme(centerTitle: true),
-    );
-
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Theme(
-        data: theme,
+        data: ThemeData(
+          useMaterial3: true,
+          brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+          scaffoldBackgroundColor: _pageColor,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF176344),
+            brightness: _isDarkMode ? Brightness.dark : Brightness.light,
+            primary: const Color(0xFF176344),
+            secondary: const Color(0xFFD6B45C),
+            surface: _surfaceColor,
+          ),
+        ),
         child: DefaultTabController(
-          length: 3, // تم تقليل التبويبات إلى 3 فقط (المصحف، الصوتيات، الإعدادات)
+          length: 3, // تم ضبط التبويبات لتصبح 3 فقط (المصحف، الصوتيات، الإعدادات)
           child: Builder(
             builder: (tabContext) => Scaffold(
-              backgroundColor: _pageColor,
               appBar: AppBar(
                 elevation: 0,
                 backgroundColor: green,
                 foregroundColor: Colors.white,
                 centerTitle: true,
-                title: Row(
+                title: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.menu_book_rounded, color: gold, size: 27),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        _currentLanguage == 'ar'
-                            ? 'مصحف المدينة المنورة'
-                            : _currentLanguage == 'tr'
-                                ? 'Medine Mushafı'
-                                : 'Madinah Quran',
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    Icon(Icons.menu_book_rounded, color: gold, size: 27),
+                    SizedBox(width: 10),
+                    Text('مصحف المدينة المنورة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -486,7 +381,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
               bottomNavigationBar: NavigationBar(
                 selectedIndex: _selectedTabIndex,
                 backgroundColor: _surfaceColor,
-                indicatorColor: _isDarkMode ? const Color(0xFF294B3A) : const Color(0xFFE8F1E9),
                 onDestinationSelected: (index) {
                   setState(() => _selectedTabIndex = index);
                   DefaultTabController.of(tabContext).animateTo(index);
@@ -506,381 +400,43 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Widget _buildSurahListTab() {
     const green = Color(0xFF174D35);
-    const gold = Color(0xFFD6B45C);
-
-    Map<String, dynamic>? lastSurah;
-    for (final surah in surahList) {
-      if (surah['id'] == _lastReadSurahId) {
-        lastSurah = surah;
-        break;
-      }
-    }
-
-    return CustomScrollView(
-      key: const PageStorageKey<String>('quran_surah_list'),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          sliver: SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF174D35), Color(0xFF287653)],
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: green.withOpacity(0.16),
-                    blurRadius: 15,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: -12,
-                    top: -15,
-                    child: Icon(
-                      Icons.auto_stories_rounded,
-                      size: 115,
-                      color: Colors.white.withOpacity(0.07),
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.waving_hand_rounded, color: gold, size: 23),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'أهلًا بك في رحاب القرآن الكريم',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'اقرأ، وتدبّر، واطمئن',
-                        style: TextStyle(
-                          color: gold,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '﴿ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ ﴾',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 19,
-                          height: 1.8,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Align(
-                        alignment: Alignment.center,
-                        child: Text(
-                          'سورة الرعد · الآية ٢٨',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: gold,
-                            foregroundColor: green,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(13),
-                            ),
-                          ),
-                          onPressed: () => _openSurah(surahList.first),
-                          icon: const Icon(Icons.menu_book_rounded),
-                          label: const Text(
-                            'ابدأ القراءة',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: surahList.length,
+      itemBuilder: (context, index) {
+        final surah = surahList[index];
+        return Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 9),
+          color: _surfaceColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
+          child: ListTile(
+            title: Text(
+              surah['name'] as String,
+              style: const TextStyle(
+                fontFamily: kSurahNameFont,
+                fontSize: 34, // تكبير خط اسم السورة بوضوح تام
+                color: Color(0xFF263D32),
               ),
             ),
+            subtitle: Text('${surah['type']} • ${surah['verses']} آية', style: const TextStyle(color: Colors.black54)),
+            trailing: const Icon(Icons.chevron_left_rounded, color: green),
+            onTap: () => _openSurah(surah),
           ),
-        ),
-        if (lastSurah != null)
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.bookmark_rounded, color: green),
-                      const SizedBox(width: 8),
-                      Text(
-                        'متابعة القراءة',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _isDarkMode ? const Color(0xFFE4D19A) : green,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Card(
-                    elevation: 0,
-                    color: _surfaceColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: BorderSide(color: green.withOpacity(0.12)),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      leading: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F2E9),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.bookmark_added_rounded,
-                          color: green,
-                        ),
-                      ),
-                      title: Text(
-                        lastSurah['name'] as String,
-                        style: const TextStyle(
-                          fontFamily: kSurahNameFont,
-                          fontSize: 34, // تكبير خط اسم السورة
-                          color: green,
-                        ),
-                      ),
-                      subtitle: const Text('آخر سورة فتحتها'),
-                      trailing: const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: green,
-                        size: 18,
-                      ),
-                      onTap: () => _openSurah(lastSurah!),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-          sliver: SliverToBoxAdapter(
-            child: Row(
-              children: [
-                const Icon(Icons.library_books_rounded, color: green),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'سور القرآن الكريم',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: green,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5EEE6),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${toArabicNumerals(surahList.length)} سورة',
-                    style: const TextStyle(
-                      color: green,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final surah = surahList[index];
-                final int id = surah['id'] as int;
-                final bool isMeccan = surah['isMeccan'] as bool;
-                final bool isLastRead = id == _lastReadSurahId;
-
-                return Card(
-                  elevation: 0,
-                  margin: const EdgeInsets.only(bottom: 9),
-                  color: _surfaceColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(17),
-                    side: BorderSide(
-                      color: isLastRead
-                          ? gold.withOpacity(0.9)
-                          : Colors.black.withOpacity(0.045),
-                      width: isLastRead ? 1.4 : 1,
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 5,
-                    ),
-                    leading: Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: isLastRead
-                            ? const Color(0xFFFFF3D5)
-                            : const Color(0xFFE8F2E9),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        toArabicNumerals(id),
-                        style: TextStyle(
-                          color: isLastRead ? Colors.brown : green,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      surah['name'] as String,
-                      style: const TextStyle(
-                        fontFamily: kSurahNameFont,
-                        fontSize: 34, // تكبير خط أسماء السور بشكل واضح
-                        color: Color(0xFF263D32),
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 5),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 5,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isMeccan
-                                  ? const Color(0xFFFFF0E2)
-                                  : const Color(0xFFE4F3FA),
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            child: Text(
-                              surah['type'] as String,
-                              style: TextStyle(
-                                color: isMeccan
-                                    ? const Color(0xFFB85B18)
-                                    : const Color(0xFF176D91),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '${toArabicNumerals(surah['verses'] as int)} آية',
-                            style: const TextStyle(
-                              color: Colors.black54,
-                              fontSize: 12,
-                            ),
-                          ),
-                          if (isLastRead)
-                            const Text(
-                              'آخر قراءة',
-                              style: TextStyle(
-                                color: Color(0xFF947025),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_left_rounded,
-                      color: green,
-                      size: 25,
-                    ),
-                    onTap: () => _openSurah(surah),
-                  ),
-                );
-              },
-              childCount: surahList.length,
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildAudioTab() {
     const green = Color(0xFF174D35);
-    final currentSurah = _currentPlayingSurahId == null ? null : surahList.cast<Map<String, dynamic>?>().firstWhere((s) => s?['id'] == _currentPlayingSurahId, orElse: () => null);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      padding: const EdgeInsets.all(16),
       children: [
         const Text('الصوتيات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: green)),
-        const SizedBox(height: 5),
-        const Text('اختر القارئ أولاً، ثم اضغط على السورة لتشغيلها.', style: TextStyle(color: Colors.black54)),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _isLoadingReciters ? const LinearProgressIndicator() : _reciterPicker(),
-        const SizedBox(height: 12),
-        if (currentSurah != null)
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: const Color(0xFFE8F1E9), borderRadius: BorderRadius.circular(16)),
-            child: Row(children: [
-              const Icon(Icons.graphic_eq_rounded, color: green, size: 28),
-              const SizedBox(width: 10),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(_selectedReciterName(), style: const TextStyle(color: green, fontWeight: FontWeight.bold)),
-                Text('سورة ${currentSurah['name']}', style: const TextStyle(color: green, fontSize: 15)),
-                Text(_isPlaying ? 'جاري التشغيل' : 'متوقف مؤقتًا', style: const TextStyle(color: Colors.black54, fontSize: 12)),
-              ])),
-              IconButton(onPressed: () => _playSurahAudio(_currentPlayingSurahId!), icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: green, size: 34)),
-            ]),
-          ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         ...surahList.map((surah) {
           final id = surah['id'] as int;
           final isCurrent = _currentPlayingSurahId == id;
@@ -888,11 +444,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
             elevation: 0,
             margin: const EdgeInsets.symmetric(vertical: 4),
             color: _surfaceColor,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: isCurrent ? green.withOpacity(.5) : Colors.black12)),
             child: ListTile(
-              leading: CircleAvatar(backgroundColor: const Color(0xFFE8F1E9), child: Text(toArabicNumerals(id), style: const TextStyle(color: green, fontWeight: FontWeight.bold))),
-              title: Text(surah['name'] as String, style: TextStyle(fontFamily: kSurahNameFont, fontSize: 32, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
-              subtitle: Text('${_selectedReciterName()} • سورة ${surah['name']}', style: TextStyle(fontSize: 12, color: _mutedTextColor)),
+              title: Text(surah['name'] as String, style: const TextStyle(fontFamily: kSurahNameFont, fontSize: 30, color: green)),
+              subtitle: Text(_selectedReciterName(), style: const TextStyle(fontSize: 12)),
               trailing: Icon(isCurrent && _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: green, size: 32),
               onTap: () => _playSurahAudio(id),
             ),
@@ -906,168 +460,40 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(
-          color: _surfaceColor,
-          child: SwitchListTile(
-            secondary: const Icon(Icons.dark_mode_rounded, color: Color(0xFFD6B45C), size: 28),
-            title: Text('المظهر الداكن', style: TextStyle(fontWeight: FontWeight.bold, color: _textColor)),
-            subtitle: Text(_isDarkMode ? 'الوضع الداكن مفعّل' : 'التبديل بين المظهر الفاتح والداكن', style: TextStyle(color: _mutedTextColor)),
-            value: _isDarkMode,
-            activeColor: const Color(0xFFD6B45C),
-            onChanged: (value) {
-              setState(() => _isDarkMode = value);
-              _saveSetting('app_dark_mode', value);
-            },
-          ),
+        SwitchListTile(
+          title: const Text('المظهر الداكن', style: TextStyle(fontWeight: FontWeight.bold)),
+          value: _isDarkMode,
+          onChanged: (value) async {
+            setState(() => _isDarkMode = value);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('app_dark_mode', value);
+          },
         ),
-        const SizedBox(height: 10),
-        Card(
-          color: _surfaceColor,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.language, color: Color(0xFF287653), size: 26),
-                    SizedBox(width: 10),
-                    Text("لغة واجهة التطبيق", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF287653))),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _currentLanguage,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'ar', child: Text("العربية")),
-                    DropdownMenuItem(value: 'en', child: Text("English")),
-                    DropdownMenuItem(value: 'tr', child: Text("Türkçe")),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _currentLanguage = val);
-                      _saveSetting('app_lang', val);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Card(
-          elevation: 0,
-          color: _surfaceColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.person, color: Color(0xFF287653), size: 26),
-                    SizedBox(width: 10),
-                    Text("القارئ الافتراضي للصوتيات", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF287653))),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _isLoadingReciters ? const Center(child: CircularProgressIndicator()) : _reciterPicker(),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 30),
-        const Center(
-          child: Column(
-            children: [
-              Text("تطبيق المصحف الشريف الإلكتروني v1.0.0", style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
-              SizedBox(height: 6),
-              Text("جميع التلاوات الصوتية تعمل عبر شبكة MP3Quran المباشرة", style: TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
-            ],
-          ),
-        )
       ],
     );
   }
 
   Widget _buildMiniAudioPlayer() {
     if (_currentPlayingSurahId == null) return const SizedBox.shrink();
-
     final currentSurah = surahList.firstWhere((s) => s['id'] == _currentPlayingSurahId);
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1B5E20),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, -2))],
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.music_note, color: Color(0xFFFFD700)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    "${_selectedReciterName()} • سورة ${currentSurah['name']}",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, color: Colors.white, size: 32),
-                  onPressed: () => _playSurahAudio(_currentPlayingSurahId!),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-                  onPressed: () async {
-                    await _audioPlayer.stop();
-                    setState(() {
-                      _currentPlayingSurahId = null;
-                    });
-                  },
-                ),
-              ],
+      padding: const EdgeInsets.all(12),
+      color: const Color(0xFF1B5E20),
+      child: Row(
+        children: [
+          const Icon(Icons.music_note, color: Color(0xFFFFD700)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "${_selectedReciterName()} • سورة ${currentSurah['name']}",
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
-            Row(
-              children: [
-                Text(
-                  _formatDuration(_position),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-                Expanded(
-                  child: Slider(
-                    activeColor: const Color(0xFFFFD700),
-                    inactiveColor: Colors.white30,
-                    value: _duration.inMilliseconds > 0
-                        ? _position.inMilliseconds.clamp(0, _duration.inMilliseconds).toDouble()
-                        : 0.0,
-                    max: _duration.inMilliseconds > 0
-                        ? _duration.inMilliseconds.toDouble()
-                        : 1.0,
-                    onChanged: (value) {
-                      _audioPlayer.seek(Duration(milliseconds: value.toInt()));
-                    },
-                  ),
-                ),
-                Text(
-                  _formatDuration(_duration),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
+            onPressed: () => _playSurahAudio(_currentPlayingSurahId!),
+          ),
+        ],
       ),
     );
   }
