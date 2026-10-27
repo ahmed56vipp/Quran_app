@@ -706,12 +706,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _openTafsirScreen() {
-    final isDark = _themeMode == 2;
+    final isDark = _themeMode == 2; // تم تعريف isDark هنا بشكل صحيح
 
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      // تم إزالة const لتجنب أخطاء وقت التشغيل
       backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -731,7 +730,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      // تم إزالة const هنا أيضاً
                       color: isDark
                           ? Colors.white
                           : const Color(0xFF2E7D32),
@@ -772,10 +770,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _showSettingsBottomSheet() {
+    final isDark = _themeMode == 2; // تم تعريف isDark هنا بشكل صحيح لمنع الخطأ
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      // تم إزالة const لتجنب أخطاء وقت التشغيل
       backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -783,8 +782,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final isDark = _themeMode == 2;
-            final textColor = isDark ? Colors.white : Colors.black87;
+            final modalIsDark = _themeMode == 2;
+            final textColor = modalIsDark ? Colors.white : Colors.black87;
 
             return Directionality(
               textDirection: TextDirection.rtl,
@@ -807,12 +806,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       ),
                       const SizedBox(height: 18),
                       Text(
-                        'التبويب المدمج لأدوات القراءة',
+                        'أدوات القراءة',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          // تم إزالة const هنا أيضاً
-                          color: isDark
+                          color: modalIsDark
                               ? Colors.white
                               : const Color(0xFF2E7D32),
                         ),
@@ -902,7 +900,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         children: [
                           Icon(
                             Icons.slow_motion_video,
-                            color: isDark ? Colors.white70 : Colors.green,
+                            color: modalIsDark ? Colors.white70 : Colors.green,
                           ),
                           Expanded(
                             child: Slider(
@@ -921,7 +919,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           ),
                           Icon(
                             Icons.fast_forward,
-                            color: isDark ? Colors.white70 : Colors.green,
+                            color: modalIsDark ? Colors.white70 : Colors.green,
                           ),
                         ],
                       ),
@@ -1022,7 +1020,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                             selected: _themeMode == 2,
                             onSelected: (v) {
                               if (!v) return;
-                              setState(() => _themeMode == 2);
+                              setState(() => _themeMode = 2);
                               _saveReadingPreference('quran_theme_mode', 2);
                               setModalState(() {});
                             },
@@ -1167,8 +1165,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           ),
                         Card(
                           elevation: isDark ? 0 : 3,
-                          // تم إزالة const هنا لتوافق isDark المتغير
-                          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
