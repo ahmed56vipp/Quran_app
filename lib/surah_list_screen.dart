@@ -325,9 +325,10 @@ class _SurahListScreenState extends State<SurahListScreen> {
     );
   }
 
+  // تم تصحيح الخطأ هنا عبر استخدام setString بدلاً من setInt للقيم النصية
   Future<void> _saveSetting(String key, dynamic value) async {
     final prefs = await SharedPreferences.getInstance();
-    if (value is String) await prefs.setInt(key, value); // ملاحظة: تم إبقاء المنطق الأصلي الخاص بك كما هو تماماً
+    if (value is String) await prefs.setString(key, value);
     if (value is bool) await prefs.setBool(key, value);
   }
 
@@ -395,7 +396,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
       }
 
       if (audioUrl.isNotEmpty) {
-        // استخدام Uri.encodeFull للتأكد من خلو الرابط من أي مشاكل في المسافات أو التنسيق
         await _audioPlayer.setUrl(Uri.encodeFull(audioUrl));
         await _audioPlayer.play();
       } else {
@@ -547,7 +547,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: const CircleAvatar(backgroundColor: Color(0xFFE8F1E9), child: Icon(Icons.bookmark_added_rounded, color: green)),
-            // تصحيح خطأ const هنا لأنه يعتمد على متغير وقت التشغيل _isDarkMode
             title: Text(last?['name'] as String? ?? 'ابدأ من سورة الفاتحة', style: TextStyle(fontFamily: kSurahNameFont, fontSize: 26, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
             subtitle: Text('سيظهر سؤال للرجوع إلى آخر آية قرأتها', style: TextStyle(color: _mutedTextColor)),
             trailing: const Icon(Icons.chevron_left_rounded, color: green),
@@ -571,7 +570,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFE8F1E9), borderRadius: BorderRadius.circular(13)), child: Icon(icon, color: green)),
-        // تصحيح خطأ const هنا أيضاً
         title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: _isDarkMode ? const Color(0xFFE4D19A) : green)),
         subtitle: Text(subtitle, style: TextStyle(color: _mutedTextColor)),
         trailing: const Icon(Icons.chevron_left_rounded),
