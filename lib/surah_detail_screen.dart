@@ -706,7 +706,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _openTafsirScreen() {
-    final isDark = _themeMode == 2; // تم تعريف isDark هنا بشكل صحيح
+    final isDark = _themeMode == 2;
 
     showModalBottomSheet<void>(
       context: context,
@@ -770,7 +770,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _showSettingsBottomSheet() {
-    final isDark = _themeMode == 2; // تم تعريف isDark هنا بشكل صحيح لمنع الخطأ
+    final isDark = _themeMode == 2;
 
     showModalBottomSheet<void>(
       context: context,
@@ -1079,7 +1079,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: 'surah_nam',
-                    fontSize: 24,
+                    fontSize: 28, // تكبير اسم السورة في شريط القراءة
                     color: Color(0xFFFFD700),
                     fontWeight: FontWeight.bold,
                   ),
@@ -1088,7 +1088,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               Text(
                 '(${widget.versesCount})',
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: Colors.white70,
                 ),
               ),
@@ -1107,11 +1107,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ),
             Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Text(
-                  currentJuz.clamp(1, 30).toString(),
+                  'الجزء ${toArabicNumerals(currentJuz.clamp(1, 30))}',
                   style: const TextStyle(
-                    fontFamily: 'jzu12',
+                    fontFamily: 'jzu12', // استخدام الخط المخصص للأجزاء بدقة
+                    fontSize: 18,
                     color: Color(0xFFFFD700),
                     fontWeight: FontWeight.bold,
                   ),
@@ -1192,15 +1193,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       ),
                                     ),
                                     WidgetSpan(
-                                      alignment: PlaceholderAlignment.middle,
+                                      alignment: PlaceholderAlignment.middle, // توسيط رقم الآية مع السطر تماماً
                                       child: Container(
                                         key: _verseKeys[i],
                                         margin: const EdgeInsets.symmetric(
                                           horizontal: 3,
                                         ),
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                          vertical: 2,
+                                          horizontal: 5,
+                                          vertical: 3,
                                         ),
                                         decoration: BoxDecoration(
                                           color: selectedVerseIndex == i
@@ -1212,7 +1213,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Text(
-                                          '${i + 1}',
+                                          toArabicNumerals(i + 1),
                                           style: TextStyle(
                                             fontFamily: 'quran_num',
                                             fontSize: _fontSize * 0.65,
