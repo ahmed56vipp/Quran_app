@@ -32,23 +32,26 @@ flutter:
   fonts:
     - family: surah_nam
       fonts:
-        - asset: assets/fonts/surah_nam.ttf 
+        - asset: assets/fonts/surah_nam.ttf
 
-    - family: bsm0
+    # خط البسملة: الرقم 27 يرسم البسملة بالمخطوطة المخصصة.
+    - family: bsmla60
       fonts:
-        - asset: assets/fonts/bsmla60.ttf 
+        - asset: assets/fonts/bsmla60.ttf
 
     - family: nss
       fonts:
-        - asset: assets/fonts/sura_nss.otf 
+        - asset: assets/fonts/sura_nss.otf
 
+    # خط أرقام الآيات؛ الاسم نصي لأن YAML يفسر الأرقام كأعداد.
     - family: '12345'
       fonts:
-        - asset: assets/fonts/123456.ttf 
+        - asset: assets/fonts/123456.ttf
 
+    # خط علامات الأجزاء؛ الأرقام 1 إلى 30 تمثل مخطوطات الأجزاء.
     - family: jzu12
       fonts:
-        - asset: assets/fonts/jzu12.ttf 
+        - asset: assets/fonts/jzu12.ttf
 
 dev_dependencies:
   flutter_test:

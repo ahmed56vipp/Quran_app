@@ -36,12 +36,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   final ScrollController _scrollController = ScrollController();
 
   List<String> verses = [];
+  String? _openingBasmala;
   List<String> tafsirVerses = [];
   List<Map<String, dynamic>> _bookmarks = [];
 
   bool isLoading = true;
+  String? _loadError;
   bool _isAutoScrolling = false;
   bool _updatingVerseFromScroll = false;
+  bool _isFullscreen = false;
 
   int currentJuz = 1;
   int selectedVerseIndex = 0;
@@ -69,6 +72,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     _autoScrollTimer?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    if (_isFullscreen) SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
@@ -147,19 +151,30 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return result;
   }
 
+  bool _isBasmala(String value) {
+    final normalized = value
+        .replaceFirst('\uFEFF', '')
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640\s]'), '')
+        .replaceAll('ٱ', 'ا')
+        .replaceAll('أ', 'ا')
+        .replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا');
+    return normalized == 'بسماللهالرحمنالرحيم';
+  }
+
   List<String> _extractTexts(Map<String, dynamic> data, {bool removeBasmala = false}) {
     final entries = data.entries.toList()
       ..sort((a, b) => _numberFromKey(a.key).compareTo(_numberFromKey(b.key)));
 
     final result = <String>[];
     for (final entry in entries) {
-      final text = entry.value.toString().trim();
+      // Some source files store the opening basmala as verse_0. It is
+      // displayed separately in the source, but is not an ayah of the surah.
+      final text = entry.value.toString().replaceFirst('\uFEFF', '').trim();
       if (text.isEmpty) continue;
-      if (removeBasmala &&
-          (text == 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ' ||
-              text == 'بسم الله الرحمن الرحيم')) {
-        continue;
-      }
+
+      final isZeroIndex = _numberFromKey(entry.key) == 0;
+      if (_isBasmala(text) && (removeBasmala || isZeroIndex)) continue;
       result.add(text);
     }
     return result;
@@ -178,22 +193,33 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Future<void> _loadData() async {
     try {
       final response = await _loadAsset([
-        'assets/surah/surah_${widget.surahId}-json',
         'assets/surah/surah_${widget.surahId}.json',
       ]);
 
       List<String> loadedVerses = [];
+      String? openingBasmala;
       if (response != null) {
-        loadedVerses = _extractTexts(_extractMap(json.decode(response)), removeBasmala: false);
+        final verseMap = _extractMap(json.decode(response));
+        for (final entry in verseMap.entries) {
+          if (_numberFromKey(entry.key) == 0 && _isBasmala(entry.value.toString())) {
+            openingBasmala = entry.value.toString().replaceFirst('\uFEFF', '').trim();
+            break;
+          }
+        }
+        loadedVerses = _extractTexts(verseMap, removeBasmala: false);
       }
 
-      if (loadedVerses.isEmpty) {
-        loadedVerses = List.generate(widget.versesCount, (i) => 'الآية الكريمة رقم ${i + 1}');
+      if (loadedVerses.length != widget.versesCount) {
+        throw FormatException(
+          'عدد الآيات في ملف السورة (${loadedVerses.length}) لا يطابق العدد المتوقع (${widget.versesCount}).',
+        );
       }
 
       if (!mounted) return;
       setState(() {
         verses = loadedVerses;
+        _openingBasmala = openingBasmala;
+        _loadError = null;
         _verseKeys
           ..clear()
           ..addAll(List.generate(loadedVerses.length, (_) => GlobalKey()));
@@ -203,15 +229,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       await _restoreLastPosition();
     } catch (_) {
       if (!mounted) return;
-      final fallback = List.generate(widget.versesCount, (i) => 'الآية الكريمة رقم ${i + 1}');
       setState(() {
-        verses = fallback;
-        _verseKeys
-          ..clear()
-          ..addAll(List.generate(fallback.length, (_) => GlobalKey()));
+        verses = [];
+        _openingBasmala = null;
+        _verseKeys.clear();
+        _loadError = 'تعذّر تحميل آيات السورة بشكل صحيح. أعد فتح السورة أو تحقق من ملفات البيانات.';
         isLoading = false;
       });
-      await _restoreLastPosition();
     }
   }
 
@@ -260,6 +284,141 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         if (mounted) await _scrollToVerse(targetVerse - 1);
       }
     } catch (_) {}
+  }
+
+  Future<void> _saveBookmarks() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_bookmarksKey, json.encode(_bookmarks));
+  }
+
+  Future<void> _addBookmark() async {
+    final verse = selectedVerseIndex + 1;
+    final exists = _bookmarks.any((b) => b['surahId'] == widget.surahId && b['verse'] == verse);
+    if (exists) {
+      _showMessage('هذه الآية محفوظة مسبقاً');
+      return;
+    }
+    setState(() {
+      _bookmarks.add({'surahId': widget.surahId, 'surahName': widget.surahName, 'verse': verse});
+    });
+    await _saveBookmarks();
+    _showMessage('تم حفظ الإشارة المرجعية');
+  }
+
+  Future<void> _navigateToBookmark(Map<String, dynamic> bookmark) async {
+    final id = _intValue(bookmark['surahId']);
+    final verse = _intValue(bookmark['verse']);
+    if (id == widget.surahId) {
+      await _scrollToVerse(verse - 1);
+      return;
+    }
+    try {
+      final raw = await rootBundle.loadString('assets/surah/surah_$id.json');
+      final map = _extractMap(json.decode(raw));
+      final count = _extractTexts(map).length;
+      final name = (bookmark['surahName'] ?? 'السورة').toString();
+      if (!mounted) return;
+      await Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SurahDetailScreen(
+        surahId: id,
+        surahName: name,
+        versesCount: count,
+        surahType: '',
+        initialJuz: _getJuzForVerse(id, verse),
+        initialVerse: verse,
+      )));
+    } catch (_) {
+      _showMessage('تعذّر فتح موضع الإشارة المرجعية');
+    }
+  }
+
+  Future<void> _showBookmarks() async {
+    await _loadBookmarks();
+    if (!mounted) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * .65,
+            child: Column(children: [
+              const Padding(padding: EdgeInsets.all(16), child: Text('الإشارات المرجعية', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+              Expanded(child: _bookmarks.isEmpty
+                ? const Center(child: Text('لا توجد إشارات محفوظة'))
+                : ListView.builder(itemCount: _bookmarks.length, itemBuilder: (_, i) {
+                    final b = _bookmarks[i];
+                    return ListTile(
+                      leading: const Icon(Icons.bookmark, color: Color(0xFF2E7D32)),
+                      title: Text('${b['surahName']} - الآية ${b['verse']}'),
+                      trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () async {
+                        setState(() => _bookmarks.removeAt(i));
+                        await _saveBookmarks();
+                        if (mounted) Navigator.pop(sheetContext);
+                        if (mounted) _showBookmarks();
+                      }),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        _navigateToBookmark(b);
+                      },
+                    );
+                  })),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showGoToVerse() async {
+    final controller = TextEditingController(text: '${selectedVerseIndex + 1}');
+    final value = await showDialog<int>(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('الذهاب إلى آية'),
+      content: TextField(controller: controller, keyboardType: TextInputType.number, autofocus: true, decoration: InputDecoration(hintText: '1 - ${verses.length}')),
+      actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')), FilledButton(onPressed: () => Navigator.pop(ctx, int.tryParse(controller.text)), child: const Text('انتقال'))],
+    ));
+    if (value != null && value >= 1 && value <= verses.length) {
+      await _scrollToVerse(value - 1);
+    } else if (value != null) {
+      _showMessage('رقم الآية خارج نطاق السورة');
+    }
+    controller.dispose();
+  }
+
+  Future<void> _toggleFullscreen() async {
+    _isFullscreen = !_isFullscreen;
+    await SystemChrome.setEnabledSystemUIMode(_isFullscreen ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge);
+    if (mounted) setState(() {});
+  }
+
+  void _showReaderSettings() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, updateSheet) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: SafeArea(child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('إعدادات القراءة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            const Align(alignment: Alignment.centerRight, child: Text('حجم الخط')),
+            Slider(value: _fontSize, min: 14, max: 40, divisions: 13, label: _fontSize.round().toString(), onChanged: (v) { setState(() => _fontSize = v); updateSheet(() {}); _saveReadingPreference('quran_font_size', v); }),
+            const Align(alignment: Alignment.centerRight, child: Text('سرعة القراءة الآلية')),
+            Slider(value: _scrollSpeed, min: .2, max: 5, divisions: 24, label: _scrollSpeed.toStringAsFixed(1), onChanged: (v) { setState(() => _scrollSpeed = v); updateSheet(() {}); _saveReadingPreference('quran_scroll_speed', v); }),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, children: [
+              ChoiceChip(label: const Text('عادي'), selected: _themeMode == 0, onSelected: (_) async { setState(() => _themeMode = 0); updateSheet(() {}); await _saveReadingPreference('quran_theme_mode', 0); }),
+              ChoiceChip(label: const Text('حماية العين'), selected: _themeMode == 1, onSelected: (_) async { setState(() => _themeMode = 1); updateSheet(() {}); await _saveReadingPreference('quran_theme_mode', 1); }),
+              ChoiceChip(label: const Text('ليلي'), selected: _themeMode == 2, onSelected: (_) async { setState(() => _themeMode = 2); updateSheet(() {}); await _saveReadingPreference('quran_theme_mode', 2); }),
+            ]),
+            const SizedBox(height: 10),
+            Row(children: [Expanded(child: OutlinedButton.icon(onPressed: _toggleFullscreen, icon: const Icon(Icons.fullscreen), label: Text(_isFullscreen ? 'إظهار الشريط' : 'ملء الشاشة'))), const SizedBox(width: 8), Expanded(child: OutlinedButton.icon(onPressed: _showGoToVerse, icon: const Icon(Icons.pin_drop_outlined), label: const Text('الذهاب إلى آية')))]),
+            Row(children: [Expanded(child: OutlinedButton.icon(onPressed: _addBookmark, icon: const Icon(Icons.bookmark_add_outlined), label: const Text('حفظ إشارة'))), const SizedBox(width: 8), Expanded(child: OutlinedButton.icon(onPressed: _showBookmarks, icon: const Icon(Icons.bookmarks_outlined), label: const Text('الإشارات')))]),
+          ]),
+        )),
+      )),
+    );
   }
 
   void _onScroll() {
@@ -348,7 +507,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         _stopAutoScroll();
         return;
       }
-      _scrollController.jumpTo((position.pixels + _scrollSpeed).clamp(0.0, position.maxScrollExtent));
+      _scrollController.jumpTo((position.pixels + _scrollSpeed).clamp(0.0, position.maxScrollExtent).toDouble());
     });
   }
 
@@ -412,6 +571,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ],
           ),
           actions: [
+            IconButton(tooltip: 'إعدادات القراءة', icon: const Icon(Icons.tune, color: Colors.white), onPressed: _showReaderSettings),
+            IconButton(tooltip: 'إشارات مرجعية', icon: const Icon(Icons.bookmark_border, color: Colors.white), onPressed: _showBookmarks),
             IconButton(
               tooltip: 'التمرير التلقائي',
               icon: Icon(
@@ -421,18 +582,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               onPressed: _toggleAutoScroll,
             ),
             Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Text(
-                  'الجزء ${toArabicNumerals(currentJuz.clamp(1, 30))}',
-                  style: const TextStyle(
-                    fontFamily: 'jzu12', // ضبط خط الأجزاء بدقة
-                    fontSize: 18,
-                    color: Color(0xFFFFD700),
-                    fontWeight: FontWeight.bold,
-                  ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Text('الجزء ', style: TextStyle(fontSize: 14, color: Colors.white)),
+                Text(
+                  '${currentJuz.clamp(1, 30).toInt()}',
+                  style: const TextStyle(fontFamily: 'jzu12', fontSize: 22, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                 ),
-              ),
+              ]),
             ),
           ],
           flexibleSpace: Container(
@@ -446,7 +602,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         body: isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
             : verses.isEmpty
-                ? const Center(child: Text('لا توجد آيات للعرض'))
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(_loadError ?? 'لا توجد آيات للعرض', textAlign: TextAlign.center),
+                    ),
+                  )
                 : SingleChildScrollView(
                     controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -459,48 +620,76 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           child: Padding(
                             padding: const EdgeInsets.all(20),
-                            child: Text.rich(
-                              TextSpan(
-                                children: [
-                                  for (int i = 0; i < verses.length; i++) ...[
-                                    TextSpan(
-                                      text: '${verses[i]} ',
-                                      style: TextStyle(
-                                        fontFamily: 'nss',
-                                        fontSize: _fontSize,
-                                        height: 2.2,
-                                        color: selectedVerseIndex == i ? const Color(0xFF2E7D32) : _getTextColor(),
-                                        fontWeight: selectedVerseIndex == i ? FontWeight.bold : FontWeight.normal,
-                                      ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_openingBasmala != null && widget.surahId != 9) ...[
+                                  Text(
+                                    '27',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'bsmla60',
+                                      fontSize: _fontSize * 1.35,
+                                      height: 2.2,
+                                      color: _getTextColor(),
                                     ),
-                                    WidgetSpan(
-                                      alignment: PlaceholderAlignment.middle, // توسيط رقم الآية مع السطر تماماً
-                                      child: Container(
-                                        key: _verseKeys[i],
-                                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: selectedVerseIndex == i ? const Color(0xFF2E7D32) : Colors.transparent,
-                                          border: Border.all(color: const Color(0xFF2E7D32)),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          toArabicNumerals(i + 1),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      for (int i = 0; i < verses.length; i++) ...[
+                                        TextSpan(
+                                          text: '${verses[i]} ',
                                           style: TextStyle(
-                                            fontFamily: '12345',
-                                            fontSize: _fontSize * 0.65,
-                                            color: selectedVerseIndex == i ? Colors.white : (isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32)),
-                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'nss',
+                                            fontSize: _fontSize,
+                                            height: 2.2,
+                                            color: selectedVerseIndex == i
+                                                ? const Color(0xFF2E7D32)
+                                                : _getTextColor(),
+                                            fontWeight: selectedVerseIndex == i
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                    const TextSpan(text: ' '),
-                                  ],
-                                ],
-                              ),
-                              textAlign: TextAlign.justify,
-                              textDirection: TextDirection.rtl,
+                                        WidgetSpan(
+                                          alignment: PlaceholderAlignment.middle,
+                                          child: Container(
+                                            key: _verseKeys[i],
+                                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: selectedVerseIndex == i
+                                                  ? const Color(0xFF2E7D32)
+                                                  : Colors.transparent,
+                                              border: Border.all(color: const Color(0xFF2E7D32)),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Text(
+                                              '${i + 1}',
+                                              style: TextStyle(
+                                                fontFamily: '12345',
+                                                fontSize: _fontSize * 0.65,
+                                                color: selectedVerseIndex == i
+                                                    ? Colors.white
+                                                    : (isDark
+                                                        ? const Color(0xFFFFD700)
+                                                        : const Color(0xFF2E7D32)),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const TextSpan(text: ' '),
+                                      ],
+                                    ],
+                                  ),
+                                  textAlign: TextAlign.justify,
+                                  textDirection: TextDirection.rtl,
+                                ),
+                              ],
                             ),
                           ),
                         ),

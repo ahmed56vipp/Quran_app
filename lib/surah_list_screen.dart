@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,11 +29,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
   List<dynamic> _recitersList = [];
   bool _isLoadingReciters = true;
   int? _lastReadSurahId;
+  int? _lastReadVerse;
+  bool _warmEyeMode = false;
   int _selectedTabIndex = 0;
   bool _isDarkMode = false;
 
-  Color get _pageColor => _isDarkMode ? const Color(0xFF101713) : const Color(0xFFF7F5EC);
-  Color get _surfaceColor => _isDarkMode ? const Color(0xFF1A2620) : Colors.white;
+  Color get _pageColor => _isDarkMode ? const Color(0xFF101713) : (_warmEyeMode ? const Color(0xFFF4E8D0) : const Color(0xFFF7F5EC));
+  Color get _surfaceColor => _isDarkMode ? const Color(0xFF1A2620) : (_warmEyeMode ? const Color(0xFFFFF6E5) : Colors.white);
   Color get _textColor => _isDarkMode ? const Color(0xFFECEFEA) : const Color(0xFF20352A);
   Color get _mutedTextColor => _isDarkMode ? const Color(0xFFB8C5BC) : const Color(0xFF68766D);
 
@@ -154,6 +157,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
   ];
 
   @override
+  void dispose() {
+    unawaited(_audioPlayer.dispose());
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
@@ -192,12 +201,24 @@ class _SurahListScreenState extends State<SurahListScreen> {
       } else if (decoded is Map && decoded.containsKey('reciters')) {
         data = decoded['reciters'];
       }
+      // Show only reciters that have a local audio URL file. This avoids
+      // offering choices that can never play from the bundled project data.
+      final availableReciters = <dynamic>[];
+      for (final reciter in data) {
+        if (reciter is! Map || reciter['id'] == null) continue;
+        try {
+          await rootBundle.loadString('assets/audiourls/${reciter['id']}.json');
+          availableReciters.add(reciter);
+        } catch (_) {
+          // No bundled audio file for this reciter.
+        }
+      }
       if (!mounted) return;
       setState(() {
-        _recitersList = data;
+        _recitersList = availableReciters;
         _isLoadingReciters = false;
       });
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => _isLoadingReciters = false);
     }
   }
@@ -205,17 +226,31 @@ class _SurahListScreenState extends State<SurahListScreen> {
   Future<void> _loadAppSettings() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
+    final savedReciterId = prefs.getString('app_reciter') ?? '123';
+    final hasSavedReciter = _recitersList.any(
+      (reciter) => reciter['id'].toString() == savedReciterId,
+    );
+    final selectedReciterId = hasSavedReciter
+        ? savedReciterId
+        : (_recitersList.isNotEmpty ? _recitersList.first['id'].toString() : '123');
+
     setState(() {
       _currentLanguage = prefs.getString('app_lang') ?? 'ar';
-      _selectedReciterId = prefs.getString('app_reciter') ?? '123';
-      _lastReadSurahId = prefs.getInt('last_read_surah');
+      _selectedReciterId = selectedReciterId;
+      _lastReadSurahId = prefs.getInt('last_surah') ?? prefs.getInt('last_read_surah');
+      _lastReadVerse = prefs.getInt('last_verse');
+      _warmEyeMode = prefs.getInt('quran_theme_mode') == 1;
       _isDarkMode = prefs.getBool('app_dark_mode') ?? false;
     });
+    if (selectedReciterId != savedReciterId) {
+      await prefs.setString('app_reciter', selectedReciterId);
+    }
   }
 
   Future<void> _openSurah(Map<String, dynamic> surah) async {
     final prefs = await SharedPreferences.getInstance();
     final int id = surah['id'] as int;
+    final savedVerse = prefs.getInt('last_surah') == id ? prefs.getInt('last_verse') : null;
     await prefs.setInt('last_read_surah', id);
     if (!mounted) return;
     setState(() => _lastReadSurahId = id);
@@ -229,10 +264,23 @@ class _SurahListScreenState extends State<SurahListScreen> {
           versesCount: surah['verses'] as int,
           surahType: surah['type'] as String,
           initialJuz: surah['juz'] as int,
-          initialVerse: 1,
+          initialVerse: savedVerse,
         ),
       ),
     );
+  }
+
+  Future<void> _resumeLastRead() async {
+    if (_lastReadSurahId == null) return;
+    final surah = surahList.firstWhere((s) => s['id'] == _lastReadSurahId, orElse: () => surahList.first);
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => SurahDetailScreen(
+      surahId: surah['id'] as int,
+      surahName: surah['name'] as String,
+      versesCount: surah['verses'] as int,
+      surahType: surah['type'] as String,
+      initialJuz: surah['juz'] as int,
+      initialVerse: _lastReadVerse,
+    )));
   }
 
   String _selectedReciterName() {
@@ -297,18 +345,20 @@ class _SurahListScreenState extends State<SurahListScreen> {
         final dynamic decoded = jsonDecode(jsonString);
         if (decoded is List && decoded.length >= surahId) {
           var item = decoded[surahId - 1];
-          if (item is String) audioUrl = item;
-          else if (item is Map) audioUrl = item['url'] ?? item['F2'] ?? '';
+          if (item is String) {
+            audioUrl = item;
+          } else if (item is Map) {
+            audioUrl = (item['F2'] ?? item['url'] ?? '').toString();
+          }
         }
       } catch (_) {}
 
-      // نظام روابط احتياطية موثوق لضمان عمل كافة التلاوات
-      if (audioUrl.isEmpty) {
-        final formattedSurahNum = surahId.toString().padLeft(3, '0');
-        audioUrl = 'https://server8.mp3quran.net/afs/$formattedSurahNum.mp3';
+      // Never substitute another reciter silently when this reciter has no URL.
+      if (audioUrl.trim().isEmpty) {
+        throw StateError('لا يوجد رابط صوتي لهذه السورة عند القارئ المحدد');
       }
 
-      await _audioPlayer.setUrl(Uri.encodeFull(audioUrl));
+      await _audioPlayer.setUrl(audioUrl.trim());
       await _audioPlayer.play();
     } catch (e) {
       if (mounted) {
@@ -460,15 +510,43 @@ class _SurahListScreenState extends State<SurahListScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        SwitchListTile(
+        const Text('إعدادات التطبيق', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Card(color: _surfaceColor, child: SwitchListTile(
           title: const Text('المظهر الداكن', style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: const Text('تفعيل الواجهة الليلية للتطبيق'),
           value: _isDarkMode,
           onChanged: (value) async {
             setState(() => _isDarkMode = value);
             final prefs = await SharedPreferences.getInstance();
             await prefs.setBool('app_dark_mode', value);
           },
-        ),
+        )),
+        Card(color: _surfaceColor, child: SwitchListTile(
+          title: const Text('حماية العين - الوضع الدافئ', style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: const Text('خلفية دافئة مريحة للقراءة'),
+          value: _warmEyeMode,
+          onChanged: (value) async {
+            setState(() => _warmEyeMode = value);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('quran_theme_mode', value ? 1 : 0);
+          },
+        )),
+        const SizedBox(height: 16),
+        Card(color: _surfaceColor, child: ListTile(
+          leading: const Icon(Icons.history_rounded, color: Color(0xFF176344)),
+          title: const Text('العودة إلى آخر موضع قراءة', style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(_lastReadSurahId == null ? 'لم يتم حفظ موضع قراءة بعد' : 'السورة ${surahList.firstWhere((s) => s['id'] == _lastReadSurahId, orElse: () => surahList.first)['name']} • الآية ${_lastReadVerse ?? 1}'),
+          trailing: const Icon(Icons.chevron_left),
+          onTap: _lastReadSurahId == null ? null : _resumeLastRead,
+        )),
+        Card(color: _surfaceColor, child: ListTile(
+          leading: const Icon(Icons.record_voice_over_rounded, color: Color(0xFF176344)),
+          title: const Text('القارئ الحالي'),
+          subtitle: Text(_selectedReciterName()),
+          trailing: const Icon(Icons.chevron_left),
+          onTap: null,
+        )),
       ],
     );
   }
