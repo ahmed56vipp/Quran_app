@@ -487,7 +487,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                         child: Text(
                                           toArabicNumerals(i + 1),
                                           style: TextStyle(
-                                            fontFamily: 'quran_num',
+                                            fontFamily: '12345',
                                             fontSize: _fontSize * 0.65,
                                             color: selectedVerseIndex == i ? Colors.white : (isDark ? const Color(0xFFFFD700) : const Color(0xFF2E7D32)),
                                             fontWeight: FontWeight.bold,

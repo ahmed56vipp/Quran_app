@@ -34,7 +34,7 @@ flutter:
       fonts:
         - asset: assets/fonts/surah_nam.ttf 
 
-    - family: bsm60
+    - family: bsm0
       fonts:
         - asset: assets/fonts/bsmla60.ttf 
 
@@ -42,7 +42,7 @@ flutter:
       fonts:
         - asset: assets/fonts/sura_nss.otf 
 
-    - family: quran_num
+    - family: 12345
       fonts:
         - asset: assets/fonts/123456.ttf 
 
