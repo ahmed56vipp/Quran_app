@@ -42,7 +42,7 @@ flutter:
       fonts:
         - asset: assets/fonts/sura_nss.otf 
 
-    - family: 12345
+    - family: '12345'
       fonts:
         - asset: assets/fonts/123456.ttf 
 
