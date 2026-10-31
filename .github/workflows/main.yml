@@ -6,47 +6,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 1. جلب الكود من المستودع
       - uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      # 2. إعداد بيئة فلاتر بشكل صحيح
+      - uses: subosito/flutter-action@v2
         with:
-          distribution: temurin
-          java-version: '17'
+          channel: 'stable'
+          cache: true # تسريع البناء في المرات القادمة
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Install Flutter dependencies
+      # 3. تحميل كل الحزم والمكتبات (بما فيها shared_preferences)
+      - name: Install dependencies
         run: flutter pub get
 
-      # The uploaded project did not contain Gradle Wrapper files. Generate
-      # them in CI so Flutter can invoke the exact Gradle version in properties.
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.1.0'
+      # 4. توليد أيقونات التطبيق
+      - name: Generate Launcher Icons
+        run: flutter pub run flutter_launcher_icons
 
-      - name: Generate Gradle Wrapper
-        working-directory: android
-        run: |
-          FLUTTER_BIN="$(command -v flutter)"
-          FLUTTER_ROOT="$(cd "$(dirname "$FLUTTER_BIN")/.." && pwd)"
-          printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > local.properties
-          printf 'sdk.dir=%s\n' "$ANDROID_HOME" >> local.properties
-          gradle wrapper --gradle-version 9.1.0 --distribution-type bin
+      # 5. بناء نسخة الـ APK النهائية
+      - name: Build Release APK
+        run: flutter build apk --release --no-pub # تمنع إعادة الفحص الباهت أثناء البناء
 
-      - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
-
-      - name: Build release APK
-        run: flutter build apk --release --no-pub
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      # 6. رفع الملف الناتج لتقوم بتحميله على هاتفك
+      - uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
