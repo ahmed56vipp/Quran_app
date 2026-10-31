@@ -1,0 +1,13 @@
+[
+   {
+      "ID":"1",
+      "link":"vidbg1.mp4",
+      "listTopDownRatio":"0.68",
+      "listLeftRightRatio":"0.5",
+      "listWidthRatioToScreen":"0.7",
+      "suraNamePosRatioHieght":"0.05",
+      "jozaNamePosRatioHight":"0.05",
+      "suraAndJozaMargin":"0.15",
+      "reciterNamePosRatioTop":"0.85"
+   }
+]

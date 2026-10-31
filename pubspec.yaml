@@ -20,6 +20,22 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/aminatedbgs/
+    - assets/audios/
+    - assets/data_backup/
+    - assets/db/
+    - assets/dexopt/
+    - assets/search_files/
+    - assets/subjects/
+    - assets/tafsir/
+    - assets/tajweed/
+    - assets/fonts/
+    - assets/doaa_khatm.txt
+    - assets/line_map.txt
+    - assets/line_map_new.txt
+    - assets/plugins.txt
+    - assets/tvquran.txt
+    - assets/waqf_marks.txt
     - assets/data/
     - assets/surah/
     - assets/translation/ar/
@@ -34,7 +50,7 @@ flutter:
       fonts:
         - asset: assets/fonts/surah_nam.ttf
 
-    # خط البسملة: الرقم 27 يرسم البسملة بالمخطوطة المخصصة.
+    # خط البسملة: الرقم 57 يرسم البسملة بالمخطوطة المخصصة.
     - family: bsmla60
       fonts:
         - asset: assets/fonts/bsmla60.ttf

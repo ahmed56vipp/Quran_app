@@ -1,0 +1,1175 @@
+{
+    "chapters": [
+        {
+            "name": "الفاتحة",
+            "id": "1",
+            "chapter_num": "1",
+            "revelation_place": "makkah",
+            "revelation_order": "5",
+            "verses_count": "7 ",
+            "juz_count": "1",
+            "description": "- حاوية لأهداف القرآن<br />\r\n- عقيدة / عبادة / منهج / أخلاق / معاملات "
+        },
+        {
+            "name": "البقرة",
+            "id": "2",
+            "chapter_num": "2",
+            "revelation_place": "madinah",
+            "revelation_order": "87",
+            "verses_count": "286",
+            "juz_count": "1-2-3",
+            "description": "منهج خلافة الله في الأرض <br />\r\nبين من اضاعوه ومن اقاموه "
+        },
+        {
+            "name": "آل عمران",
+            "id": "3",
+            "chapter_num": "3",
+            "revelation_place": "madinah",
+            "revelation_order": "89",
+            "verses_count": "200",
+            "juz_count": "3-4",
+            "description": "الثبات على المنهج<br />\r\nوالدفاع عنه باللسان والسنان"
+        },
+        {
+            "name": "النساء",
+            "id": "4",
+            "chapter_num": "4",
+            "revelation_place": "madinah",
+            "revelation_order": "92",
+            "verses_count": "176",
+            "juz_count": "4-5-6",
+            "description": "العدل و الرحمة خاصة مع الضعفاء"
+        },
+        {
+            "name": "المائدة",
+            "id": "5",
+            "chapter_num": "5",
+            "revelation_place": "madinah",
+            "revelation_order": "112",
+            "verses_count": "120",
+            "juz_count": "6-7",
+            "description": "الوفاء بالعقود <br />\r\nالمطعومات والمشروبات<br />\r\nالمادية والمعنوية"
+        },
+        {
+            "name": "الأنعام",
+            "id": "6",
+            "chapter_num": "6",
+            "revelation_place": "madinah",
+            "revelation_order": "55",
+            "verses_count": "165",
+            "juz_count": "7-8 ",
+            "description": "- توحيد الله تعالى <br />\r\nواقامة الحجة على الكفار"
+        },
+        {
+            "name": "الأعراف",
+            "id": "7",
+            "chapter_num": "7",
+            "revelation_place": "makkah",
+            "revelation_order": "39",
+            "verses_count": "206",
+            "juz_count": "8-9 ",
+            "description": "تحديد الموقف وسط الصراع"
+        },
+        {
+            "name": "الأنفال",
+            "id": "8",
+            "chapter_num": "8",
+            "revelation_place": "madinah",
+            "revelation_order": "88",
+            "verses_count": "75",
+            "juz_count": "9-10",
+            "description": "- قوانين النصر <br />\r\n- الاخوة الايمانية<br />\r\n"
+        },
+        {
+            "name": "التوبة",
+            "id": "9",
+            "chapter_num": "9",
+            "revelation_place": "madinah",
+            "revelation_order": "113",
+            "verses_count": "129",
+            "juz_count": "10-11",
+            "description": "- حماية المجتمع الاسلامي <br />\r\n- اعداء الخارج / تبوك<br />\r\n- اعداء الداخل / المنافقين<br />\r\n- الولاء والبراء "
+        },
+        {
+            "name": "يونس",
+            "id": "10",
+            "chapter_num": "10",
+            "revelation_place": "makkah",
+            "revelation_order": "51",
+            "verses_count": "109",
+            "juz_count": "11 ",
+            "description": "الإيمان بالقضاء والقدر "
+        },
+        {
+            "name": "هود",
+            "id": "11",
+            "chapter_num": "11",
+            "revelation_place": "madinah",
+            "revelation_order": "52",
+            "verses_count": "123",
+            "juz_count": "11-12",
+            "description": "التوازن في الثبات على الحق <br />\r\n( فاصبر ان العاقبة للمتقين )"
+        },
+        {
+            "name": "يوسف",
+            "id": "12",
+            "chapter_num": "12",
+            "revelation_place": "makkah",
+            "revelation_order": "53",
+            "verses_count": "111",
+            "juz_count": "12-13",
+            "description": "- الثقة بتدبير الله<br />\r\n- الصبر و عدم اليأس"
+        },
+        {
+            "name": "الرعد",
+            "id": "13",
+            "chapter_num": "13",
+            "revelation_place": "madinah",
+            "revelation_order": "96",
+            "verses_count": "43",
+            "juz_count": "13",
+            "description": "قوة الحق وضعف الباطل"
+        },
+        {
+            "name": "إبراهيم",
+            "id": "14",
+            "chapter_num": "14",
+            "revelation_place": "madinah",
+            "revelation_order": "72",
+            "verses_count": "52",
+            "juz_count": "13",
+            "description": "نعمة الإيمان ونقمة الكفر<br />\r\n( وظيفة الرسل اخراج الناس من الظلمات الى النور ) "
+        },
+        {
+            "name": "الحجر",
+            "id": "15",
+            "chapter_num": "15",
+            "revelation_place": "makkah",
+            "revelation_order": "54",
+            "verses_count": "99",
+            "juz_count": "14",
+            "description": "حفظ الله لدينه"
+        },
+        {
+            "name": "النحل",
+            "id": "16",
+            "chapter_num": "16",
+            "revelation_place": "madinah",
+            "revelation_order": "70",
+            "verses_count": "128",
+            "juz_count": "14",
+            "description": "توحيد الله تعالى من خلال النعم"
+        },
+        {
+            "name": "الإسراء",
+            "id": "17",
+            "chapter_num": "17",
+            "revelation_place": "madinah",
+            "revelation_order": "50",
+            "verses_count": "111",
+            "juz_count": "15",
+            "description": "استشعر قيمة القرآن"
+        },
+        {
+            "name": "الكهف",
+            "id": "18",
+            "chapter_num": "18",
+            "revelation_place": "makkah",
+            "revelation_order": "69",
+            "verses_count": "110",
+            "juz_count": "15-16",
+            "description": "العصمة من الفتن"
+        },
+        {
+            "name": "مريم",
+            "id": "19",
+            "chapter_num": "19",
+            "revelation_place": "madinah",
+            "revelation_order": "44",
+            "verses_count": "98",
+            "juz_count": "16",
+            "description": "رحمة الله تعالى<br />\r\nتوريث الدين للأبناء"
+        },
+        {
+            "name": "طه",
+            "id": "20",
+            "chapter_num": "20",
+            "revelation_place": "madinah",
+            "revelation_order": "45",
+            "verses_count": "135",
+            "juz_count": "16",
+            "description": "رعاية الله للمختارين من الرسل<br />\r\nالقرآن منهج للسعادة لا للشقاء "
+        },
+        {
+            "name": "الأنبياء",
+            "id": "21",
+            "chapter_num": "21",
+            "revelation_place": "madinah",
+            "revelation_order": "73",
+            "verses_count": "112",
+            "juz_count": "17",
+            "description": "دور الأنبياء في تصحيح العقيدة وتذكرة البشرية"
+        },
+        {
+            "name": "الحج",
+            "id": "22",
+            "chapter_num": "22",
+            "revelation_place": "madinah",
+            "revelation_order": "103",
+            "verses_count": "78",
+            "juz_count": "17",
+            "description": "دور الحج في بناء الأمة"
+        },
+        {
+            "name": "المؤمنون",
+            "id": "23",
+            "chapter_num": "23",
+            "revelation_place": "madinah",
+            "revelation_order": "74",
+            "verses_count": "118",
+            "juz_count": "18",
+            "description": "- ادلة وحدانية الله تعالى<br />\r\n- صفات المؤمنين"
+        },
+        {
+            "name": "النور",
+            "id": "24",
+            "chapter_num": "24",
+            "revelation_place": "madinah",
+            "revelation_order": "102",
+            "verses_count": "64",
+            "juz_count": "18",
+            "description": "شرع الله نور للمجتمع"
+        },
+        {
+            "name": "الفرقان",
+            "id": "25",
+            "chapter_num": "25",
+            "revelation_place": "madinah",
+            "revelation_order": "42",
+            "verses_count": "77",
+            "juz_count": "18-19",
+            "description": "الاستدلال على صدق الرسول من خلال معجزة القرآن"
+        },
+        {
+            "name": "الشعراء",
+            "id": "26",
+            "chapter_num": "26",
+            "revelation_place": "makkah",
+            "revelation_order": "47",
+            "verses_count": "227",
+            "juz_count": "19",
+            "description": "- دور الإعلام في توصيل رسالة الإسلام "
+        },
+        {
+            "name": "النمل",
+            "id": "27",
+            "chapter_num": "27",
+            "revelation_place": "madinah",
+            "revelation_order": "48",
+            "verses_count": "93",
+            "juz_count": "19-20",
+            "description": "أهمية التفوق الحضاري والايمان بالله تعالى"
+        },
+        {
+            "name": "القصص",
+            "id": "28",
+            "chapter_num": "28",
+            "revelation_place": "madinah",
+            "revelation_order": "49",
+            "verses_count": "88",
+            "juz_count": "20",
+            "description": "الصراع بين الحق والباطل <br />\r\nوالعاقبة للحق واهله"
+        },
+        {
+            "name": "العنكبوت",
+            "id": "29",
+            "chapter_num": "29",
+            "revelation_place": "madinah",
+            "revelation_order": "85",
+            "verses_count": "69",
+            "juz_count": "20-21",
+            "description": "الايمان والفتنة<br />\r\nجاهد الفتن و اصبر عليها"
+        },
+        {
+            "name": "الروم",
+            "id": "30",
+            "chapter_num": "30",
+            "revelation_place": "madinah",
+            "revelation_order": "84",
+            "verses_count": "60",
+            "juz_count": "21",
+            "description": "أيات الله ظاهرة فكيف لاتؤمنون ؟<br />\r\n( لله الأمر من قبل ومن بعد )"
+        },
+        {
+            "name": "لقمان",
+            "id": "31",
+            "chapter_num": "31",
+            "revelation_place": "madinah",
+            "revelation_order": "57",
+            "verses_count": "34",
+            "juz_count": "21",
+            "description": "بيان الآيات والنعم<br />\r\nوالدعوة الى الايمان والشكر"
+        },
+        {
+            "name": "السجدة",
+            "id": "32",
+            "chapter_num": "32",
+            "revelation_place": "madinah",
+            "revelation_order": "75",
+            "verses_count": "30",
+            "juz_count": "21",
+            "description": "عظمة الله تعالى والخضوع له"
+        },
+        {
+            "name": "الأحزاب",
+            "id": "33",
+            "chapter_num": "33",
+            "revelation_place": "madinah",
+            "revelation_order": "90",
+            "verses_count": "73",
+            "juz_count": "21-22",
+            "description": "مقام النبي عليه السلام واحواله"
+        },
+        {
+            "name": "سبأ",
+            "id": "34",
+            "chapter_num": "34",
+            "revelation_place": "madinah",
+            "revelation_order": "58",
+            "verses_count": "54",
+            "juz_count": "22",
+            "description": "الاستسلام لله سبيل بقاء الحضارات"
+        },
+        {
+            "name": "فاطر",
+            "id": "35",
+            "chapter_num": "35",
+            "revelation_place": "madinah",
+            "revelation_order": "43",
+            "verses_count": "45",
+            "juz_count": "22",
+            "description": "- التذكير بنعم الله تعالى وعظمته<br />\r\n- الاستسلام سبيل العزة "
+        },
+        {
+            "name": "يس",
+            "id": "36",
+            "chapter_num": "36",
+            "revelation_place": "makkah",
+            "revelation_order": "41",
+            "verses_count": "83",
+            "juz_count": "22-23",
+            "description": "الإصرار على الدعوة"
+        },
+        {
+            "name": "الصافات",
+            "id": "37",
+            "chapter_num": "37",
+            "revelation_place": "madinah",
+            "revelation_order": "56",
+            "verses_count": "182",
+            "juz_count": "23",
+            "description": "الاستسلام الكامل لله تعالى"
+        },
+        {
+            "name": "ص",
+            "id": "38",
+            "chapter_num": "38",
+            "revelation_place": "makkah",
+            "revelation_order": "38",
+            "verses_count": "88",
+            "juz_count": "23",
+            "description": "العودة للحق"
+        },
+        {
+            "name": "الزمر",
+            "id": "39",
+            "chapter_num": "39",
+            "revelation_place": "makkah",
+            "revelation_order": "59",
+            "verses_count": "75",
+            "juz_count": "23-24",
+            "description": "الإخلاص لله تعالى "
+        },
+        {
+            "name": "غافر",
+            "id": "40",
+            "chapter_num": "40",
+            "revelation_place": "madinah",
+            "revelation_order": "60",
+            "verses_count": "85",
+            "juz_count": "24",
+            "description": "- أهمية الدعوة إلى الله و تفويض الأمر إليه <br />\r\n- الصراع العقلي بين الحق والباطل وأدب الحوار"
+        },
+        {
+            "name": "فصلت",
+            "id": "41",
+            "chapter_num": "41",
+            "revelation_place": "madinah",
+            "revelation_order": "61",
+            "verses_count": "54",
+            "juz_count": "24-25",
+            "description": "- القرآن الكريم <br />\r\n- وضوح الرسالة وتفصيلها"
+        },
+        {
+            "name": "الشورى",
+            "id": "42",
+            "chapter_num": "42",
+            "revelation_place": "makkah",
+            "revelation_order": "62",
+            "verses_count": "53",
+            "juz_count": "25",
+            "description": "التحذير من الفرقة والأمر بالشورى "
+        },
+        {
+            "name": "الزخرف",
+            "id": "43",
+            "chapter_num": "43",
+            "revelation_place": "makkah",
+            "revelation_order": "63",
+            "verses_count": "89",
+            "juz_count": "25",
+            "description": "التحذير من الانبهار من المظاهر المادية "
+        },
+        {
+            "name": "الدخان",
+            "id": "44",
+            "chapter_num": "44",
+            "revelation_place": "makkah",
+            "revelation_order": "64",
+            "verses_count": "59",
+            "juz_count": "25",
+            "description": "التحذير من الانبهار بالسلطة والتمكين "
+        },
+        {
+            "name": "الجاثية",
+            "id": "45",
+            "chapter_num": "45",
+            "revelation_place": "makkah",
+            "revelation_order": "65",
+            "verses_count": "37",
+            "juz_count": "25",
+            "description": "التحذير من التكبر والتعالي "
+        },
+        {
+            "name": "الأحقاف",
+            "id": "46",
+            "chapter_num": "46",
+            "revelation_place": "makkah",
+            "revelation_order": "66",
+            "verses_count": "35",
+            "juz_count": "26",
+            "description": "استجب ولا تعرض "
+        },
+        {
+            "name": "محمد",
+            "id": "47",
+            "chapter_num": "47",
+            "revelation_place": "madinah",
+            "revelation_order": "95",
+            "verses_count": "38",
+            "juz_count": "26",
+            "description": "طاعة النبي مقياس قبول العمل أو إحباطه "
+        },
+        {
+            "name": "الفتح",
+            "id": "48",
+            "chapter_num": "48",
+            "revelation_place": "madinah",
+            "revelation_order": "111",
+            "verses_count": "29",
+            "juz_count": "26",
+            "description": "الفتوحات والتجليات الربانية "
+        },
+        {
+            "name": "الحجرات",
+            "id": "49",
+            "chapter_num": "49",
+            "revelation_place": "madinah",
+            "revelation_order": "106",
+            "verses_count": "18",
+            "juz_count": "26",
+            "description": "أدب العلاقات "
+        },
+        {
+            "name": "ق",
+            "id": "50",
+            "chapter_num": "50",
+            "revelation_place": "makkah",
+            "revelation_order": "34",
+            "verses_count": "45",
+            "juz_count": "26",
+            "description": "براهين البعث"
+        },
+        {
+            "name": "الذاريات",
+            "id": "51",
+            "chapter_num": "51",
+            "revelation_place": "madinah",
+            "revelation_order": "67",
+            "verses_count": "60",
+            "juz_count": "26-27",
+            "description": "- العطاء والمنع بيد الله<br />\r\n- ففروا الى الله تعالى"
+        },
+        {
+            "name": "الطور",
+            "id": "52",
+            "chapter_num": "52",
+            "revelation_place": "madinah",
+            "revelation_order": "76",
+            "verses_count": "49",
+            "juz_count": "27",
+            "description": "اختيار الجنة او النار<br />\r\n( كل امرىء بما كسب رهين )"
+        },
+        {
+            "name": "النجم",
+            "id": "53",
+            "chapter_num": "53",
+            "revelation_place": "madinah",
+            "revelation_order": "23",
+            "verses_count": "62",
+            "juz_count": "27",
+            "description": "- مصادر العلم والمعرفة<br />\r\n- الوحي او الأوهام"
+        },
+        {
+            "name": "القمر",
+            "id": "54",
+            "chapter_num": "54",
+            "revelation_place": "makkah",
+            "revelation_order": "37",
+            "verses_count": "55",
+            "juz_count": "27 ",
+            "description": "التعرف على الله تعالى من خلال النقم "
+        },
+        {
+            "name": "الرحمن",
+            "id": "55",
+            "chapter_num": "55",
+            "revelation_place": "madinah",
+            "revelation_order": "97",
+            "verses_count": "78",
+            "juz_count": "27",
+            "description": "التعرف على الله تعالى من خلال النعم "
+        },
+        {
+            "name": "الواقعة",
+            "id": "56",
+            "chapter_num": "56",
+            "revelation_place": "madinah",
+            "revelation_order": "46",
+            "verses_count": "96",
+            "juz_count": "27",
+            "description": "البعث والجزاء<br />\r\n( وكنتم ازواجاً ثلاثة ) "
+        },
+        {
+            "name": "الحديد",
+            "id": "57",
+            "chapter_num": "57",
+            "revelation_place": "madinah",
+            "revelation_order": "94",
+            "verses_count": "29",
+            "juz_count": "27 ",
+            "description": "التوازن بين المادية و الروحانية"
+        },
+        {
+            "name": "المجادلة",
+            "id": "58",
+            "chapter_num": "58",
+            "revelation_place": "madinah",
+            "revelation_order": "105",
+            "verses_count": "22",
+            "juz_count": "28",
+            "description": "التبرؤ من المناهج والاتصال بالإسلام"
+        },
+        {
+            "name": "الحشر",
+            "id": "59",
+            "chapter_num": "59",
+            "revelation_place": "madinah",
+            "revelation_order": "101",
+            "verses_count": "24",
+            "juz_count": "28",
+            "description": "مواقف مختلفة من الإنتماء لدين الله "
+        },
+        {
+            "name": "الممتحنة",
+            "id": "60",
+            "chapter_num": "60",
+            "revelation_place": "madinah",
+            "revelation_order": "91",
+            "verses_count": "13",
+            "juz_count": "28",
+            "description": "قيمة العقيدة "
+        },
+        {
+            "name": "الصف",
+            "id": "61",
+            "chapter_num": "61",
+            "revelation_place": "madinah",
+            "revelation_order": "109",
+            "verses_count": "14",
+            "juz_count": "28",
+            "description": "الجهاد في سبيل الله تجارة رابحة "
+        },
+        {
+            "name": "الجمعة",
+            "id": "62",
+            "chapter_num": "62",
+            "revelation_place": "madinah",
+            "revelation_order": "110",
+            "verses_count": "11",
+            "juz_count": "28",
+            "description": "أحكام صلاة الجمعة  "
+        },
+        {
+            "name": "المنافقون",
+            "id": "63",
+            "chapter_num": "63",
+            "revelation_place": "madinah",
+            "revelation_order": "104",
+            "verses_count": "11",
+            "juz_count": "28",
+            "description": "خطر النفاق"
+        },
+        {
+            "name": "التغابن",
+            "id": "64",
+            "chapter_num": "64",
+            "revelation_place": "madinah",
+            "revelation_order": "108",
+            "verses_count": "18",
+            "juz_count": "28",
+            "description": "مشاغل اجتماعية تضيع الانتماء "
+        },
+        {
+            "name": "الطلاق",
+            "id": "65",
+            "chapter_num": "65",
+            "revelation_place": "madinah",
+            "revelation_order": "99",
+            "verses_count": "12",
+            "juz_count": "28",
+            "description": "لا للخلاف  "
+        },
+        {
+            "name": "التحريم",
+            "id": "66",
+            "chapter_num": "66",
+            "revelation_place": "madinah",
+            "revelation_order": "107",
+            "verses_count": "12",
+            "juz_count": "28 ",
+            "description": "دور المرأة في تحقيق الإنتماء "
+        },
+        {
+            "name": "الملك",
+            "id": "67",
+            "chapter_num": "67",
+            "revelation_place": "makkah",
+            "revelation_order": "77",
+            "verses_count": "30",
+            "juz_count": "29",
+            "description": "تعرف إلى من ستدعو "
+        },
+        {
+            "name": "القلم",
+            "id": "68",
+            "chapter_num": "68",
+            "revelation_place": "makkah",
+            "revelation_order": "2",
+            "verses_count": "52",
+            "juz_count": "29",
+            "description": "أخلاق الدعاة"
+        },
+        {
+            "name": "الحاقة",
+            "id": "69",
+            "chapter_num": "69",
+            "revelation_place": "makkah",
+            "revelation_order": "78",
+            "verses_count": "52",
+            "juz_count": "29",
+            "description": "يوم القيامة "
+        },
+        {
+            "name": "المعارج",
+            "id": "70",
+            "chapter_num": "70",
+            "revelation_place": "makkah",
+            "revelation_order": "79",
+            "verses_count": "44",
+            "juz_count": "29",
+            "description": "أهمية العبادة مع الأخلاق"
+        },
+        {
+            "name": "نوح",
+            "id": "71",
+            "chapter_num": "71",
+            "revelation_place": "makkah",
+            "revelation_order": "71",
+            "verses_count": "28",
+            "juz_count": "29",
+            "description": "نموذج داعية"
+        },
+        {
+            "name": "الجن",
+            "id": "72",
+            "chapter_num": "72",
+            "revelation_place": "makkah",
+            "revelation_order": "40",
+            "verses_count": "28",
+            "juz_count": "29",
+            "description": "دعاة إلى الله من عالم آخر  "
+        },
+        {
+            "name": "المزمل",
+            "id": "73",
+            "chapter_num": "73",
+            "revelation_place": "makkah",
+            "revelation_order": "3",
+            "verses_count": "20",
+            "juz_count": "29",
+            "description": "زادك أيها الداعية قيام الليل"
+        },
+        {
+            "name": "المدثر",
+            "id": "74",
+            "chapter_num": "74",
+            "revelation_place": "makkah",
+            "revelation_order": "4",
+            "verses_count": "56",
+            "juz_count": "29",
+            "description": "قم فأنذر"
+        },
+        {
+            "name": "القيامة",
+            "id": "75",
+            "chapter_num": "75",
+            "revelation_place": "makkah",
+            "revelation_order": "31",
+            "verses_count": "40",
+            "juz_count": "29",
+            "description": "التذكير بيوم القيامة"
+        },
+        {
+            "name": "الانسان",
+            "id": "76",
+            "chapter_num": "76",
+            "revelation_place": "madinah",
+            "revelation_order": "98",
+            "verses_count": "31",
+            "juz_count": "29",
+            "description": "حث على الهداية بذكر نعيم أهل الجنة"
+        },
+        {
+            "name": "المرسلات",
+            "id": "77",
+            "chapter_num": "77",
+            "revelation_place": "madinah",
+            "revelation_order": "33",
+            "verses_count": "50",
+            "juz_count": "29",
+            "description": "تحذير المكذبين بيوم الدين"
+        },
+        {
+            "name": "النبأ",
+            "id": "78",
+            "chapter_num": "78",
+            "revelation_place": "makkah",
+            "revelation_order": "80",
+            "verses_count": "40 ",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "النازعات",
+            "id": "79",
+            "chapter_num": "79",
+            "revelation_place": "makkah",
+            "revelation_order": "81",
+            "verses_count": "46",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "عبس",
+            "id": "80",
+            "chapter_num": "80",
+            "revelation_place": "makkah",
+            "revelation_order": "24",
+            "verses_count": "42",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n-التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "التكوير",
+            "id": "81",
+            "chapter_num": "81",
+            "revelation_place": "makkah",
+            "revelation_order": "7",
+            "verses_count": "29",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الإنفطار",
+            "id": "82",
+            "chapter_num": "82",
+            "revelation_place": "makkah",
+            "revelation_order": "82",
+            "verses_count": "19",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "المطففين",
+            "id": "83",
+            "chapter_num": "83",
+            "revelation_place": "makkah",
+            "revelation_order": "86",
+            "verses_count": "36",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الإنشقاق",
+            "id": "84",
+            "chapter_num": "84",
+            "revelation_place": "makkah",
+            "revelation_order": "83",
+            "verses_count": "25",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "البروج",
+            "id": "85",
+            "chapter_num": "85",
+            "revelation_place": "makkah",
+            "revelation_order": "27",
+            "verses_count": "22",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الطارق",
+            "id": "86",
+            "chapter_num": "86",
+            "revelation_place": "makkah",
+            "revelation_order": "36",
+            "verses_count": "17",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الأعلى",
+            "id": "87",
+            "chapter_num": "87",
+            "revelation_place": "makkah",
+            "revelation_order": "8",
+            "verses_count": "19",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الغاشية",
+            "id": "88",
+            "chapter_num": "88",
+            "revelation_place": "makkah",
+            "revelation_order": "68",
+            "verses_count": "26 ",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الفجر",
+            "id": "89",
+            "chapter_num": "89",
+            "revelation_place": "makkah",
+            "revelation_order": "10",
+            "verses_count": "30 ",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "البلد",
+            "id": "90",
+            "chapter_num": "90",
+            "revelation_place": "makkah",
+            "revelation_order": "35",
+            "verses_count": "20 ",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الشمس",
+            "id": "91",
+            "chapter_num": "91",
+            "revelation_place": "makkah",
+            "revelation_order": "26",
+            "verses_count": "15 ",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الليل",
+            "id": "92",
+            "chapter_num": "92",
+            "revelation_place": "makkah",
+            "revelation_order": "9",
+            "verses_count": "21",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الضحى",
+            "id": "93",
+            "chapter_num": "93",
+            "revelation_place": "makkah",
+            "revelation_order": "11",
+            "verses_count": "11",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الشرح",
+            "id": "94",
+            "chapter_num": "94",
+            "revelation_place": "makkah",
+            "revelation_order": "12",
+            "verses_count": "8",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "التين",
+            "id": "95",
+            "chapter_num": "95",
+            "revelation_place": "makkah",
+            "revelation_order": "28",
+            "verses_count": "8 ",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "العلق",
+            "id": "96",
+            "chapter_num": "96",
+            "revelation_place": "makkah",
+            "revelation_order": "1",
+            "verses_count": "19",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "القدر",
+            "id": "97",
+            "chapter_num": "97",
+            "revelation_place": "makkah",
+            "revelation_order": "25",
+            "verses_count": "5 ",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "البينة",
+            "id": "98",
+            "chapter_num": "98",
+            "revelation_place": "madinah",
+            "revelation_order": "100",
+            "verses_count": "8",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "الزلزلة",
+            "id": "99",
+            "chapter_num": "99",
+            "revelation_place": "madinah",
+            "revelation_order": "93",
+            "verses_count": "8",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر والجزاء"
+        },
+        {
+            "name": "العاديات",
+            "id": "100",
+            "chapter_num": "100",
+            "revelation_place": "makkah",
+            "revelation_order": "14",
+            "verses_count": "11",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء"
+        },
+        {
+            "name": "القارعة",
+            "id": "101",
+            "chapter_num": "101",
+            "revelation_place": "makkah",
+            "revelation_order": "30",
+            "verses_count": "11",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "التكاثر",
+            "id": "102",
+            "chapter_num": "102",
+            "revelation_place": "makkah",
+            "revelation_order": "16",
+            "verses_count": "8",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "العصر",
+            "id": "103",
+            "chapter_num": "103",
+            "revelation_place": "makkah",
+            "revelation_order": "13",
+            "verses_count": "3",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الهمزة",
+            "id": "104",
+            "chapter_num": "104",
+            "revelation_place": "makkah",
+            "revelation_order": "32",
+            "verses_count": "9",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الفيل",
+            "id": "105",
+            "chapter_num": "105",
+            "revelation_place": "makkah",
+            "revelation_order": "19",
+            "verses_count": "5",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "قريش",
+            "id": "106",
+            "chapter_num": "106",
+            "revelation_place": "makkah",
+            "revelation_order": "29",
+            "verses_count": "4",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الماعون",
+            "id": "107",
+            "chapter_num": "107",
+            "revelation_place": "madinah",
+            "revelation_order": "17",
+            "verses_count": "7",
+            "juz_count": "30 ",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الكوثر",
+            "id": "108",
+            "chapter_num": "108",
+            "revelation_place": "makkah",
+            "revelation_order": "15",
+            "verses_count": "3 ",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الكافرون",
+            "id": "109",
+            "chapter_num": "109",
+            "revelation_place": "makkah",
+            "revelation_order": "18",
+            "verses_count": "6",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه<br />\r\n- التذكير باليوم الآخر و الجزاء<br />\r\n"
+        },
+        {
+            "name": "النصر",
+            "id": "110",
+            "chapter_num": "110",
+            "revelation_place": "madinah",
+            "revelation_order": "114",
+            "verses_count": "3",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "المسد",
+            "id": "111",
+            "chapter_num": "111",
+            "revelation_place": "makkah",
+            "revelation_order": "6",
+            "verses_count": "5",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الإخلاص",
+            "id": "112",
+            "chapter_num": "112",
+            "revelation_place": "makkah",
+            "revelation_order": "22",
+            "verses_count": "4",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الفلق",
+            "id": "113",
+            "chapter_num": "113",
+            "revelation_place": "makkah",
+            "revelation_order": "20",
+            "verses_count": "5",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء "
+        },
+        {
+            "name": "الناس",
+            "id": "114",
+            "chapter_num": "114",
+            "revelation_place": "makkah",
+            "revelation_order": "21",
+            "verses_count": "6",
+            "juz_count": "30",
+            "description": "- توحيد الله تعالى و تعظيمه <br />\r\n- التذكير باليوم الآخر و الجزاء <br />\r\n"
+        }
+    ],
+    "aboutus": "تساعدكم هذه المنصة على تأمل آيات القرآن الكريم وفهم مقاصد سور القرآن وذلك من خلال توضيح محور السورة الاساسي وكذلك المواضيع التي تطرقت اليها.<br />\r\nيمكنكم اختيار السورة من ثم استعراض معلوماتها لكي تكون بعد ذلك قرائتكم للقرآن بتدبر وفهم اكبر.  <br />\r\n<br />\r\nالمرجع لمحتويات المنصة هو كتاب (التفسير الموضوعي لسور القرآن الكريم) إشراف أ.د. مصطفى مسلم، وإعداد نخبة من علماء التفسير وعلوم القرآن، وقد قام بتقسيم الآيات حسب الوحدة الموضوعية وتفريعها حافظة القرآن الاستاذة / آمال الجارودي  التي من الله عليها بحفظ القرآن الكريم في دار التحفيظ بمدينة الرياض ثم قامت بدراسة علم الخرائط الذهنية الذي ساعدها في اتقان الحفظ والفهم والضبط وربط الآيات بموضوعاتها.<br />\r\n<br />\r\nنسأل الله عز وجل ان يثيب كل من شارك في اتمام هذا العمل: مصمم الواجهات - مصمم الشعار - مبرمج الموقع - مفرغ المحتويات - مدخل المعلومات - مبرمج تطبيق ابل - مبرمج تطبيق اندرويد - مراجع المحتويات النهائية.<br />\r\n<br />\r\nتم عمل هذه المنصة كوقف لوجه الله تعالى وذلك من قبل ( ارشاد المجتمع الوقفية ) بالمملكة العربية السعودية، ونسعد باستقبال مقترحاتكم او استفساراتكم من خلال زيارة موقع الوقف www.ershad.sa  او ارسال ايميل الى: Allforms2020@gmail.com<br />\r\n<br />\r\n<br />\r\n",
+    "apps": {
+        "android": "http://onelink.to/8bw3gf",
+        "ios": "http://onelink.to/8bw3gf"
+    },
+    "social_media": [
+        {
+            "id": "1",
+            "name": "فيس بوك",
+            "url": "https://www.facebook.com/Taammal-381981805640024/",
+            "icon": "facebook-square"
+        },
+        {
+            "id": "2",
+            "name": "اتويتر",
+            "url": "https://twitter.com/Taammalq",
+            "icon": "twitter-square"
+        },
+        {
+            "id": "3",
+            "name": "يوتيوب",
+            "url": "https://www.youtube.com/channel/UCtwJBQ_q3KJkoupk3RomFNw",
+            "icon": "youtube-square"
+        },
+        {
+            "id": "5",
+            "name": "انستغرام",
+            "url": "https://www.instagram.com/taammalq/",
+            "icon": "instagram"
+        }
+    ]
+}

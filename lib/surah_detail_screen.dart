@@ -583,7 +583,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ),
             Center(
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Text('الجزء ', style: TextStyle(fontSize: 14, color: Colors.white)),
                 Text(
                   '${currentJuz.clamp(1, 30).toInt()}',
                   style: const TextStyle(fontFamily: 'jzu12', fontSize: 22, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
@@ -625,7 +624,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                               children: [
                                 if (_openingBasmala != null && widget.surahId != 9) ...[
                                   Text(
-                                    '27',
+                                    '57',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontFamily: 'bsmla60',

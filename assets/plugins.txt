@@ -1,0 +1,3 @@
+Al-Quran TV animated backgrounds, خلفيات متحركة لتليفاز القرآن,com.isysway.alquranplugins.animatedbgs
+Group of 37  Tafsir , مجموعة مكونة من 37 تفسير, com.isysway.alquranplugins.tafaseer
+Earab Al-Quran,إعراب القرآن,com.isysway.alquranplugins.erab

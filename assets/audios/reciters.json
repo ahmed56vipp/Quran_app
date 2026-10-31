@@ -1,0 +1,164 @@
+[
+  {
+    "id": 77,
+    "ar": "وديع اليمني",
+    "en": "Wadee Alyamani",
+    "url": "null"
+  },
+  {
+    "id": 96,
+    "ar": "ناصر القطامي",
+    "en": "Nasser Al-Qatami",
+    "url": "null"
+  },
+  {
+    "id": 104,
+    "ar": "فارس عباد",
+    "en": "Faris Abbad",
+    "url": "null"
+  },
+  {
+    "id": 123,
+    "ar": "مشاري بن راشد العفاسي",
+    "en": "Mishary Rashed Alafasy",
+    "url": "null"
+  },
+  {
+    "id": 126,
+    "ar": "محمد جبريل",
+    "en": "Mohamed Jebril",
+    "url": "null"
+  },
+  {
+    "id": 133,
+    "ar": "محمد صديق المنشاوي",
+    "en": "Mohamed Seddek Al-Menshawy",
+    "url": "null"
+  },
+  {
+    "id": 134,
+    "ar": "ماهر المعيقلي",
+    "en": "Maher Al-Moakly",
+    "url": "null"
+  },
+  {
+    "id": 144,
+    "ar": "محمود خليل الحصري",
+    "en": "Mahmoud Khalil Al-hussary",
+    "url": "null"
+  },
+  {
+    "id": 236,
+    "ar": "مصطفى إسماعيل",
+    "en": "Mustafa Ismail",
+    "url": "null"
+  },
+  {
+    "id": 313,
+    "ar": "عبد الباسط عبد الصمد",
+    "en": "Abdulbasit Abdulsamad",
+    "url": "null"
+  },
+  {
+    "id": 411,
+    "ar": "عبد الرحمن السديس",
+    "en": "Abdul-Rahman Al-Sudais",
+    "url": "null"
+  },
+  {
+    "id": 514,
+    "ar": "أحمد بن علي العجمي",
+    "en": "Ahmad bin Ali Al-Ajmy",
+    "url": "null"
+  },
+  {
+    "id": 633,
+    "ar": "المصحف المعلم المنشاوي",
+    "en": "Quran Teacher Al-menshawy",
+    "url": "null"
+  },
+  {
+    "id": 634,
+    "ar": "محمود علي البنا",
+    "en": "Mahmoud Ali Al Banna",
+    "url": "null"
+  },
+  {
+    "id": 635,
+    "ar": "محمود خليل الحصري (نسخة الإذاعة المصرية)",
+    "en": "Mahmoud Khalil al Hussary (Copy of Egyptian Radio)",
+    "url": "null"
+  },
+  {
+    "id": 45,
+    "ar": "سعد الغامدي",
+    "en": "Saad Al-Ghamdi",
+    "url": "null"
+  },
+  {
+    "id": 972,
+    "ar": "ياسر الدوسري",
+    "en": "Yasser Al-Dossari",
+    "url": "null"
+  },
+  {
+    "id": 1001,
+    "en": "AbdulBaset AbdulSamad (Mujawwad)",
+    "ar": "عبد الباسط عبد الصمد (مجود)",
+    "url": "https://download.quranicaudio.com/qdc/abdul_baset/mujawwad/"
+  },
+  {
+    "id": 1002,
+    "en": "AbdulBaset AbdulSamad 2 (Murattal)",
+    "ar": "عبد الباسط عبد الصمد 2 (مرتل)",
+    "url": "https://download.quranicaudio.com/qdc/abdul_baset/murattal/"
+  },
+  {
+    "id": 1003,
+    "en": "Abdur-Rahman as-Sudais 2",
+    "ar": "عبدالرحمن السديس 2",
+    "url": "https://download.quranicaudio.com/qdc/abdurrahmaan_as_sudais/murattal/"
+  },
+  {
+    "id": 1004,
+    "en": "Abu Bakr al-Shatri",
+    "ar": "أبو بكر الشاطرى",
+    "url": "https://download.quranicaudio.com/qdc/abu_bakr_shatri/murattal/"
+  },
+  {
+    "id": 1005,
+    "en": "Hani ar-Rifai",
+    "ar": "هاني الرفاعي",
+    "url": "https://download.quranicaudio.com/qdc/hani_ar_rifai/murattal/"
+  },
+  {
+    "id": 1006,
+    "en": "Mahmoud Khalil Al-Husary 2",
+    "ar": "محمود خليل الحصري 2",
+    "url": "https://download.quranicaudio.com/qdc/khalil_al_husary/murattal/"
+  },
+  {
+    "id": 1007,
+    "en": "Mishari Rashid al-`Afasy 2",
+    "ar": "مشاري راشد العفاسي 2",
+    "url": "https://download.quranicaudio.com/qdc/mishari_al_afasy/murattal/"
+  },
+  {
+    "id": 1009,
+    "en": "Mohamed Siddiq al-Minshawi 2 (Murattal) ",
+    "ar": "محمد صديق المنشاوي 2 (مرتل)",
+    "url": "https://download.quranicaudio.com/qdc/siddiq_minshawi/murattal/"
+  },
+  {
+    "id": 1010,
+    "en": "Sa`ud ash-Shuraym",
+    "ar": "سعود الشريم",
+    "url": "https://download.quranicaudio.com/qdc/saud_ash-shuraym/murattal/"
+  },
+  {
+    "id": 1012,
+    "en": "Mahmoud Khalil Al-Husary (Muallim)",
+    "ar": "محمود خليل الحصري (المعلم)",
+    "url": "https://download.quranicaudio.com/qdc/khalil_al_husary/muallim/"
+  }
+]
