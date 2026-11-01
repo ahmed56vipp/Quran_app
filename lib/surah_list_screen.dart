@@ -42,10 +42,6 @@ class _SurahListScreenState extends State<SurahListScreen>
   Color get _surfaceColor => _isDarkMode
       ? const Color(0xFF1A2620)
       : (_warmEyeMode ? const Color(0xFFFFF6E5) : Colors.white);
-  Color get _textColor =>
-      _isDarkMode ? const Color(0xFFECEFEA) : const Color(0xFF20352A);
-  Color get _mutedTextColor =>
-      _isDarkMode ? const Color(0xFFB8C5BC) : const Color(0xFF68766D);
 
   final List<Map<String, dynamic>> surahList = const [
     {"id": 1, "name": "الفاتحة", "type": "مكية", "verses": 7, "isMeccan": true, "juz": 1},
@@ -170,9 +166,7 @@ class _SurahListScreenState extends State<SurahListScreen>
     _audioPlayer = AudioPlayer();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() => setState(() {}));
-
     _loadRecitersData().then((_) => _loadAppSettings());
-
     _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
@@ -201,7 +195,8 @@ class _SurahListScreenState extends State<SurahListScreen>
 
   Future<void> _loadRecitersData() async {
     try {
-      final String jsonString = await rootBundle.loadString('assets/data/readers.json');
+      final String jsonString =
+          await rootBundle.loadString('assets/data/readers.json');
       final dynamic decoded = jsonDecode(jsonString);
       List<dynamic> data = [];
       if (decoded is List) {
@@ -209,15 +204,12 @@ class _SurahListScreenState extends State<SurahListScreen>
       } else if (decoded is Map && decoded.containsKey('reciters')) {
         data = decoded['reciters'];
       }
-
-      // فلترة القراء الذين لديهم ملف روابط صالح يحتوي 114 رابطاً.
       final availableReciters = <dynamic>[];
       for (final reciter in data) {
         if (reciter is! Map || reciter['id'] == null) continue;
         try {
-          final raw = await rootBundle.loadString(
-            'assets/audiourls/${reciter['id']}.json',
-          );
+          final raw = await rootBundle
+              .loadString('assets/audiourls/${reciter['id']}.json');
           final decodedUrls = jsonDecode(raw);
           int count = 0;
           if (decodedUrls is List) {
@@ -230,14 +222,9 @@ class _SurahListScreenState extends State<SurahListScreen>
               }
             }
           }
-          if (count >= 114) {
-            availableReciters.add(reciter);
-          }
-        } catch (_) {
-          // لا يوجد ملف روابط لهذا القارئ.
-        }
+          if (count >= 114) availableReciters.add(reciter);
+        } catch (_) {}
       }
-
       if (!mounted) return;
       setState(() {
         _recitersList = availableReciters;
@@ -257,24 +244,24 @@ class _SurahListScreenState extends State<SurahListScreen>
     );
     final selectedReciterId = hasSavedReciter
         ? savedReciterId
-        : (_recitersList.isNotEmpty ? _recitersList.first['id'].toString() : '123');
-
+        : (_recitersList.isNotEmpty
+            ? _recitersList.first['id'].toString()
+            : '123');
     setState(() {
       _currentLanguage = prefs.getString('app_lang') ?? 'ar';
       _selectedReciterId = selectedReciterId;
-      _lastReadSurahId = prefs.getInt('last_surah') ?? prefs.getInt('last_read_surah');
+      _lastReadSurahId =
+          prefs.getInt('last_surah') ?? prefs.getInt('last_read_surah');
       _lastReadVerse = prefs.getInt('last_verse');
       _warmEyeMode = prefs.getInt('quran_theme_mode') == 1;
       _isDarkMode = prefs.getBool('app_dark_mode') ?? false;
     });
-
     if (selectedReciterId != savedReciterId) {
       await prefs.setString('app_reciter', selectedReciterId);
     }
-
-    // منبثقة استئناف القراءة عند الدخول.
     if (_lastReadSurahId != null && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _showResumeDialog());
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _showResumeDialog());
     }
   }
 
@@ -318,10 +305,192 @@ class _SurahListScreenState extends State<SurahListScreen>
     await prefs.setInt('last_read_surah', id);
     if (!mounted) return;
     setState(() => _lastReadSurahId = id);
-
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SurahDetailScreen(
           surahId: id,
-          surahName: surah['name'] as
+          surahName: surah['name'] as String,
+          versesCount: surah['verses'] as int,
+          surahType: surah['type'] as String,
+          initialJuz: surah['juz'] as int,
+          initialVerse: savedVerse,
+          reciterId: _selectedReciterId,
+        ),
+      ),
+    );
+    if (mounted) {
+      final p = await SharedPreferences.getInstance();
+      setState(() {
+        _lastReadSurahId = p.getInt('last_surah');
+        _lastReadVerse = p.getInt('last_verse');
+      });
+    }
+  }
+
+  Future<void> _resumeLastRead() async {
+    if (_lastReadSurahId == null) return;
+    final surah = surahList.firstWhere(
+      (s) => s['id'] == _lastReadSurahId,
+      orElse: () => surahList.first,
+    );
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SurahDetailScreen(
+          surahId: surah['id'] as int,
+          surahName: surah['name'] as String,
+          versesCount: surah['verses'] as int,
+          surahType: surah['type'] as String,
+          initialJuz: surah['juz'] as int,
+          initialVerse: _lastReadVerse,
+          reciterId: _selectedReciterId,
+        ),
+      ),
+    );
+  }
+
+  String _selectedReciterName() {
+    for (final dynamic reciter in _recitersList) {
+      if (reciter is Map && reciter['id'].toString() == _selectedReciterId) {
+        return (reciter[_currentLanguage] ??
+                reciter['ar'] ??
+                reciter['name'] ??
+                'قارئ معروف')
+            .toString();
+      }
+    }
+    return 'القارئ المختار';
+  }
+
+  Widget _reciterPicker() {
+    const green = Color(0xFF174D35);
+    return DropdownButtonFormField<String>(
+      value: _recitersList.any((r) => r['id'].toString() == _selectedReciterId)
+          ? _selectedReciterId
+          : (_recitersList.isNotEmpty
+              ? _recitersList.first['id'].toString()
+              : null),
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'اختر القارئ',
+        prefixIcon: const Icon(Icons.record_voice_over_rounded, color: green),
+        filled: true,
+        fillColor: _surfaceColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      items: _recitersList.map<DropdownMenuItem<String>>((dynamic r) {
+        final name = r[_currentLanguage] ?? r['ar'] ?? r['name'] ?? 'قارئ';
+        return DropdownMenuItem<String>(
+          value: r['id'].toString(),
+          child: Text(name.toString(), overflow: TextOverflow.ellipsis),
+        );
+      }).toList(),
+      onChanged: (value) async {
+        if (value == null) return;
+        if (_currentPlayingSurahId != null) await _audioPlayer.stop();
+        setState(() {
+          _selectedReciterId = value;
+          _currentPlayingSurahId = null;
+        });
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('app_reciter', value);
+      },
+    );
+  }
+
+  Future<void> _playSurahAudio(int surahId) async {
+    if (_currentPlayingSurahId == surahId && _isPlaying) {
+      await _audioPlayer.pause();
+      return;
+    } else if (_currentPlayingSurahId == surahId && !_isPlaying) {
+      await _audioPlayer.play();
+      return;
+    }
+    try {
+      setState(() {
+        _currentPlayingSurahId = surahId;
+        _position = Duration.zero;
+        _duration = Duration.zero;
+      });
+      String audioUrl = '';
+      try {
+        final String jsonString = await rootBundle
+            .loadString('assets/audiourls/$_selectedReciterId.json');
+        final dynamic decoded = jsonDecode(jsonString);
+        if (decoded is List && decoded.length >= surahId) {
+          final item = decoded[surahId - 1];
+          if (item is String) {
+            audioUrl = item;
+          } else if (item is Map) {
+            audioUrl = (item['F2'] ?? item['url'] ?? '').toString();
+          }
+        }
+      } catch (_) {}
+      if (audioUrl.trim().isEmpty) {
+        throw StateError('لا يوجد رابط صوتي لهذه السورة عند القارئ المحدد');
+      }
+      await _audioPlayer.setUrl(audioUrl.trim());
+      await _audioPlayer.play();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("تعذّر تشغيل التلاوة الصوتية لهذا القارئ")),
+        );
+        setState(() => _currentPlayingSurahId = null);
+      }
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$minutes:$seconds";
+  }
+
+  Future<void> _showBookmarksFromHome() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(kBookmarksKey);
+    final bookmarks = <Map<String, dynamic>>[];
+    if (raw != null) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          for (final item in decoded) {
+            if (item is Map) {
+              bookmarks.add(Map<String, dynamic>.from(item));
+            }
+          }
+        }
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * .65,
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('الإشارات المرجعية',
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
+                ),
+                Expanded(
+                  child: bookmarks.isEmpty
+                      ? const Center(child: Text('لا توجد إشارات محفوظة'))
+                      : ListView.builder(
+                          itemCount: bookmarks.length,
+                          itemBuilder: (_, i) {
+                            final b = bookmarks[i];
+                            final sid =
+                                int.tryParse(b['s
