@@ -56,7 +56,7 @@ flutter:
 
     - family: nss
       fonts:
-        - asset: assets/fonts/surah_nss.otf
+        - asset: assets/fonts/surah_nss.ttf
 
     - family: quran_num
       fonts:
