@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'utils.dart';
 
 class SurahDetailScreen extends StatefulWidget {
@@ -400,335 +398,337 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
     controller.dispose();
   }
-Future<void> _toggleFullscreen() async {
-  _isFullscreen = !_isFullscreen;
-  await SystemChrome.setEnabledSystemUIMode(
-      _isFullscreen ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge);
-  if (mounted) setState(() {});
-}
 
-Future<void> _toggleAudio() async {
-  if (_isAudioPlaying) {
-    await _audioPlayer.pause();
-    return;
+  Future<void> _toggleFullscreen() async {
+    _isFullscreen = !_isFullscreen;
+    await SystemChrome.setEnabledSystemUIMode(_isFullscreen
+        ? SystemUiMode.immersiveSticky
+        : SystemUiMode.edgeToEdge);
+    if (mounted) setState(() {});
   }
-  try {
-    String audioUrl = '';
-    final raw = await rootBundle
-        .loadString('assets/audiourls/${widget.reciterId}.json');
-    final decoded = jsonDecode(raw);
-    if (decoded is List && decoded.length >= widget.surahId) {
-      final item = decoded[widget.surahId - 1];
-      if (item is String) {
-        audioUrl = item;
-      } else if (item is Map) {
-        audioUrl = (item['F2'] ?? item['url'] ?? '').toString();
+
+  Future<void> _toggleAudio() async {
+    if (_isAudioPlaying) {
+      await _audioPlayer.pause();
+      return;
+    }
+    try {
+      String audioUrl = '';
+      final raw = await rootBundle
+          .loadString('assets/audiourls/${widget.reciterId}.json');
+      final decoded = jsonDecode(raw);
+      if (decoded is List && decoded.length >= widget.surahId) {
+        final item = decoded[widget.surahId - 1];
+        if (item is String) {
+          audioUrl = item;
+        } else if (item is Map) {
+          audioUrl = (item['F2'] ?? item['url'] ?? '').toString();
+        }
       }
+      if (audioUrl.trim().isEmpty) throw StateError('لا رابط صوتي');
+      await _audioPlayer.setUrl(audioUrl.trim());
+      await _audioPlayer.play();
+    } catch (_) {
+      _showMessage('تعذّر تشغيل التلاوة الصوتية لهذه السورة');
     }
-    if (audioUrl.trim().isEmpty) {
-      throw StateError('لا رابط صوتي');
+  }
+
+  Future<void> _showTafsir() async {
+    final verse = selectedVerseIndex + 1;
+    try {
+      final raw = await rootBundle
+          .loadString('assets/tafsir/${widget.surahId}_$verse.json');
+      final decoded = jsonDecode(raw);
+      final text = decoded is Map
+          ? (decoded['text'] ?? decoded['tafsir'] ?? '').toString()
+          : decoded.toString();
+      if (!mounted) return;
+      _showTextSheet('تفسير الآية $verse', text);
+    } catch (_) {
+      _showMessage('التفسير غير متوفر لهذه الآية');
     }
-    await _audioPlayer.setUrl(audioUrl.trim());
-    await _audioPlayer.play();
-  } catch (_) {
-    _showMessage('تعذّر تشغيل التلاوة الصوتية لهذه السورة');
   }
-}
 
-Future<void> _showTafsir() async {
-  final verse = selectedVerseIndex + 1;
-  try {
-    final raw = await rootBundle
-        .loadString('assets/tafsir/${widget.surahId}_$verse.json');
-    final decoded = jsonDecode(raw);
-    final text = decoded is Map
-        ? (decoded['text'] ?? decoded['tafsir'] ?? '').toString()
-        : decoded.toString();
-    if (!mounted) return;
-    _showTextSheet('تفسير الآية $verse', text);
-  } catch (_) {
-    _showMessage('التفسير غير متوفر لهذه الآية');
+  Future<void> _showTajweed() async {
+    final verse = selectedVerseIndex + 1;
+    try {
+      final raw = await rootBundle
+          .loadString('assets/tajweed/${widget.surahId}_$verse.json');
+      final decoded = jsonDecode(raw);
+      final text = decoded is Map
+          ? (decoded['text'] ?? decoded['tajweed'] ?? '').toString()
+          : decoded.toString();
+      if (!mounted) return;
+      _showTextSheet('تجويد الآية $verse', text);
+    } catch (_) {
+      _showMessage('التجويد غير متوفر لهذه الآية');
+    }
   }
-}
 
-Future<void> _showTajweed() async {
-  final verse = selectedVerseIndex + 1;
-  try {
-    final raw = await rootBundle
-        .loadString('assets/tajweed/${widget.surahId}_$verse.json');
-    final decoded = jsonDecode(raw);
-    final text = decoded is Map
-        ? (decoded['text'] ?? decoded['tajweed'] ?? '').toString()
-        : decoded.toString();
-    if (!mounted) return;
-    _showTextSheet('تجويد الآية $verse', text);
-  } catch (_) {
-    _showMessage('التجويد غير متوفر لهذه الآية');
+  Future<void> _showTranslation() async {
+    final verse = selectedVerseIndex + 1;
+    try {
+      final raw = await rootBundle
+          .loadString('assets/translation/ar/${widget.surahId}_$verse.json');
+      final decoded = jsonDecode(raw);
+      final text = decoded is Map
+          ? (decoded['text'] ?? decoded['translation'] ?? '').toString()
+          : decoded.toString();
+      if (!mounted) return;
+      _showTextSheet('ترجمة الآية $verse', text);
+    } catch (_) {
+      _showMessage('الترجمة غير متوفرة لهذه الآية');
+    }
   }
-}
 
-Future<void> _showTranslation() async {
-  final verse = selectedVerseIndex + 1;
-  try {
-    final raw = await rootBundle
-        .loadString('assets/translation/ar/${widget.surahId}_$verse.json');
-    final decoded = jsonDecode(raw);
-    final text = decoded is Map
-        ? (decoded['text'] ?? decoded['translation'] ?? '').toString()
-        : decoded.toString();
-    if (!mounted) return;
-    _showTextSheet('ترجمة الآية $verse', text);
-  } catch (_) {
-    _showMessage('الترجمة غير متوفرة لهذه الآية');
-  }
-}
-
-void _showTextSheet(String title, String body) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (_) => Directionality(
-      textDirection: TextDirection.rtl,
-      child: SafeArea(
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * .6,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(title,
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    body.isEmpty ? 'لا يوجد محتوى' : body,
-                    style: TextStyle(
-                      fontSize: _fontSize * 0.75,
-                      height: 1.9,
-                      color: _getTextColor(),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-void _openSettingsDrawer() {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, updateSheet) => Directionality(
+  void _showTextSheet(String title, String body) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => Directionality(
         textDirection: TextDirection.rtl,
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * .6,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('إعدادات القراءة',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                const Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('حجم الخط')),
-                Slider(
-                  value: _fontSize,
-                  min: 14,
-                  max: 40,
-                  divisions: 13,
-                  label: _fontSize.round().toString(),
-                  onChanged: (v) {
-                    setState(() => _fontSize = v);
-                    updateSheet(() {});
-                    _saveReadingPreference('quran_font_size', v);
-                  },
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(title,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
                 ),
-                const Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('سرعة القراءة الآلية')),
-                Slider(
-                  value: _scrollSpeed,
-                  min: .2,
-                  max: 5,
-                  divisions: 24,
-                  label: _scrollSpeed.toStringAsFixed(1),
-                  onChanged: (v) {
-                    setState(() => _scrollSpeed = v);
-                    updateSheet(() {});
-                    _saveReadingPreference('quran_scroll_speed', v);
-                  },
-                ),
-                const SizedBox(height: 8),
-                Wrap(spacing: 8, children: [
-                  ChoiceChip(
-                    label: const Text('عادي'),
-                    selected: _themeMode == 0,
-                    onSelected: (_) async {
-                      setState(() => _themeMode = 0);
-                      updateSheet(() {});
-                      await _saveReadingPreference('quran_theme_mode', 0);
-                    },
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      body.isEmpty ? 'لا يوجد محتوى' : body,
+                      style: TextStyle(
+                        fontSize: _fontSize * 0.75,
+                        height: 1.9,
+                        color: _getTextColor(),
+                      ),
+                    ),
                   ),
-                  ChoiceChip(
-                    label: const Text('حماية العين'),
-                    selected: _themeMode == 1,
-                    onSelected: (_) async {
-                      setState(() => _themeMode = 1);
-                      updateSheet(() {});
-                      await _saveReadingPreference('quran_theme_mode', 1);
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('ليلي'),
-                    selected: _themeMode == 2,
-                    onSelected: (_) async {
-                      setState(() => _themeMode = 2);
-                      updateSheet(() {});
-                      await _saveReadingPreference('quran_theme_mode', 2);
-                    },
-                  ),
-                ]),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: _showGoToVerse,
-                  icon: const Icon(Icons.pin_drop_outlined),
-                  label: const Text('الذهاب إلى آية'),
                 ),
               ],
             ),
           ),
         ),
       ),
-    ),
-  );
-}
-
-void _onScroll() {
-  _scrollSelectionDebounce?.cancel();
-  _scrollSelectionDebounce =
-      Timer(const Duration(milliseconds: 90), _updateSelectedVerseFromScroll);
-}
-
-void _updateSelectedVerseFromScroll() {
-  if (!mounted ||
-      isLoading ||
-      verses.isEmpty ||
-      _updatingVerseFromScroll ||
-      !_scrollController.hasClients) {
-    return;
-  }
-  final screenHeight = MediaQuery.of(context).size.height;
-  final targetY = screenHeight * 0.40;
-
-  int? nearestIndex;
-  double nearestDistance = double.infinity;
-  for (int i = 0; i < _verseKeys.length; i++) {
-    final verseContext = _verseKeys[i].currentContext;
-    if (verseContext == null) continue;
-    final renderObject = verseContext.findRenderObject();
-    if (renderObject is! RenderBox ||
-        !renderObject.attached ||
-        !renderObject.hasSize) {
-      continue;
-    }
-    final globalPosition = renderObject.localToGlobal(Offset.zero);
-    if (globalPosition.dy < 0 || globalPosition.dy > screenHeight) continue;
-    final distance = (globalPosition.dy - targetY).abs();
-    if (distance < nearestDistance) {
-      nearestDistance = distance;
-      nearestIndex = i;
-    }
-  }
-
-  if (nearestIndex != null &&
-      nearestIndex >= 2 &&
-      nearestIndex != selectedVerseIndex) {
-    _updatingVerseFromScroll = true;
-    setState(() {
-      selectedVerseIndex = nearestIndex!;
-      currentJuz =
-          _getJuzForVerse(widget.surahId, selectedVerseIndex + 1);
-    });
-    _saveLastReadPosition(nearestIndex);
-    _updatingVerseFromScroll = false;
-  }
-}
-
-Future<void> _scrollToVerse(int index) async {
-  if (!mounted || index < 0 || index >= verses.length) return;
-  _stopAutoScroll();
-  setState(() {
-    selectedVerseIndex = index;
-    currentJuz = _getJuzForVerse(widget.surahId, index + 1);
-  });
-  _saveLastReadPosition(index);
-
-  await WidgetsBinding.instance.endOfFrame;
-  await Future<void>.delayed(const Duration(milliseconds: 40));
-  if (!mounted || index >= _verseKeys.length) return;
-  final target = _verseKeys[index].currentContext;
-  if (target == null) return;
-  try {
-    await Scrollable.ensureVisible(
-      target,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeInOutCubic,
-      alignment: 0.15,
     );
-  } catch (_) {}
-}
-
-void _toggleAutoScroll() {
-  if (_isAutoScrolling) {
-    _stopAutoScroll();
-    return;
   }
-  setState(() => _isAutoScrolling = true);
-  _autoScrollTimer =
-      Timer.periodic(const Duration(milliseconds: 30), (timer) {
-    if (!mounted || !_scrollController.hasClients) {
-      timer.cancel();
-      return;
+
+  void _openSettingsDrawer() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, updateSheet) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('إعدادات القراءة',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  const Align(
+                      alignment: Alignment.centerRight, child: Text('حجم الخط')),
+                  Slider(
+                    value: _fontSize,
+                    min: 14,
+                    max: 40,
+                    divisions: 13,
+                    label: _fontSize.round().toString(),
+                    onChanged: (v) {
+                      setState(() => _fontSize = v);
+                      updateSheet(() {});
+                      _saveReadingPreference('quran_font_size', v);
+                    },
+                  ),
+                  const Align(
+                      alignment: Alignment.centerRight,
+                      child: Text('سرعة القراءة الآلية')),
+                  Slider(
+                    value: _scrollSpeed,
+                    min: .2,
+                    max: 5,
+                    divisions: 24,
+                    label: _scrollSpeed.toStringAsFixed(1),
+                    onChanged: (v) {
+                      setState(() => _scrollSpeed = v);
+                      updateSheet(() {});
+                      _saveReadingPreference('quran_scroll_speed', v);
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, children: [
+                    ChoiceChip(
+                      label: const Text('عادي'),
+                      selected: _themeMode == 0,
+                      onSelected: (_) async {
+                        setState(() => _themeMode = 0);
+                        updateSheet(() {});
+                        await _saveReadingPreference('quran_theme_mode', 0);
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('حماية العين'),
+                      selected: _themeMode == 1,
+                      onSelected: (_) async {
+                        setState(() => _themeMode = 1);
+                        updateSheet(() {});
+                        await _saveReadingPreference('quran_theme_mode', 1);
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('ليلي'),
+                      selected: _themeMode == 2,
+                      onSelected: (_) async {
+                        setState(() => _themeMode = 2);
+                        updateSheet(() {});
+                        await _saveReadingPreference('quran_theme_mode', 2);
+                      },
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _showGoToVerse,
+                    icon: const Icon(Icons.pin_drop_outlined),
+                    label: const Text('الذهاب إلى آية'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onScroll() {
+    _scrollSelectionDebounce?.cancel();
+    _scrollSelectionDebounce =
+        Timer(const Duration(milliseconds: 90), _updateSelectedVerseFromScroll);
+  }
+
+  void _updateSelectedVerseFromScroll() {
+    if (!mounted ||
+        isLoading ||
+        verses.isEmpty ||
+        _updatingVerseFromScroll ||
+        !_scrollController.hasClients) return;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetY = screenHeight * 0.40;
+
+    int? nearestIndex;
+    double nearestDistance = double.infinity;
+    for (int i = 0; i < _verseKeys.length; i++) {
+      final verseContext = _verseKeys[i].currentContext;
+      if (verseContext == null) continue;
+      final renderObject = verseContext.findRenderObject();
+      if (renderObject is! RenderBox ||
+          !renderObject.attached ||
+          !renderObject.hasSize) continue;
+      final globalPosition = renderObject.localToGlobal(Offset.zero);
+      if (globalPosition.dy < 0 || globalPosition.dy > screenHeight) continue;
+      final distance = (globalPosition.dy - targetY).abs();
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = i;
+      }
     }
-    final position = _scrollController.position;
-    if (!position.hasContentDimensions ||
-        position.pixels >= position.maxScrollExtent) {
+
+    if (nearestIndex != null &&
+        nearestIndex >= 2 &&
+        nearestIndex != selectedVerseIndex) {
+      _updatingVerseFromScroll = true;
+      setState(() {
+        selectedVerseIndex = nearestIndex!;
+        currentJuz = _getJuzForVerse(widget.surahId, selectedVerseIndex + 1);
+      });
+      _saveLastReadPosition(nearestIndex);
+      _updatingVerseFromScroll = false;
+    }
+  }
+
+  Future<void> _scrollToVerse(int index) async {
+    if (!mounted || index < 0 || index >= verses.length) return;
+    _stopAutoScroll();
+    setState(() {
+      selectedVerseIndex = index;
+      currentJuz = _getJuzForVerse(widget.surahId, index + 1);
+    });
+    _saveLastReadPosition(index);
+    await WidgetsBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    if (!mounted || index >= _verseKeys.length) return;
+    final target = _verseKeys[index].currentContext;
+    if (target == null) return;
+    try {
+      await Scrollable.ensureVisible(target,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+          alignment: 0.15);
+    } catch (_) {}
+  }
+
+  void _toggleAutoScroll() {
+    if (_isAutoScrolling) {
       _stopAutoScroll();
       return;
     }
-    _scrollController.jumpTo((position.pixels + _scrollSpeed)
-        .clamp(0.0, position.maxScrollExtent)
-        .toDouble());
-  });
-}
-
-void _stopAutoScroll() {
-  _autoScrollTimer?.cancel();
-  _autoScrollTimer = null;
-  if (mounted && _isAutoScrolling) {
-    setState(() => _isAutoScrolling = false);
+    setState(() => _isAutoScrolling = true);
+    _autoScrollTimer =
+        Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      if (!mounted || !_scrollController.hasClients) {
+        timer.cancel();
+        return;
+      }
+      final position = _scrollController.position;
+      if (!position.hasContentDimensions ||
+          position.pixels >= position.maxScrollExtent) {
+        _stopAutoScroll();
+        return;
+      }
+      _scrollController.jumpTo((position.pixels + _scrollSpeed)
+          .clamp(0.0, position.maxScrollExtent)
+          .toDouble());
+    });
   }
-}
 
-void _showMessage(String message) {
-  if (!mounted) return;
-  ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(message)));
-}
+  void _stopAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = null;
+    if (mounted && _isAutoScrolling) {
+      setState(() => _isAutoScrolling = false);
+    }
+  }
 
-Color _getBackgroundColor() {
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Color _getBackgroundColor() {
+    if (_themeMode == 1) return const Color(0xFFFDF6E3);
+    if (_themeMode == 2) return const Color(0xFF121212);
+    return const Color(0xFFF8F9FA);
+  }
+
+  Color _getTextColor() {
+    if (_themeMode == 2) return const Color(0xFFE0E0E0);
+    if (_themeMode == 1) return const Color(0xFF5B4636);
+    return const Color(0xFF2C3E50);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = _themeMode == 2;
@@ -758,47 +758,27 @@ Color _getBackgroundColor() {
                 ),
               ),
               Text('(${widget.versesCount})',
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.white70)),
+                  style: const TextStyle(fontSize: 12, color: Colors.white70)),
             ],
           ),
           actions: [
-            // زر إضافة علامة مرجعية فقط (ظاهر دائماً)
             IconButton(
               tooltip: 'إضافة علامة مرجعية',
-              icon: const Icon(Icons.bookmark_add_outlined,
-                  color: Colors.white),
+              icon: const Icon(Icons.bookmark_add_outlined, color: Colors.white),
               onPressed: _addBookmark,
             ),
-            // القائمة المنبثقة لكل الميزات الأخرى
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
               onSelected: (value) {
                 switch (value) {
-                  case 'audio':
-                    _toggleAudio();
-                    break;
-                  case 'tafsir':
-                    _showTafsir();
-                    break;
-                  case 'tajweed':
-                    _showTajweed();
-                    break;
-                  case 'translation':
-                    _showTranslation();
-                    break;
-                  case 'fullscreen':
-                    _toggleFullscreen();
-                    break;
-                  case 'settings':
-                    _openSettingsDrawer();
-                    break;
-                  case 'bookmarks':
-                    _showBookmarks();
-                    break;
-                  case 'autoscroll':
-                    _toggleAutoScroll();
-                    break;
+                  case 'audio': _toggleAudio(); break;
+                  case 'tafsir': _showTafsir(); break;
+                  case 'tajweed': _showTajweed(); break;
+                  case 'translation': _showTranslation(); break;
+                  case 'fullscreen': _toggleFullscreen(); break;
+                  case 'settings': _openSettingsDrawer(); break;
+                  case 'bookmarks': _showBookmarks(); break;
+                  case 'autoscroll': _toggleAutoScroll(); break;
                 }
               },
               itemBuilder: (context) => [
@@ -813,29 +793,20 @@ Color _getBackgroundColor() {
                   ]),
                 ),
                 const PopupMenuItem(
-                  value: 'tafsir',
-                  child: Row(children: [
-                    Icon(Icons.menu_book),
-                    SizedBox(width: 8),
-                    Text('التفسير'),
-                  ]),
-                ),
+                    value: 'tafsir',
+                    child: Row(children: [
+                      Icon(Icons.menu_book), SizedBox(width: 8), Text('التفسير'),
+                    ])),
                 const PopupMenuItem(
-                  value: 'tajweed',
-                  child: Row(children: [
-                    Icon(Icons.color_lens_outlined),
-                    SizedBox(width: 8),
-                    Text('التجويد'),
-                  ]),
-                ),
+                    value: 'tajweed',
+                    child: Row(children: [
+                      Icon(Icons.color_lens_outlined), SizedBox(width: 8), Text('التجويد'),
+                    ])),
                 const PopupMenuItem(
-                  value: 'translation',
-                  child: Row(children: [
-                    Icon(Icons.translate),
-                    SizedBox(width: 8),
-                    Text('الترجمة'),
-                  ]),
-                ),
+                    value: 'translation',
+                    child: Row(children: [
+                      Icon(Icons.translate), SizedBox(width: 8), Text('الترجمة'),
+                    ])),
                 const PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'autoscroll',
@@ -844,33 +815,23 @@ Color _getBackgroundColor() {
                         ? Icons.pause_circle_outline
                         : Icons.play_circle_outline),
                     const SizedBox(width: 8),
-                    Text(_isAutoScrolling
-                        ? 'إيقاف التمرير التلقائي'
-                        : 'التمرير التلقائي'),
+                    Text(_isAutoScrolling ? 'إيقاف التمرير التلقائي' : 'التمرير التلقائي'),
                   ]),
                 ),
                 const PopupMenuItem(
-                  value: 'settings',
-                  child: Row(children: [
-                    Icon(Icons.tune),
-                    SizedBox(width: 8),
-                    Text('إعدادات القراءة'),
-                  ]),
-                ),
+                    value: 'settings',
+                    child: Row(children: [
+                      Icon(Icons.tune), SizedBox(width: 8), Text('إعدادات القراءة'),
+                    ])),
                 const PopupMenuItem(
-                  value: 'bookmarks',
-                  child: Row(children: [
-                    Icon(Icons.bookmarks_outlined),
-                    SizedBox(width: 8),
-                    Text('العلامات المرجعية'),
-                  ]),
-                ),
+                    value: 'bookmarks',
+                    child: Row(children: [
+                      Icon(Icons.bookmarks_outlined), SizedBox(width: 8), Text('العلامات المرجعية'),
+                    ])),
                 PopupMenuItem(
                   value: 'fullscreen',
                   child: Row(children: [
-                    Icon(_isFullscreen
-                        ? Icons.fullscreen_exit
-                        : Icons.fullscreen),
+                    Icon(_isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen),
                     const SizedBox(width: 8),
                     Text(_isFullscreen ? 'إظهار الشريط' : 'ملء الشاشة'),
                   ]),
@@ -885,8 +846,6 @@ Color _getBackgroundColor() {
               ),
             ),
           ),
-          // الجزء في أقصى اليسار
-          // رقم إنجليزي حتى يرسمه خط jzu12 كمخطوطة الجزء.
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(26),
             child: Container(
@@ -924,8 +883,7 @@ Color _getBackgroundColor() {
                       children: [
                         Card(
                           elevation: isDark ? 0 : 3,
-                          color:
-                              isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16)),
                           child: Padding(
@@ -935,7 +893,6 @@ Color _getBackgroundColor() {
                               children: [
                                 if (_openingBasmala != null &&
                                     widget.surahId != 9) ...[
-                                  // البسملة برقم 27
                                   Text(
                                     '27',
                                     textAlign: TextAlign.center,
@@ -951,9 +908,7 @@ Color _getBackgroundColor() {
                                 Text.rich(
                                   TextSpan(
                                     children: [
-                                      for (int i = 0;
-                                          i < verses.length;
-                                          i++) ...[
+                                      for (int i = 0; i < verses.length; i++) ...[
                                         TextSpan(
                                           text: '${verses[i]} ',
                                           style: TextStyle(
@@ -963,30 +918,25 @@ Color _getBackgroundColor() {
                                             color: selectedVerseIndex == i
                                                 ? const Color(0xFF2E7D32)
                                                 : _getTextColor(),
-                                            fontWeight:
-                                                selectedVerseIndex == i
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
+                                            fontWeight: selectedVerseIndex == i
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                           ),
                                         ),
                                         WidgetSpan(
-                                          alignment:
-                                              PlaceholderAlignment.middle,
+                                          alignment: PlaceholderAlignment.middle,
                                           child: Container(
                                             key: _verseKeys[i],
-                                            margin: const EdgeInsets
-                                                .symmetric(horizontal: 3),
-                                            padding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 5,
-                                                    vertical: 3),
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 3),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 3),
                                             decoration: BoxDecoration(
                                               color: selectedVerseIndex == i
                                                   ? const Color(0xFF2E7D32)
                                                   : Colors.transparent,
                                               border: Border.all(
-                                                  color: const Color(
-                                                      0xFF2E7D32)),
+                                                  color: const Color(0xFF2E7D32)),
                                               shape: BoxShape.circle,
                                             ),
                                             child: Text(
@@ -997,10 +947,8 @@ Color _getBackgroundColor() {
                                                 color: selectedVerseIndex == i
                                                     ? Colors.white
                                                     : (isDark
-                                                        ? const Color(
-                                                            0xFFFFD700)
-                                                        : const Color(
-                                                            0xFF2E7D32)),
+                                                        ? const Color(0xFFFFD700)
+                                                        : const Color(0xFF2E7D32)),
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -1030,14 +978,4 @@ Color _getBackgroundColor() {
       ),
     );
   }
-}
-  if (_themeMode == 1) return const Color(0xFFFDF6E3);
-  if (_themeMode == 2) return const Color(0xFF121212);
-  return const Color(0xFFF8F9FA);
-}
-
-Color _getTextColor() {
-  if (_themeMode == 2) return const Color(0xFFE0E0E0);
-  if (_themeMode == 1) return const Color(0xFF5B4636);
-  return const Color(0xFF2C3E50);
 }
