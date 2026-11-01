@@ -909,7 +909,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                     '27',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      fontFamily: 'bsmla60',
+                                      fontFamily: 'bamla61', // خط البسملة المتطابق مع pubspec.yaml
                                       fontSize: _fontSize * 1.35,
                                       height: 2.2,
                                       color: _getTextColor(),
@@ -954,7 +954,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                             child: Text(
                                               '${i + 1}',
                                               style: TextStyle(
-                                                fontFamily: '12345',
+                                                fontFamily: '12345', // خط أرقام الآيات المتطابق مع pubspec.yaml
                                                 fontSize: _fontSize * 0.65,
                                                 color: selectedVerseIndex == i
                                                     ? Colors.white
