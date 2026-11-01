@@ -50,21 +50,18 @@ flutter:
       fonts:
         - asset: assets/fonts/surah_nam.ttf
 
-    # خط البسملة: الرقم 57 يرسم البسملة بالمخطوطة المخصصة.
-    - family: bsmla60
+    - family: bsm60
       fonts:
         - asset: assets/fonts/bsmla60.ttf
 
     - family: nss
       fonts:
-        - asset: assets/fonts/sura_nss.otf
+        - asset: assets/fonts/surah_nss.otf
 
-    # خط أرقام الآيات؛ الاسم نصي لأن YAML يفسر الأرقام كأعداد.
-    - family: '12345'
+    - family: quran_num
       fonts:
         - asset: assets/fonts/123456.ttf
 
-    # خط علامات الأجزاء؛ الأرقام 1 إلى 30 تمثل مخطوطات الأجزاء.
     - family: jzu12
       fonts:
         - asset: assets/fonts/jzu12.ttf
