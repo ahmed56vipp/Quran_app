@@ -38,7 +38,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _isAudioPlaying = false;
   List<String> verses = [];
   String? _openingBasmala;
-  List<Map<String, dynamic>> _bookmarks = [];
+  List> _bookmarks = [];
 
   bool isLoading = true;
   String? _loadError;
@@ -265,7 +265,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(kBookmarksKey);
-      final loaded = <Map<String, dynamic>>[];
+      final loaded = >[];
       if (raw != null) {
         final decoded = json.decode(raw);
         if (decoded is List) {
@@ -453,13 +453,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     final verse = selectedVerseIndex + 1;
     try {
       final raw = await rootBundle
-          .loadString('assets/tajweed/${widget.surahId}_$verse.json');
-      final decoded = jsonDecode(raw);
-      final text = decoded is Map
-          ? (decoded['text'] ?? decoded['tajweed'] ?? '').toString()
-          : decoded.toString();
+          .loadString('assets/tajweed/${widget.surahId}-jsonl');
+      final lines = const LineSplitter().convert(raw);
+      String? verseTajweedText;
+      for (final line in lines) {
+        if (line.trim().isEmpty) continue;
+        final decoded = jsonDecode(line);
+        if (decoded is Map && _intValue(decoded['ayah']) == verse) {
+          verseTajweedText = decoded['text']?.toString() ?? decoded['tajweed']?.toString();
+          break;
+        }
+      }
       if (!mounted) return;
-      _showTextSheet('تجويد الآية $verse', text);
+      _showTextSheet('تجويد الآية $verse', verseTajweedText ?? 'التجويد غير متوفر لهذه الآية');
     } catch (_) {
       _showMessage('التجويد غير متوفر لهذه الآية');
     }
@@ -469,13 +475,19 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     final verse = selectedVerseIndex + 1;
     try {
       final raw = await rootBundle
-          .loadString('assets/translation/ar/${widget.surahId}_$verse.json');
+          .loadString('assets/translation/ar/ar_translation_${widget.surahId}.json');
       final decoded = jsonDecode(raw);
-      final text = decoded is Map
-          ? (decoded['text'] ?? decoded['translation'] ?? '').toString()
-          : decoded.toString();
+      String text = '';
+      if (decoded is Map) {
+        final versesMap = decoded['verse'];
+        if (versesMap is Map) {
+          text = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? '').toString();
+        } else if (decoded.containsKey('text')) {
+          text = decoded['text'].toString();
+        }
+      }
       if (!mounted) return;
-      _showTextSheet('ترجمة الآية $verse', text);
+      _showTextSheet('ترجمة الآية $verse', text.isNotEmpty ? text : 'الترجمة غير متوفرة لهذه الآية');
     } catch (_) {
       _showMessage('الترجمة غير متوفرة لهذه الآية');
     }
