@@ -38,7 +38,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   bool _isAudioPlaying = false;
   List<String> verses = [];
   String? _openingBasmala;
-  List> _bookmarks = [];
+  List> _bookmarks = []; // تم تصحيح نوع البيانات هنا
 
   bool isLoading = true;
   String? _loadError;
@@ -265,7 +265,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(kBookmarksKey);
-      final loaded = >[];
+      final List> loaded = []; // تم تصحيح نوع البيانات هنا
       if (raw != null) {
         final decoded = json.decode(raw);
         if (decoded is List) {
