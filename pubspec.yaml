@@ -50,10 +50,10 @@ flutter:
       fonts:
         - asset: assets/fonts/surah_nam.ttf
 
-    - family: bsm60
+    - family: bamla61
       fonts:
-        - asset: assets/fonts/bsmla60.ttf
-
+        - asset: assets/fonts/bamla61.ttf
+bamla61.ttf
     - family: nss
       fonts:
         - asset: assets/fonts/surah_nss.ttf
