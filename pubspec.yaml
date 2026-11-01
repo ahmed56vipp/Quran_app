@@ -53,7 +53,7 @@ flutter:
     - family: bamla61
       fonts:
         - asset: assets/fonts/bamla61.ttf
-bamla61.ttf
+
     - family: nss
       fonts:
         - asset: assets/fonts/surah_nss.ttf
