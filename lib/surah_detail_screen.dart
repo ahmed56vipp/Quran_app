@@ -31,14 +31,14 @@ class SurahDetailScreen extends StatefulWidget {
 }
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
-  final List<GlobalKey> _verseKeys = [];
+  final List _verseKeys = [];
   final ScrollController _scrollController = ScrollController();
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _isAudioPlaying = false;
-  List<String> verses = [];
+  List verses = [];
   String? _openingBasmala;
-  List> _bookmarks = [];
+  List _bookmarks = [];
 
   bool isLoading = true;
   String? _loadError;
@@ -82,7 +82,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     super.dispose();
   }
 
-  Future<void> _loadReadingPreferences() async {
+  Future _loadReadingPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
@@ -96,13 +96,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     });
   }
 
-  Future<void> _saveReadingPreference(String key, Object value) async {
+  Future _saveReadingPreference(String key, Object value) async {
     final prefs = await SharedPreferences.getInstance();
     if (value is int) await prefs.setInt(key, value);
     if (value is double) await prefs.setDouble(key, value);
   }
 
-  Future<void> _saveLastReadPosition(int index) async {
+  Future _saveLastReadPosition(int index) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('last_surah', widget.surahId);
     await prefs.setInt('last_verse', index + 1);
@@ -137,9 +137,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return int.tryParse(key.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
   }
 
-  Map<String, dynamic> _extractMap(dynamic data) {
+  Map _extractMap(dynamic data) {
     if (data is! Map) return {};
-    final result = <String, dynamic>{};
+    final result = {};
     final source = data['verse'];
     if (source is Map) {
       source.forEach((key, value) => result[key.toString()] = value);
@@ -166,22 +166,21 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return normalized == 'بسماللهالرحمنالرحيم';
   }
 
-  List<String> _extractTexts(Map<String, dynamic> data,
-      {bool removeBasmala = false}) {
+  List _extractTexts(Map data, {bool removeBasmala = false}) {
     final entries = data.entries.toList()
-      ..sort((a, b) => _numberFromKey(a.key).compareTo(_numberFromKey(b.key)));
-    final result = <String>[];
+      ..sort((a, b) => _numberFromKey(a.key.toString()).compareTo(_numberFromKey(b.key.toString())));
+    final result = [];
     for (final entry in entries) {
       final text = entry.value.toString().replaceFirst('\uFEFF', '').trim();
       if (text.isEmpty) continue;
-      final isZeroIndex = _numberFromKey(entry.key) == 0;
+      final isZeroIndex = _numberFromKey(entry.key.toString()) == 0;
       if (_isBasmala(text) && (removeBasmala || isZeroIndex)) continue;
       result.add(text);
     }
     return result;
   }
 
-  Future<String?> _loadAsset(List<String> paths) async {
+  Future _loadAsset(List paths) async {
     for (final path in paths) {
       try {
         final value = await rootBundle.loadString(path);
@@ -197,19 +196,17 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  Future<void> _loadData() async {
+  Future _loadData() async {
     try {
-      final response =
-          await _loadAsset(['assets/surah/surah_${widget.surahId}.json']);
-      List<String> loadedVerses = [];
+      final response = await _loadAsset(['assets/surah/surah_${widget.surahId}.json']);
+      List loadedVerses = [];
       String? openingBasmala;
       if (response != null) {
         final verseMap = _extractMap(json.decode(response));
         for (final entry in verseMap.entries) {
-          if (_numberFromKey(entry.key) == 0 &&
+          if (_numberFromKey(entry.key.toString()) == 0 &&
               _isBasmala(entry.value.toString())) {
-            openingBasmala =
-                entry.value.toString().replaceFirst('\uFEFF', '').trim();
+            openingBasmala = entry.value.toString().replaceFirst('\uFEFF', '').trim();
             break;
           }
         }
@@ -237,14 +234,13 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         verses = [];
         _openingBasmala = null;
         _verseKeys.clear();
-        _loadError =
-            'تعذّر تحميل آيات السورة بشكل صحيح. أعد فتح السورة أو تحقق من ملفات البيانات.';
+        _loadError = 'تعذّر تحميل آيات السورة بشكل صحيح. أعد فتح السورة أو تحقق من ملفات البيانات.';
         isLoading = false;
       });
     }
   }
 
-  Future<void> _restoreLastPosition() async {
+  Future _restoreLastPosition() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
@@ -255,23 +251,23 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       if (targetVerse != null &&
           targetVerse >= 1 &&
           targetVerse <= verses.length) {
-        await Future<void>.delayed(const Duration(milliseconds: 80));
+        await Future.delayed(const Duration(milliseconds: 80));
         if (mounted) await _scrollToVerse(targetVerse - 1);
       }
     } catch (_) {}
   }
 
-  Future<void> _loadBookmarks() async {
+  Future _loadBookmarks() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(kBookmarksKey);
-      final List> loaded = [];
+      final List loaded = [];
       if (raw != null) {
         final decoded = json.decode(raw);
         if (decoded is List) {
           for (final item in decoded) {
             if (item is! Map) continue;
-            final bookmark = Map<String, dynamic>.from(item);
+            final bookmark = Map.from(item);
             final surahId = _intValue(bookmark['surahId']);
             final verse = _intValue(bookmark['verse']);
             if (surahId < 1 || verse < 1) continue;
@@ -287,12 +283,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     } catch (_) {}
   }
 
-  Future<void> _saveBookmarks() async {
+  Future _saveBookmarks() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(kBookmarksKey, json.encode(_bookmarks));
   }
 
-  Future<void> _addBookmark() async {
+  Future _addBookmark() async {
     final verse = selectedVerseIndex + 1;
     final exists = _bookmarks.any(
         (b) => b['surahId'] == widget.surahId && b['verse'] == verse);
@@ -311,10 +307,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     _showMessage('تم حفظ الإشارة المرجعية');
   }
 
-  Future<void> _showBookmarks() async {
+  Future _showBookmarks() async {
     await _loadBookmarks();
     if (!mounted) return;
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => Directionality(
@@ -326,8 +322,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               const Padding(
                 padding: EdgeInsets.all(16),
                 child: Text('الإشارات المرجعية',
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
               Expanded(
                 child: _bookmarks.isEmpty
@@ -367,9 +362,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  Future<void> _showGoToVerse() async {
-    final controller =
-        TextEditingController(text: '${selectedVerseIndex + 1}');
+  Future _showGoToVerse() async {
+    final controller = TextEditingController(text: '${selectedVerseIndex + 1}');
     final value = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -385,8 +379,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               onPressed: () => Navigator.pop(ctx),
               child: const Text('إلغاء')),
           FilledButton(
-              onPressed: () =>
-                  Navigator.pop(ctx, int.tryParse(controller.text)),
+              onPressed: () => Navigator.pop(ctx, int.tryParse(controller.text)),
               child: const Text('انتقال')),
         ],
       ),
@@ -399,7 +392,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     controller.dispose();
   }
 
-  Future<void> _toggleFullscreen() async {
+  Future _toggleFullscreen() async {
     _isFullscreen = !_isFullscreen;
     await SystemChrome.setEnabledSystemUIMode(_isFullscreen
         ? SystemUiMode.immersiveSticky
@@ -407,15 +400,14 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _toggleAudio() async {
+  Future _toggleAudio() async {
     if (_isAudioPlaying) {
       await _audioPlayer.pause();
       return;
     }
     try {
       String audioUrl = '';
-      final raw = await rootBundle
-          .loadString('assets/audiourls/${widget.reciterId}.json');
+      final raw = await rootBundle.loadString('assets/audiourls/${widget.reciterId}.json');
       final decoded = jsonDecode(raw);
       if (decoded is List && decoded.length >= widget.surahId) {
         final item = decoded[widget.surahId - 1];
@@ -433,11 +425,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  Future<void> _showTafsir() async {
+  Future _showTafsir() async {
     final verse = selectedVerseIndex + 1;
     try {
-      final raw = await rootBundle
-          .loadString('assets/tafsir/${widget.surahId}_$verse.json');
+      final raw = await rootBundle.loadString('assets/tafsir/${widget.surahId}_$verse.json');
       final decoded = jsonDecode(raw);
       final text = decoded is Map
           ? (decoded['text'] ?? decoded['tafsir'] ?? '').toString()
@@ -449,11 +440,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  Future<void> _showTajweed() async {
+  Future _showTajweed() async {
     final verse = selectedVerseIndex + 1;
     try {
-      final raw = await rootBundle
-          .loadString('assets/tajweed/${widget.surahId}-jsonl');
+      final raw = await rootBundle.loadString('assets/tajweed/${widget.surahId}-jsonl');
       final lines = const LineSplitter().convert(raw);
       String? verseTajweedText;
       for (final line in lines) {
@@ -471,11 +461,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  Future<void> _showTranslation() async {
+  Future _showTranslation() async {
     final verse = selectedVerseIndex + 1;
     try {
-      final raw = await rootBundle
-          .loadString('assets/translation/ar/ar_translation_${widget.surahId}.json');
+      final raw = await rootBundle.loadString('assets/translation/ar/ar_translation_${widget.surahId}.json');
       final decoded = jsonDecode(raw);
       String text = '';
       if (decoded is Map) {
@@ -494,7 +483,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _showTextSheet(String title, String body) {
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => Directionality(
@@ -507,8 +496,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(title,
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
@@ -532,7 +520,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   }
 
   void _openSettingsDrawer() {
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
@@ -547,11 +535,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 children: [
                   const Text('إعدادات القراءة',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  const Align(
-                      alignment: Alignment.centerRight, child: Text('حجم الخط')),
+                  const Align(alignment: Alignment.centerRight, child: Text('حجم الخط')),
                   Slider(
                     value: _fontSize,
                     min: 14,
@@ -564,9 +550,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                       _saveReadingPreference('quran_font_size', v);
                     },
                   ),
-                  const Align(
-                      alignment: Alignment.centerRight,
-                      child: Text('سرعة القراءة الآلية')),
+                  const Align(alignment: Alignment.centerRight, child: Text('سرعة القراءة الآلية')),
                   Slider(
                     value: _scrollSpeed,
                     min: .2,
@@ -626,8 +610,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   void _onScroll() {
     _scrollSelectionDebounce?.cancel();
-    _scrollSelectionDebounce =
-        Timer(const Duration(milliseconds: 90), _updateSelectedVerseFromScroll);
+    _scrollSelectionDebounce = Timer(const Duration(milliseconds: 90), _updateSelectedVerseFromScroll);
   }
 
   void _updateSelectedVerseFromScroll() {
@@ -645,9 +628,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       final verseContext = _verseKeys[i].currentContext;
       if (verseContext == null) continue;
       final renderObject = verseContext.findRenderObject();
-      if (renderObject is! RenderBox ||
-          !renderObject.attached ||
-          !renderObject.hasSize) continue;
+      if (renderObject is! RenderBox || !renderObject.attached || !renderObject.hasSize) continue;
       final globalPosition = renderObject.localToGlobal(Offset.zero);
       if (globalPosition.dy < 0 || globalPosition.dy > screenHeight) continue;
       final distance = (globalPosition.dy - targetY).abs();
@@ -670,7 +651,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  Future<void> _scrollToVerse(int index) async {
+  Future _scrollToVerse(int index) async {
     if (!mounted || index < 0 || index >= verses.length) return;
     _stopAutoScroll();
     setState(() {
@@ -679,7 +660,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     });
     _saveLastReadPosition(index);
     await WidgetsBinding.instance.endOfFrame;
-    await Future<void>.delayed(const Duration(milliseconds: 40));
+    await Future.delayed(const Duration(milliseconds: 40));
     if (!mounted || index >= _verseKeys.length) return;
     final target = _verseKeys[index].currentContext;
     if (target == null) return;
@@ -697,8 +678,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       return;
     }
     setState(() => _isAutoScrolling = true);
-    _autoScrollTimer =
-        Timer.periodic(const Duration(milliseconds: 30), (timer) {
+    _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       if (!mounted || !_scrollController.hasClients) {
         timer.cancel();
         return;
@@ -725,8 +705,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   void _showMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Color _getBackgroundColor() {
