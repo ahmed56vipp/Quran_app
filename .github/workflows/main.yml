@@ -1,3 +1,4 @@
+
 name: Flutter Build APK
 
 on: [push]
@@ -5,6 +6,7 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -13,6 +15,35 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install required NDK
+        shell: bash
+        run: |
+          set -e
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
+
+          NDK_PATH="$ANDROID_HOME/ndk/28.2.13676358"
+
+          for attempt in 1 2 3; do
+            echo "Installing NDK - attempt $attempt of 3"
+
+            rm -rf "$NDK_PATH"
+
+            if sdkmanager --sdk_root="$ANDROID_HOME" --install "ndk;28.2.13676358" \
+              && test -f "$NDK_PATH/source.properties"; then
+              echo "NDK installed successfully"
+              exit 0
+            fi
+
+            echo "NDK installation failed"
+            sleep 15
+          done
+
+          echo "NDK installation failed after 3 attempts"
+          exit 1
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -23,8 +54,6 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # The uploaded project did not contain Gradle Wrapper files. Generate
-      # them in CI so Flutter can invoke the exact Gradle version in properties.
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
