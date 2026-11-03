@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'surah_detail_screen.dart';
+import 'mushaf_page_reader.dart';
 import 'utils.dart';
 
 const String kSurahNameFont = 'surah_nam';
@@ -586,6 +587,15 @@ class _SurahListScreenState extends State<SurahListScreen>
               ],
             ),
             actions: [
+              IconButton(
+                tooltip: 'قارئ صفحات المصحف',
+                icon: const Icon(Icons.auto_stories_rounded, color: gold),
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const MushafPageReader(),
+                  ));
+                },
+              ),
               IconButton(
                 tooltip: 'الإشارات المرجعية',
                 icon: const Icon(Icons.bookmarks_outlined,

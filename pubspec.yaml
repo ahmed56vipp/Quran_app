@@ -44,6 +44,7 @@ flutter:
     - assets/icon/
     - assets/audiourls/
     - assets/surah_f/
+    - assets/mushaf/
 
   fonts:
     - family: surah_nam
