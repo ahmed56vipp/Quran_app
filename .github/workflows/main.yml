@@ -1,4 +1,3 @@
-
 name: Flutter Build APK
 
 on: [push]
@@ -16,34 +15,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
+      - name: Set up Android SDK & Packages
         uses: android-actions/setup-android@v3
-
-      - name: Install required NDK
-        shell: bash
-        run: |
-          set -e
-          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
-
-          NDK_PATH="$ANDROID_HOME/ndk/28.2.13676358"
-
-          for attempt in 1 2 3; do
-            echo "Installing NDK - attempt $attempt of 3"
-
-            rm -rf "$NDK_PATH"
-
-            if sdkmanager --sdk_root="$ANDROID_HOME" --install "ndk;28.2.13676358" \
-              && test -f "$NDK_PATH/source.properties"; then
-              echo "NDK installed successfully"
-              exit 0
-            fi
-
-            echo "NDK installation failed"
-            sleep 15
-          done
-
-          echo "NDK installation failed after 3 attempts"
-          exit 1
+        with:
+          packages: |
+            platform-tools
+            platforms;android-34
+            build-tools;34.0.0
+            ndk;28.2.13676358
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
