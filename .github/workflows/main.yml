@@ -1,14 +1,19 @@
-
 name: Flutter Build APK
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+      - merge-quran-ci
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -17,7 +22,9 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
       - name: Install required NDK
         shell: bash
@@ -29,7 +36,6 @@ jobs:
 
           for attempt in 1 2 3; do
             echo "Installing NDK - attempt $attempt of 3"
-
             rm -rf "$NDK_PATH"
 
             if sdkmanager --sdk_root="$ANDROID_HOME" --install "ndk;28.2.13676358" \
@@ -48,7 +54,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.47.9'
           cache: true
 
       - name: Install Flutter dependencies
@@ -64,8 +70,10 @@ jobs:
         run: |
           FLUTTER_BIN="$(command -v flutter)"
           FLUTTER_ROOT="$(cd "$(dirname "$FLUTTER_BIN")/.." && pwd)"
+
           printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > local.properties
           printf 'sdk.dir=%s\n' "$ANDROID_HOME" >> local.properties
+
           gradle wrapper --gradle-version 9.1.0 --distribution-type bin
 
       - name: Generate launcher icons
@@ -79,3 +87,4 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

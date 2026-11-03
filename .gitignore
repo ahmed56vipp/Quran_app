@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# Excluded archives and backups
+
+# Excluded archives and backups
+Quran_clod.zip
+pubspec_backup.yaml
+Quran_app-updated.zip
