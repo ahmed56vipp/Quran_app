@@ -30,7 +30,9 @@ jobs:
         shell: bash
         run: |
           set -e
+          set +o pipefail
           yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
+          set -o pipefail
 
           NDK_PATH="$ANDROID_HOME/ndk/28.2.13676358"
 
