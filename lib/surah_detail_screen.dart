@@ -425,82 +425,71 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // --- دالة التفسير المحدثة لمعالجة جميع بنى مجلدات التفسير ---
+  // --- دالة التفسير الشاملة ---
   Future _showTafsir() async {
     final verse = selectedVerseIndex + 1;
-    try {
-      String? text;
+    final List<String> possiblePaths = [
+      'assets/tafsir/tafseer${widget.surahId}/$verse.txt',
+      'assets/tafsir/tafseer${widget.surahId}/$verse-txt',
+      'assets/tafsir/tafseer${widget.surahId}/verse_$verse.txt',
+      'assets/tafsir/tafseer${widget.surahId}_$verse.txt',
+      'assets/tafsir/${widget.surahId}_$verse.json',
+      'assets/tafsir/${widget.surahId}-$verse.json',
+      'assets/tafsir/tafseer${widget.surahId}.json',
+      'assets/tafsir/${widget.surahId}.json',
+    ];
 
-      // 1. محاولة قراءة الملف النصي الفردي لكل آية داخل مجلدات مثل tafseer31/
+    String? text;
+    for (final path in possiblePaths) {
       try {
-        text = await _loadAsset([
-          'assets/tafsir/tafseer${widget.surahId}/$verse.txt',
-          'assets/tafsir/tafseer${widget.surahId}/$verse-txt',
-          'assets/tafsir/tafseer${widget.surahId}/verse_$verse.txt',
-          'assets/tafsir/${widget.surahId}_$verse.txt',
-        ]);
-      } catch (_) {}
-
-      // 2. إذا لم يتم العثور عليه، محاولة قراءة ملف JSON الشامل
-      if (text == null || text.isEmpty) {
-        try {
-          final raw = await _loadAsset([
-            'assets/tafsir/${widget.surahId}.json',
-            'assets/tafsir/tafsir_${widget.surahId}.json',
-            'assets/tafsir/ar_tafsir_${widget.surahId}.json',
-          ]);
-          if (raw != null) {
-            final decoded = jsonDecode(raw);
-            if (decoded is Map) {
-              final versesMap = decoded['verse'] ?? decoded['verses'] ?? decoded;
-              if (versesMap is Map) {
-                text = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? versesMap[verse.toString()] ?? '').toString();
-              } else if (decoded.containsKey('text')) {
-                text = decoded['text'].toString();
+        final raw = await rootBundle.loadString(path);
+        if (raw.trim().isNotEmpty) {
+          if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) {
+            try {
+              final decoded = jsonDecode(raw);
+              if (decoded is Map) {
+                final versesMap = decoded['verse'] ?? decoded['verses'] ?? decoded;
+                if (versesMap is Map) {
+                  text = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? versesMap[verse.toString()] ?? '').toString();
+                } else if (decoded.containsKey('text')) {
+                  text = decoded['text'].toString();
+                }
               }
+            } catch (_) {
+              text = raw;
             }
+          } else {
+            text = raw;
           }
-        } catch (_) {}
-      }
-
-      // 3. محاولة أخيره للملفات المنفصلة بصيغة JSON
-      if (text == null || text.isEmpty) {
-        try {
-          final raw = await _loadAsset([
-            'assets/tafsir/${widget.surahId}_$verse.json',
-            'assets/tafsir/${widget.surahId}-$verse.json',
-          ]);
-          if (raw != null) {
-            final decoded = jsonDecode(raw);
-            text = decoded is Map
-                ? (decoded['text'] ?? decoded['tafsir'] ?? decoded['content'] ?? '').toString()
-                : decoded.toString();
-          }
-        } catch (_) {}
-      }
-
-      if (!mounted) return;
-      _showTextSheet('تفسير الآية $verse', (text != null && text.isNotEmpty) ? text : 'التفسير غير متوفر لهذه الآية');
-    } catch (_) {
-      _showMessage('التفسير غير متوفر لهذه الآية');
+          if (text != null && text.trim().isNotEmpty) break;
+        }
+      } catch (_) {}
     }
+
+    if (!mounted) return;
+    _showTextSheet(
+      'تفسير الآية $verse',
+      (text != null && text.trim().isNotEmpty) ? text : 'التفسير غير متوفر لهذه الآية في الملفات المضمنة',
+    );
   }
 
-  // --- دالة التجويد المحدثة ---
+  // --- دالة التجويد الشاملة ---
   Future _showTajweed() async {
     final verse = selectedVerseIndex + 1;
-    try {
-      final raw = await _loadAsset([
-        'assets/tajweed/${widget.surahId}.jsonl',
-        'assets/tajweed/${widget.surahId}-jsonl',
-        'assets/tajweed/${widget.surahId}.json',
-        'assets/tajweed/surah_${widget.surahId}.jsonl',
-      ]);
+    final List<String> possiblePaths = [
+      'assets/tajweed/${widget.surahId}.jsonl',
+      'assets/tajweed/${widget.surahId}-jsonl',
+      'assets/tajweed/${widget.surahId}.json',
+      'assets/tajweed/surah_${widget.surahId}.jsonl',
+      'assets/tajweed/tajweed_${widget.surahId}.jsonl',
+    ];
 
-      if (raw != null) {
-        String? verseTajweedText;
-        if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) {
-          try {
+    String? verseTajweedText;
+    for (final path in possiblePaths) {
+      try {
+        final raw = await rootBundle.loadString(path);
+        if (raw.trim().isNotEmpty) {
+          if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) {
             final decoded = jsonDecode(raw);
             if (decoded is List) {
               for (final item in decoded) {
@@ -515,33 +504,32 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 verseTajweedText = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? '').toString();
               }
             }
-          } catch (_) {}
-        }
-
-        if (verseTajweedText == null || verseTajweedText.isEmpty) {
-          final lines = const LineSplitter().convert(raw);
-          for (final line in lines) {
-            if (line.trim().isEmpty) continue;
-            try {
-              final decoded = jsonDecode(line);
-              if (decoded is Map && (_intValue(decoded['ayah']) == verse || _intValue(decoded['verse']) == verse || _intValue(decoded['verse_id']) == verse)) {
-                verseTajweedText = decoded['text']?.toString() ?? decoded['tajweed']?.toString();
-                break;
-              }
-            } catch (_) {}
+          } else {
+            final lines = const LineSplitter().convert(raw);
+            for (final line in lines) {
+              if (line.trim().isEmpty) continue;
+              try {
+                final decoded = jsonDecode(line);
+                if (decoded is Map) {
+                  final ayahNum = _intValue(decoded['ayah'] ?? decoded['verse'] ?? decoded['verse_id'] ?? decoded['ayah_num']);
+                  if (ayahNum == verse) {
+                    verseTajweedText = decoded['text']?.toString() ?? decoded['tajweed']?.toString();
+                    break;
+                  }
+                }
+              } catch (_) {}
+            }
           }
+          if (verseTajweedText != null && verseTajweedText.trim().isNotEmpty) break;
         }
-
-        if (!mounted) return;
-        _showTextSheet('تجويد الآية $verse', verseTajweedText ?? 'التجويد غير متوفر لهذه الآية');
-        return;
-      }
-
-      if (!mounted) return;
-      _showMessage('التجويد غير متوفر لهذه الآية');
-    } catch (_) {
-      _showMessage('التجويد غير متوفر لهذه الآية');
+      } catch (_) {}
     }
+
+    if (!mounted) return;
+    _showTextSheet(
+      'تجويد الآية $verse',
+      (verseTajweedText != null && verseTajweedText.trim().isNotEmpty) ? verseTajweedText : 'التجويد غير متوفر لهذه الآية',
+    );
   }
 
   Future _showTranslation() async {
@@ -925,8 +913,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             child: Container(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(left: 12, bottom: 4),
+              // تم تخصيص خط jzu12 ليعرض الجزء الحالي وإجمالي الأجزاء بالعربية/الإنجليزية مثل 1/30
               child: Text(
-                '${currentJuz.clamp(1, 30)}',
+                '${toArabicNumerals(currentJuz.clamp(1, 30))}/٣٠',
                 style: const TextStyle(
                   fontFamily: 'jzu12',
                   fontSize: 22,
@@ -1014,11 +1003,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                                   width: 1),
                                               shape: BoxShape.circle,
                                             ),
+                                            // استخدام خط 12345 لعرض ترقيم الآيات بالصيغة (رقم الآية / إجمالي الآيات)
                                             child: Text(
-                                              toArabicNumerals(i + 1),
+                                              '${i + 1}/${widget.versesCount}',
                                               style: TextStyle(
                                                 fontFamily: '12345',
-                                                fontSize: _fontSize * 0.65,
+                                                fontSize: _fontSize * 0.50,
                                                 color: selectedVerseIndex == i
                                                     ? Colors.white
                                                     : (isDark
