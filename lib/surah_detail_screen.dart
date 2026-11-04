@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'utils.dart';
+import 'utils.dart'; // استيراد الدالة لتحويل الأرقام إلى الصيغة العربية[span_5](start_span)[span_5](end_span)[span_6](start_span)[span_6](end_span)
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -896,6 +896,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
+                                // تعديل عرض النص والترقيم ليكون مضبوطاً ومنتظماً
                                 Text.rich(
                                   TextSpan(
                                     children: [
@@ -905,7 +906,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                           style: TextStyle(
                                             fontFamily: 'nss',
                                             fontSize: _fontSize,
-                                            height: 2.2,
+                                            height: 2.4, // زيادة ارتفاع السطر لمنع تداخل التشكيل
                                             color: selectedVerseIndex == i
                                                 ? const Color(0xFF2E7D32)
                                                 : _getTextColor(),
@@ -919,19 +920,20 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                           child: Container(
                                             key: _verseKeys[i],
                                             margin: const EdgeInsets.symmetric(
-                                                horizontal: 3),
+                                                horizontal: 4),
                                             padding: const EdgeInsets.symmetric(
-                                                horizontal: 5, vertical: 3),
+                                                horizontal: 6, vertical: 3),
                                             decoration: BoxDecoration(
                                               color: selectedVerseIndex == i
                                                   ? const Color(0xFF2E7D32)
                                                   : Colors.transparent,
                                               border: Border.all(
-                                                  color: const Color(0xFF2E7D32)),
+                                                  color: const Color(0xFF2E7D32),
+                                                  width: 1),
                                               shape: BoxShape.circle,
                                             ),
                                             child: Text(
-                                              '${i + 1}',
+                                              toArabicNumerals(i + 1), // تحويل الرقم إلى الصيغة العربية[span_7](start_span)[span_7](end_span)
                                               style: TextStyle(
                                                 fontFamily: '12345',
                                                 fontSize: _fontSize * 0.65,
@@ -949,7 +951,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       ],
                                     ],
                                   ),
-                                  textAlign: TextAlign.justify,
+                                  textAlign: TextAlign.right, // تم التعديل من justify إلى right لمنع التباعد والقفز في الأرقام
                                   textDirection: TextDirection.rtl,
                                 ),
                               ],
