@@ -180,7 +180,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return result;
   }
 
-  Future _loadAsset(List paths) async {
+  Future<String?> _loadAsset(List paths) async {
     for (final path in paths) {
       try {
         final value = await rootBundle.loadString(path);
@@ -425,32 +425,45 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // --- دالة التفسير المطورة للتعامل مع كلا الاحتمالات (ملف شامل أو ملفات منفصلة) ---
+  // --- دالة التفسير المحدثة لمعالجة جميع بنى مجلدات التفسير ---
   Future _showTafsir() async {
     final verse = selectedVerseIndex + 1;
     try {
       String? text;
-      // 1. محاولة قراءة ملف التفسير الشامل للسورة (مثل الترجمة)
+
+      // 1. محاولة قراءة الملف النصي الفردي لكل آية داخل مجلدات مثل tafseer31/
       try {
-        final raw = await _loadAsset([
-          'assets/tafsir/${widget.surahId}.json',
-          'assets/tafsir/tafsir_${widget.surahId}.json',
-          'assets/tafsir/ar_tafsir_${widget.surahId}.json',
+        text = await _loadAsset([
+          'assets/tafsir/tafseer${widget.surahId}/$verse.txt',
+          'assets/tafsir/tafseer${widget.surahId}/$verse-txt',
+          'assets/tafsir/tafseer${widget.surahId}/verse_$verse.txt',
+          'assets/tafsir/${widget.surahId}_$verse.txt',
         ]);
-        if (raw != null) {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map) {
-            final versesMap = decoded['verse'] ?? decoded['verses'] ?? decoded;
-            if (versesMap is Map) {
-              text = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? versesMap[verse.toString()] ?? '').toString();
-            } else if (decoded.containsKey('text')) {
-              text = decoded['text'].toString();
-            }
-          }
-        }
       } catch (_) {}
 
-      // 2. إذا لم يوجد، محاولة قراءة ملف منفصل لكل آية
+      // 2. إذا لم يتم العثور عليه، محاولة قراءة ملف JSON الشامل
+      if (text == null || text.isEmpty) {
+        try {
+          final raw = await _loadAsset([
+            'assets/tafsir/${widget.surahId}.json',
+            'assets/tafsir/tafsir_${widget.surahId}.json',
+            'assets/tafsir/ar_tafsir_${widget.surahId}.json',
+          ]);
+          if (raw != null) {
+            final decoded = jsonDecode(raw);
+            if (decoded is Map) {
+              final versesMap = decoded['verse'] ?? decoded['verses'] ?? decoded;
+              if (versesMap is Map) {
+                text = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? versesMap[verse.toString()] ?? '').toString();
+              } else if (decoded.containsKey('text')) {
+                text = decoded['text'].toString();
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. محاولة أخيره للملفات المنفصلة بصيغة JSON
       if (text == null || text.isEmpty) {
         try {
           final raw = await _loadAsset([
@@ -473,7 +486,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // --- دالة التجويد المطورة لدعم جميع صيغ وامتدادات ملفات التجويد ---
+  // --- دالة التجويد المحدثة ---
   Future _showTajweed() async {
     final verse = selectedVerseIndex + 1;
     try {
