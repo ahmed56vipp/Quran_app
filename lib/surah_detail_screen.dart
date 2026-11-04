@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'utils.dart'; // استيراد الدالة لتحويل الأرقام إلى الصيغة العربية[span_5](start_span)[span_5](end_span)[span_6](start_span)[span_6](end_span)
+import 'utils.dart';
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahId;
@@ -425,37 +425,107 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  // --- دالة التفسير المطورة للتعامل مع كلا الاحتمالات (ملف شامل أو ملفات منفصلة) ---
   Future _showTafsir() async {
     final verse = selectedVerseIndex + 1;
     try {
-      final raw = await rootBundle.loadString('assets/tafsir/${widget.surahId}_$verse.json');
-      final decoded = jsonDecode(raw);
-      final text = decoded is Map
-          ? (decoded['text'] ?? decoded['tafsir'] ?? '').toString()
-          : decoded.toString();
+      String? text;
+      // 1. محاولة قراءة ملف التفسير الشامل للسورة (مثل الترجمة)
+      try {
+        final raw = await _loadAsset([
+          'assets/tafsir/${widget.surahId}.json',
+          'assets/tafsir/tafsir_${widget.surahId}.json',
+          'assets/tafsir/ar_tafsir_${widget.surahId}.json',
+        ]);
+        if (raw != null) {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map) {
+            final versesMap = decoded['verse'] ?? decoded['verses'] ?? decoded;
+            if (versesMap is Map) {
+              text = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? versesMap[verse.toString()] ?? '').toString();
+            } else if (decoded.containsKey('text')) {
+              text = decoded['text'].toString();
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 2. إذا لم يوجد، محاولة قراءة ملف منفصل لكل آية
+      if (text == null || text.isEmpty) {
+        try {
+          final raw = await _loadAsset([
+            'assets/tafsir/${widget.surahId}_$verse.json',
+            'assets/tafsir/${widget.surahId}-$verse.json',
+          ]);
+          if (raw != null) {
+            final decoded = jsonDecode(raw);
+            text = decoded is Map
+                ? (decoded['text'] ?? decoded['tafsir'] ?? decoded['content'] ?? '').toString()
+                : decoded.toString();
+          }
+        } catch (_) {}
+      }
+
       if (!mounted) return;
-      _showTextSheet('تفسير الآية $verse', text);
+      _showTextSheet('تفسير الآية $verse', (text != null && text.isNotEmpty) ? text : 'التفسير غير متوفر لهذه الآية');
     } catch (_) {
       _showMessage('التفسير غير متوفر لهذه الآية');
     }
   }
 
+  // --- دالة التجويد المطورة لدعم جميع صيغ وامتدادات ملفات التجويد ---
   Future _showTajweed() async {
     final verse = selectedVerseIndex + 1;
     try {
-      final raw = await rootBundle.loadString('assets/tajweed/${widget.surahId}-jsonl');
-      final lines = const LineSplitter().convert(raw);
-      String? verseTajweedText;
-      for (final line in lines) {
-        if (line.trim().isEmpty) continue;
-        final decoded = jsonDecode(line);
-        if (decoded is Map && _intValue(decoded['ayah']) == verse) {
-          verseTajweedText = decoded['text']?.toString() ?? decoded['tajweed']?.toString();
-          break;
+      final raw = await _loadAsset([
+        'assets/tajweed/${widget.surahId}.jsonl',
+        'assets/tajweed/${widget.surahId}-jsonl',
+        'assets/tajweed/${widget.surahId}.json',
+        'assets/tajweed/surah_${widget.surahId}.jsonl',
+      ]);
+
+      if (raw != null) {
+        String? verseTajweedText;
+        if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) {
+          try {
+            final decoded = jsonDecode(raw);
+            if (decoded is List) {
+              for (final item in decoded) {
+                if (item is Map && (_intValue(item['ayah']) == verse || _intValue(item['verse']) == verse)) {
+                  verseTajweedText = item['text']?.toString() ?? item['tajweed']?.toString();
+                  break;
+                }
+              }
+            } else if (decoded is Map) {
+              final versesMap = decoded['verse'] ?? decoded;
+              if (versesMap is Map) {
+                verseTajweedText = (versesMap['verse_$verse'] ?? versesMap['$verse'] ?? '').toString();
+              }
+            }
+          } catch (_) {}
         }
+
+        if (verseTajweedText == null || verseTajweedText.isEmpty) {
+          final lines = const LineSplitter().convert(raw);
+          for (final line in lines) {
+            if (line.trim().isEmpty) continue;
+            try {
+              final decoded = jsonDecode(line);
+              if (decoded is Map && (_intValue(decoded['ayah']) == verse || _intValue(decoded['verse']) == verse || _intValue(decoded['verse_id']) == verse)) {
+                verseTajweedText = decoded['text']?.toString() ?? decoded['tajweed']?.toString();
+                break;
+              }
+            } catch (_) {}
+          }
+        }
+
+        if (!mounted) return;
+        _showTextSheet('تجويد الآية $verse', verseTajweedText ?? 'التجويد غير متوفر لهذه الآية');
+        return;
       }
+
       if (!mounted) return;
-      _showTextSheet('تجويد الآية $verse', verseTajweedText ?? 'التجويد غير متوفر لهذه الآية');
+      _showMessage('التجويد غير متوفر لهذه الآية');
     } catch (_) {
       _showMessage('التجويد غير متوفر لهذه الآية');
     }
@@ -896,7 +966,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
-                                // تعديل عرض النص والترقيم ليكون مضبوطاً ومنتظماً
                                 Text.rich(
                                   TextSpan(
                                     children: [
@@ -906,7 +975,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                           style: TextStyle(
                                             fontFamily: 'nss',
                                             fontSize: _fontSize,
-                                            height: 2.4, // زيادة ارتفاع السطر لمنع تداخل التشكيل
+                                            height: 2.4,
                                             color: selectedVerseIndex == i
                                                 ? const Color(0xFF2E7D32)
                                                 : _getTextColor(),
@@ -933,7 +1002,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                               shape: BoxShape.circle,
                                             ),
                                             child: Text(
-                                              toArabicNumerals(i + 1), // تحويل الرقم إلى الصيغة العربية[span_7](start_span)[span_7](end_span)
+                                              toArabicNumerals(i + 1),
                                               style: TextStyle(
                                                 fontFamily: '12345',
                                                 fontSize: _fontSize * 0.65,
@@ -951,7 +1020,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       ],
                                     ],
                                   ),
-                                  textAlign: TextAlign.right, // تم التعديل من justify إلى right لمنع التباعد والقفز في الأرقام
+                                  textAlign: TextAlign.right,
                                   textDirection: TextDirection.rtl,
                                 ),
                               ],
